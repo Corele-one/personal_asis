@@ -1,0 +1,3 @@
+# Organize specialist context around delegations
+
+Specialist roles retain confirmed domain goals and constraints, while work records are organized by independent delegations and relevant history is retrieved for each execution instead of indefinitely appending all domain work to one conversation. This preserves continuity, correction, and recoverability without making the runtime's chat thread the authority for the entire domain. Role, delegation, and session identities remain distinct; working hypotheses, confirmed facts, audit records, and readable memory keep their separate responsibilities, with storage and retrieval implementation still pending.

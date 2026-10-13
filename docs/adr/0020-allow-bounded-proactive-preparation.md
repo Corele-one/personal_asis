@@ -1,0 +1,3 @@
+# Allow bounded proactive preparation
+
+The personal agent may discover issues, retrieve permitted evidence, analyze it, and prepare drafts before asking the user, within explicitly agreed topics, sources, and budgets; this reduces interruptions while leaving formal user action tasks and external writes under their existing confirmation rules. Each continuing-work or proactive scope still needs concrete triggers, limits, notification behavior, and stop conditions before activation, and cannot expand source disclosure or provider permissions. This permits bounded preparation rather than requiring approval before every preparatory step or granting unrestricted initiative.

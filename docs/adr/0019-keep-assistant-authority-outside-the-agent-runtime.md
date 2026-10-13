@@ -1,0 +1,3 @@
+# Keep assistant authority outside the replaceable agent runtime
+
+The assistant owns work goals, user action tasks, data and memory policy, permission and confirmation scopes, budgets, device coordination, and results; a replaceable agent runtime supplies model/tool execution and reusable session or recovery mechanisms. This separates durable personal-assistant behavior from framework-specific defaults while reusing execution infrastructure, instead of making a complete existing agent the system authority or rebuilding every agent primitive. Pi is a candidate to validate, not a selected implementation; runtime session storage does not automatically become task, permission, or memory authority.
