@@ -1,0 +1,61 @@
+#!/usr/bin/env python3
+"""Deploy the coordinator to the user's selected VPS, leaving AstrBot untouched."""
+
+import argparse
+import io
+from pathlib import Path
+import shlex
+import subprocess
+import tarfile
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--host", default="mac@35.209.202.207")
+    args = parser.parse_args()
+    root = Path(__file__).resolve().parents[1]
+    buffer = io.BytesIO()
+    def clean(info):
+        return None if "__pycache__" in Path(info.name).parts or info.name.endswith(".pyc") else info
+    with tarfile.open(fileobj=buffer, mode="w:gz") as archive:
+        for name in ("src", "scripts/asis", "tests", "integrations", "deploy", "pyproject.toml"):
+            archive.add(root / name, arcname=name, filter=clean)
+    # Paths and service user match the checked deployment unit. Abort on any
+    # test or installation failure; retries are safe for a partially applied deploy.
+    command = """set -eu
+umask 077
+mkdir -p /home/mac/personal-asis /home/mac/.local/share/personal-asis-coordinator
+chmod 700 /home/mac/.local/share/personal-asis-coordinator
+tar -xzf - -C /home/mac/personal-asis
+cd /home/mac/personal-asis
+PYTHONPATH=src /usr/bin/python3 -m unittest discover -s tests -q
+sudo -n install -m 644 deploy/personal-asis-coordinator.service /etc/systemd/system/personal-asis-coordinator.service
+sudo -n systemctl daemon-reload
+sudo -n systemctl enable personal-asis-coordinator.service
+sudo -n systemctl restart personal-asis-coordinator.service
+systemctl is-active personal-asis-coordinator.service
+ss -ltn sport = :8765
+"""
+    ssh = ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10",
+           "-o", "ServerAliveInterval=5", "-o", "ServerAliveCountMax=2",
+           "-p", "22", args.host, "sh -c " + shlex.quote(command)]
+    for attempt in range(3):
+        try:
+            result = subprocess.run(ssh, input=buffer.getvalue(), capture_output=True, timeout=45)
+        except subprocess.TimeoutExpired:
+            print(f"SSH attempt {attempt + 1}: timeout", flush=True)
+            continue
+        if result.returncode == 0:
+            print(result.stdout.decode(), end="", flush=True)
+            print(result.stderr.decode(), end="", flush=True)
+            return 0
+        print(f"SSH attempt {attempt + 1}: exit {result.returncode}", flush=True)
+        print(result.stderr.decode(), end="", flush=True)
+        if result.returncode != 255:
+            # A remote test/configuration failure is not a reason to retry deploy.
+            return result.returncode
+    return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

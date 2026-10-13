@@ -19,3 +19,5 @@ sources.yaml
 *.key
 cookies.json
 auth.json
+coordinator.json
+pwa.json

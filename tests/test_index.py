@@ -54,6 +54,28 @@ class IndexTests(unittest.TestCase):
         self.index.reconcile()
         self.assertNotEqual(new["document_id"], self.hits("inference")[0]["document_id"])
 
+    def test_private_metadata_permission_is_source_scoped_and_does_not_share_body(self):
+        life = self.base / "Life"
+        life.mkdir()
+        (life / "record.md").write_text("---\nsensitivity: private\n---\n# 合成生活记录\n合成 LIFE_BODY_SENTINEL\n")
+        (self.daily / "record.md").write_text("# 合成旧日记\n合成 OLD_DAILY_SENTINEL\n")
+        self.write(text="---\nsensitivity: private\n---\n# 合成普通来源私密条目\n合成 STUDY_PRIVATE_SENTINEL\n")
+        self.index.config = replace(self.config, sources=(*self.config.sources,
+            Source("life", life, "private", True, True, (), private_remote_metadata=True)))
+        self.index.reconcile()
+        for channel in ("feishu", "pwa"):
+            hits = self.hits("合成", channel)
+            self.assertEqual({h["source_id"] for h in hits}, {"life"})
+            self.assertNotIn("LIFE_BODY_SENTINEL", json.dumps(hits))
+            self.assertNotIn("excerpt", json.dumps(hits))
+            self.assertNotIn("original_uri", json.dumps(hits))
+        local = self.hits("LIFE_BODY_SENTINEL")[0]
+        self.assertEqual(local["policy"], "private")
+        self.assertEqual({h["source_id"] for h in self.index.catalog()["documents"]}, {"life"})
+        self.index.config = replace(self.index.config, sources=tuple(
+            replace(s, private_remote_metadata=False) if s.id == "life" else s for s in self.index.config.sources))
+        self.assertEqual(self.hits("合成", "pwa"), [])
+
     def test_metadata_first_avoids_hashing_unchanged(self):
         self.write()
         self.index.reconcile()

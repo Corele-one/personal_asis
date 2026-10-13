@@ -25,7 +25,7 @@ The system's durable assets are source configurations, personal indexes, evidenc
 
 - No LLM call, semantic vector index, file watcher, OCR, image understanding, email, calendar write, task candidate extraction, personal model, automatic memory, or reusable-rule execution.
 - No source migration, NAS, central PostgreSQL, Redis, Elasticsearch, Qdrant, Kafka, Kubernetes, or a public service on either laptop.
-- No QQ/AstrBot interface. Feishu is the only chat interface.
+- No QQ interface or AstrBot reasoning/task authority. Feishu is the only chat interface; the existing AstrBot-hosted Feishu transport may be reused by a scoped PA0 plugin (see [transport boundary](docs/pa0-feishu.md)).
 
 ## 3. System boundary
 
@@ -66,6 +66,8 @@ The initial test configuration is:
 
 Future wellbeing sources are private by default, including derived reviews and excerpts. Their titles, paths, and filenames can reveal sensitive information: neither the VPS catalog nor Feishu may expose those fields by default. Health material must not be treated as `normal` because it is stored inside `Note/`; explicit private-source exclusions and classification take precedence. Enabling a wellbeing source requires local configuration that specifies whether indexing, model use, and remote evidence display are allowed. Existing `Daily/` restrictions remain in force.
 
+The live Mac configuration now uses the user's Study and Life roots. Test Note/Daily configuration and index records were removed at the user's request; original test files remain on disk. Study allows nonprivate remote metadata. The user explicitly authorized Life's private diary/health titles, source and relative path hints for VPS, Feishu and PWA; a separate local `private_remote_metadata` grant applies only to Life. Classification remains private; this grant never authorizes source text, excerpts, model context or another root. Permission to read a new root alone does not imply remote disclosure or inherit an old root's grant.
+
 `sources.yaml` is local to its owning node. It may only be edited locally, never via PWA or Feishu.
 
 ### Local State Store
@@ -86,9 +88,9 @@ PA0 synchronizes only policy-authorized metadata: node status, source ID, docume
 
 ## 5. Security and privacy requirements
 
-- All PWA traffic uses HTTPS and independent strong user authentication, preferring passkeys.
+- All PWA traffic uses HTTPS and independent owner authentication. The user explicitly selected static-password login for the initial IP deployment; require a long password, salted scrypt storage, rate limiting, secure cookies, session expiry, Origin and CSRF checks. Passkeys/TOTP remain optional later choices, never silently enabled or substituted.
 - Each Local Node enrolls once with a pairing code, stores its node credential in the system credential store, and uses short-lived, renewable credentials for subsequent HTTPS requests.
-- Feishu events must pass platform signature verification and be accepted only from the configured user `open_id`.
+- Feishu events must arrive through the authenticated platform SDK TLS socket transport or pass platform signature verification on a webhook, and be accepted only from the configured user `open_id`. The initial existing AstrBot socket adapter uses one-time private-chat binding; the PA0 plugin rejects webhook, group and other-platform events. See [Feishu implementation](docs/pa0-feishu.md).
 - For source search, Feishu may show only policy-permitted task/node status, document title, source/node, and a path hint. It must not show excerpts or full evidence cards. The first domain pilot defines a separate, limited permission for capture replies; it does not expand journal or search-result disclosure.
 - PWA shows evidence cards with title, node, source, path, location, and minimal excerpt according to policy. Original files open only through an online owning Local Node on the user's device.
 - Source policy changes are local-only control-plane changes.
@@ -99,7 +101,7 @@ PA0 synchronizes only policy-authorized metadata: node status, source ID, docume
 
 ### Implementation status
 
-The Mac local slice now provides a local CLI, SQLite FTS5 index, stable identities and version metadata, reconciliation, replica grouping, policy-filtered metadata serializers, and a user launchd reconciliation service. See [Mac implementation and validation](docs/pa0-mac.md). Coordinator enrollment/polling, ROG, PWA evidence transport, Feishu integration, and encrypted backups remain unimplemented. PA0 has not passed the full acceptance gate. The local `pwa` serializer currently returns only allowed metadata; it is not the PWA evidence-card implementation.
+The Mac index, launchd, VPS coordinator, outbound node protocol, Feishu plugin and IP HTTPS PWA are deployed. Real node enrollment/recovery, Feishu user pairing/search/API receipts and PWA owner login/search have been verified. Study and Life are the only live sources (446 Markdown documents); their explicitly granted metadata may be displayed, while body/excerpt/model permissions remain closed. The user removed the old test sources and opened a dedicated VM's TCP 443 rule in Cloud Shell. Trusted IP TLS, renewal dry-run, anonymous API rejection and 62 application/plugin checks passed. See [Mac](docs/pa0-mac.md), [coordinator](docs/pa0-coordinator.md), [Feishu](docs/pa0-feishu.md) and [PWA](docs/pa0-pwa.md) validation. ROG, original/excerpt evidence transport and encrypted backups remain incomplete; current cards are metadata-only. PA0 has not passed the full gate and no PA1 model capability is enabled.
 
 ### User flows
 
@@ -238,7 +240,7 @@ The following are intentionally not decided until deployment, and must not be si
 
 - backup storage target;
 - MiMo endpoint, model ID, plan, and current quotas;
-- PWA authentication provider and fallback method;
+- future PWA passkey/provider migration, if requested; the current static-password method was explicitly selected;
 - calendar OAuth account configuration;
 - email provider and protocol;
 - future derived-cache enablement;

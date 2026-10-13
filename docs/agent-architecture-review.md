@@ -1,6 +1,6 @@
 # Personal Agent 架构审阅稿
 
-状态：用户已确认整体共识，作为后续实施基线；实现仍只有 PA0 Mac 本机检索。依据：[详细架构](agent-architecture.md)、[信息来源](information-sources.md)、[总规格](../SPECIFICATION.md)。实施顺序见 [实施计划](implementation-plan.md)。
+状态：用户已确认整体共识；Mac 检索、协调／轮询、飞书及 IP HTTPS PWA 已部署并完成真实搜索验证，见 [PWA](pa0-pwa.md) 与 [协调记录](pa0-coordinator.md)。当前仅为获准元数据，ROG 等完整 PA0 验收仍待完成。依据：[详细架构](agent-architecture.md)、[信息来源](information-sources.md)、[总规格](../SPECIFICATION.md)。实施顺序见 [实施计划](implementation-plan.md)。
 
 ## 整体责任
 

@@ -24,13 +24,14 @@
 | `policy` | `normal` 或 `private` |
 | `index` | 是否启用本地索引 |
 | `remote_metadata` | 是否允许向远程渠道导出非私密文档的元数据，默认关闭 |
+| `private_remote_metadata` | 单独允许此来源的私密元数据；仅在明确授权后本机配置，默认关闭，不授权正文／模型 |
 | `exclude` | 根目录相对路径 glob；匹配目录时排除其所有后代 |
 
-`Daily` 为 `private`，不能启用远程元数据。Markdown frontmatter 中 `sensitivity: private`、`policy: private` 或 `classification: private` 会覆盖普通来源的分类。普通来源中的健康目录应排除；健康条目也可明确标为私密。程序不根据文本推断健康分类，配置人员需要维护排除规则和标记。现有本机配置对所有文档关闭远程元数据。
+private 默认不允许远程元数据；启用时必须另有明确的 `private_remote_metadata` 许可。frontmatter 的 `sensitivity: private`、`policy: private` 或 `classification: private` 覆盖普通来源分类；排除规则仍生效。程序不从正文推断健康分类。本轮用户精确允许 Life 私密条目的元数据展示，Life 保持 private；Study 只显示非私密元数据，正文与云模型权限均未扩展。
 
 更改来源权限或排除规则后，新 CLI 请求立即按最新配置过滤；后台服务最多 30 秒后重新读取配置并核对。配置只能在本机编辑。
 
-`search --channel feishu`、`search --channel pwa` 与 `catalog` 是待接入的本地序列化入口，**没有发送消息或联网**。它们仅导出显式允许的非私密元数据，不含正文摘录、原文 URI、附件路径或绝对根目录。PWA 的完整证据卡片与安全的原文传输仍待实现，因此当前 `pwa` 模式只提供元数据。未授权来源连标题和路径提示也不输出。
+`search --channel feishu/pwa` 与 `catalog` 本身仍是本机序列化命令，不自行发送消息。出站节点与飞书／PWA 接入使用这些严格元数据结果，只包含获准字段，不含正文、摘录、原文 URI、附件路径或绝对根目录；未授权来源不输出标题和路径。完整证据与原文传输未实现，也未获本轮授权。
 
 ## 服务
 
@@ -38,7 +39,7 @@
 
 本机数据目录权限为 `0700`，配置、数据库和服务日志为 `0600`，CLI 设置 `umask 077`。日志只记录运行计数与错误类型。日志文件当前不做自动轮转；索引和版本历史也尚无清理命令。
 
-服务尚不执行 VPS 轮询。节点注册、Keychain 凭据、短期凭据刷新、HTTPS 验证、租约、防重任务及加密备份将在协调服务协议和备份目标明确后接入。不要向现有来源配置加入云端访问凭据。
+服务现已支持在本机配置 `coordinator.json` 后进行出站轮询，提供节点配对、Keychain 凭据、短期会话刷新、HTTPS 证书验证、租约及完成 outbox。无域名时支持显式 SSH 回环隧道；部署与实测状态见 [协调说明](pa0-coordinator.md)。加密备份仍待实现及配置目标。不要向来源配置加入协调凭据。
 
 ## 本机验证（2026-10-13）
 
@@ -52,6 +53,6 @@ launchd 已实际安装并处于 `running`；服务启动核对识别 178 个未
 
 用户提供 VPS：`ssh mac@35.209.202.207 -p 22`。只读登录确认 Linux、`/usr/bin/python3`、未安装 Docker；现有 `astrbot.service` 处于 `active/running`，进程归属 `mac`，目录为 `/home/mac/astrbot`。期间一次 SSH 连接中断，重试已成功；未读取密钥或修改服务器部署。
 
-当前 [总规格](../SPECIFICATION.md) 不采用 AstrBot 接口；现存 AstrBot 作为部署背景保留。后续需要确定独立飞书适配器的并存方式，或经用户明确选择后同步规格再复用 AstrBot。不能在未验证签名、用户白名单和披露权限前转发资料。
+用户已确认飞书机器人由 AstrBot 承载，已复用其认证 socket 传输并验证用户绑定与实际收发。IP PWA 已部署并验证真实登录及搜索。旧 Note／Daily 已移除；当前仅 Study 267 个、Life 179 个 Markdown，本轮所有 1803 个新来源文件的大小、mtime、ctime 在索引前后不变。Life 私密元数据许可单独记录，分类仍 private。
 
-仍需：协调节点及私有 HTTPS PWA、节点安全注册与出站任务轮询、飞书限定入口、ROG WSL 节点、跨设备任务恢复与通知、真实两节点副本聚合验收，以及加密备份。未实现或未现场验证的部分不计为 PA0 通过。
+协调、飞书和私有 IP HTTPS PWA 已部署，实际用户搜索已通过。仍需 ROG WSL、真实两节点副本／离线联调、完整证据传输及加密备份；原文／摘录传输还须独立授权。用户要求 ROG 稍后接入。未完成部分不计为整个 PA0 通过，当前不进入 PA1。

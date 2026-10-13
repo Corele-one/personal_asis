@@ -14,3 +14,6 @@ asis = "personal_asis.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+personal_asis = ["web/*"]

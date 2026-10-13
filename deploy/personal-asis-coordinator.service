@@ -1,0 +1,23 @@
+[Unit]
+Description=Personal Asis PA0 metadata coordinator
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=mac
+WorkingDirectory=/home/mac/personal-asis
+Environment=PYTHONPATH=/home/mac/personal-asis/src
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/usr/bin/python3 -m personal_asis --home /home/mac/.local/share/personal-asis-coordinator coordinator serve --nodes mac --port 8765
+Restart=on-failure
+RestartSec=10
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/mac/.local/share/personal-asis-coordinator
+
+[Install]
+WantedBy=multi-user.target

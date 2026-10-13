@@ -17,6 +17,10 @@ class Source:
     index: bool
     remote_metadata: bool
     exclude: tuple[str, ...]
+    private_remote_metadata: bool = False
+
+    def shares_metadata(self, private: bool) -> bool:
+        return self.remote_metadata and (not private or self.private_remote_metadata)
 
     def excludes(self, relative: str) -> bool:
         path = Path(relative)
@@ -57,16 +61,18 @@ def load_config(path: Path) -> Config:
         policy = item["policy"]
         if policy not in {"normal", "private"}:
             raise ValueError("policy 仅支持 normal/private")
-        for key in ("index", "remote_metadata"):
+        for key in ("index", "remote_metadata", "private_remote_metadata"):
             if type(item.get(key, False)) is not bool:
                 raise ValueError(f"{key} 必须是布尔值")
-        if policy == "private" and item.get("remote_metadata", False):
-            raise ValueError("private 来源不能启用远程元数据")
+        if (policy == "private" and item.get("remote_metadata", False)
+                and not item.get("private_remote_metadata", False)):
+            raise ValueError("private 来源远程元数据需要单独、明确的 private_remote_metadata 许可")
         excludes = item.get("exclude", [])
         if not isinstance(excludes, list) or not all(isinstance(x, str) for x in excludes):
             raise ValueError("exclude 必须是字符串数组")
         sources.append(Source(sid, root, policy, item.get("index", True),
-                              item.get("remote_metadata", False), tuple(excludes)))
+                              item.get("remote_metadata", False), tuple(excludes),
+                              item.get("private_remote_metadata", False)))
     if not sources:
         raise ValueError("至少配置一个来源")
     # Overlapping roots could bypass a private source's classification.

@@ -71,6 +71,26 @@ class ServiceTests(unittest.TestCase):
                                          {"sources": [{"status": "ready"}]}])
         self.assertEqual(times, [0, 60])
 
+    def test_configured_daemon_polls_and_closes_outbox_on_shutdown(self):
+        with tempfile.TemporaryDirectory() as name:
+            home = Path(name)
+            (home / "sources.yaml").write_text(json.dumps({"node_id": "mac", "sources": [
+                {"id": "test", "root": name, "policy": "private"}]}))
+            (home / "coordinator.json").write_text("{}")
+            handlers, events = {}, []
+            def emit(event):
+                events.append(event)
+                if event["event"] == "poll":
+                    handlers[signal.SIGTERM]()
+            with patch("personal_asis.service.signal.signal", side_effect=lambda sig, cb: handlers.update({sig: cb})), \
+                 patch("personal_asis.service.Index") as index, \
+                 patch("personal_asis.service.Poller") as poller:
+                index.return_value.__enter__.return_value.reconcile.return_value = {"sources": [{"status": "ready"}]}
+                poller.return_value.once.return_value = {"event": "poll", "claimed": True, "completed": True}
+                daemon(home, emit)
+            self.assertEqual([e["event"] for e in events], ["reconcile", "poll"])
+            poller.return_value.close.assert_called_once()
+
 
 if __name__ == "__main__":
     unittest.main()

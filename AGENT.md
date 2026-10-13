@@ -6,9 +6,9 @@
 
 构建基于个人资料、能够跨设备持续工作的个人助手，覆盖资料检索、研究生申请与职业选择、饮食、作息和心理状态复盘。以“记录 → 复盘 → 用户选择行动 → 反馈”形成持续改进。
 
-当前已实现 PA0 的 Mac 本机索引与 CLI，并安装本机用户级 launchd 核对服务；VPS 协调、出站任务轮询、ROG、飞书和 PWA 尚未实现，完整 PA0 未验收。每次开始任务先核对实际文件树；不把规划、模拟结果或文档检查报告成已上线能力。
+已部署 Mac 索引／CLI、launchd、VPS 协调、Keychain 配对、出站 SSH 轮询、AstrBot 飞书插件和 IP HTTPS PWA。真实飞书、Mac↔VPS 及用户 PWA 登录／搜索已验证。当前仅索引 Study 267 个、Life 179 个 Markdown；旧 Note／Daily 测试配置与索引已移除，原文件保留。Study 非私密元数据及 Life 私密元数据按本轮精确授权远程显示，正文／摘录／云模型处理仍禁止。ROG、完整证据传输及加密备份未完成，完整 PA0 未验收。以 [PWA](docs/pa0-pwa.md)、[协调](docs/pa0-coordinator.md)、[飞书](docs/pa0-feishu.md) 与 [Mac](docs/pa0-mac.md) 的现场记录为准；不把模拟或规划报告成上线能力。
 
-运行依赖为 Python 3.11+ 与支持 FTS5 trigram 的 SQLite 3.34+，无第三方运行包。真实命令：`scripts/asis doctor`、`scripts/asis status`、`scripts/asis search "芯片"`、`scripts/asis reconcile`；测试为 `PYTHONPATH=src python3 -m unittest discover -s tests -v`。详见 [README.md](README.md) 与 [Mac 实施说明](docs/pa0-mac.md)。本机数据位于 `~/Library/Application Support/PersonalAsis/`，不放入代码目录。
+索引与协调核心依赖 Python 3.11+ 及支持 FTS5 trigram 的 SQLite 3.34+，无第三方运行包；飞书插件依赖服务器既有 AstrBot 与飞书 SDK。真实命令：`scripts/asis doctor`、`scripts/asis status`、`scripts/asis search "芯片"`、`scripts/asis reconcile`；测试为 `PYTHONPATH=src python3 -m unittest discover -s tests -v`。详见 [README.md](README.md) 与 [Mac 实施说明](docs/pa0-mac.md)。本机数据位于 `~/Library/Application Support/PersonalAsis/`，不放入代码目录。
 
 ## 文档分工与阅读顺序
 
@@ -59,6 +59,7 @@
 - 来源配置只在所属本机修改；飞书或 PWA 不能改变读取、缓存、云模型使用或出境范围。
 - 用户允许全量本机只读访问 Obsidian `daily`；实际根路径待配置。此许可不等于云端全文处理、个人模型形成或心理标签授权。复盘按相关性检索，默认保持原有私密政策。
 - 健康资料及派生结果默认私密，标题和路径也按敏感数据处理。普通资料夹中的健康条目不能因目录分类而默认进入云端。
+- 用户本轮明确允许 Life 中包括日记和健康条目在内的标题、来源和相对路径提示进入 VPS／飞书／PWA。此例外通过本机 `private_remote_metadata` 单独记录，仅作用于 Life，不改私密分类，不授权正文、摘录、云模型或其他来源。允许访问新目录不自动继承旧目录授权。
 - 飞书是选定的餐食与作息采集入口，可回显本次提交的识别候选、修订与事件时间；不带入 journal 原文、心理解读或历史健康周报。普通资料搜索仍遵循原有飞书摘要限制。
 - 飞书平台会接触提交内容，事件处理可能短暂接触明文；VPS 不持久化明文照片、作息内容或相关日志。离线输入队列按节点加密，明确保留期和失败回执。
 - 云模型只接收来源政策和提供商授权允许的最小上下文；多模型分别检查权限并合计预算，不能因切换模型扩大资料范围。

@@ -1,6 +1,6 @@
 # Personal Asis
 
-PA0 的 Mac 本地节点已实现：SQLite FTS5 Markdown 搜索、文档 UUID／版本、索引核对、来源权限和用户级 launchd 服务。没有模型调用或网络监听。VPS 调度、节点注册／出站轮询、ROG、PWA 与飞书接入尚未实现，整个 PA0 尚未验收。
+Mac 索引、VPS 协调、飞书私聊与 [IP HTTPS PWA](https://35.209.202.207/) 已部署。已验证真实用户登录／搜索、节点轮询及消息回执。当前仅有 Study／Life 两个来源，索引 446 个 Markdown；仅展示明确获准的元数据，没有正文导出或模型调用。ROG、完整证据传输与加密备份仍待完成，完整 PA0 未验收。见 [PWA 说明](docs/pa0-pwa.md)、[协调](docs/pa0-coordinator.md) 和 [飞书](docs/pa0-feishu.md)。
 
 ## 本机使用
 
@@ -17,7 +17,7 @@ scripts/asis audit
 
 输出为 JSON。每个 Replica Group 含独立副本的 UUID、内容哈希、节点、来源与路径。本地副本另含当前原文 URI、行号、最小摘录和索引／读取时间。查询中的空白分隔词按 AND 组合，FTS 运算符按普通文本处理。
 
-本机运行数据位于 `~/Library/Application Support/PersonalAsis/`；来源配置为其中的 `sources.yaml`，SQLite 索引和日志不进入代码目录。当前配置只读索引规格指定的 `test_for_asis/Note` 和 `test_for_asis/Daily`，两个来源的远程元数据权限都关闭。
+本机运行数据位于 `~/Library/Application Support/PersonalAsis/`；配置、索引和审计不进入代码目录。当前只读索引用户授权的 Study（267 个）及 Life（179 个）Markdown。Study 非私密元数据获准远程展示，Life 保持 private，另以明确的 `private_remote_metadata` 许可显示其私密元数据；正文、摘录和模型处理不因此开放。旧 Note／Daily 测试来源已从配置和索引移除，磁盘原文件保留。
 
 ```sh
 # 在另一份本机私密运行目录中初始化；不覆盖已有配置
@@ -39,4 +39,4 @@ scripts/asis service uninstall
 PYTHONPATH=src python3 -m unittest discover -s tests -v
 ```
 
-更多配置、权限边界、验收结果与待办见 [Mac 实施说明](docs/pa0-mac.md)。后续开发遵循已确认的 [Agent 架构基线](docs/agent-architecture-review.md)及 [实施计划](docs/implementation-plan.md)。
+更多配置、权限边界、验收结果与待办见 [Mac 实施说明](docs/pa0-mac.md) 和 [协调服务说明](docs/pa0-coordinator.md)。后续开发遵循已确认的 [Agent 架构基线](docs/agent-architecture-review.md)及 [实施计划](docs/implementation-plan.md)。

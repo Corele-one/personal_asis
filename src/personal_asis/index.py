@@ -306,7 +306,7 @@ class Index:
                 stale += 1
                 continue
             source, path, text, private = current
-            if channel != "local" and (private or not source.remote_metadata):
+            if channel != "local" and not source.shares_metadata(private):
                 continue
             hit = {"document_id": row["document_id"], "content_hash": row["content_hash"],
                    "title": row["title"], "node_id": self.config.node_id, "source_id": source.id,
@@ -338,7 +338,7 @@ class Index:
             current = self._current(row)
             if current:
                 source, _, _, private = current
-                if source.remote_metadata and not private:
+                if source.shares_metadata(private):
                     result.append({"node_id": self.config.node_id, "source_id": source.id,
                                    "document_id": row["document_id"], "content_hash": row["content_hash"],
                                    "title": row["title"], "path_hint": row["path"],

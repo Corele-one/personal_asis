@@ -1,0 +1,7 @@
+name: personal_asis
+display_name: PA0 资料搜索
+desc: 飞书私聊中执行获准元数据搜索；不调用模型。
+version: v0.1.0
+author: Personal Asis
+support_platforms:
+  - lark
