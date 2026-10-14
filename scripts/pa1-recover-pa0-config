@@ -1,0 +1,41 @@
+#!/usr/bin/env python3
+"""Remove incompatible PA1 grants from PA0 config, preserving a private snapshot."""
+import argparse
+import json
+import os
+from pathlib import Path
+
+
+def write(path, value):
+    temporary=path.with_suffix('.recover.tmp')
+    descriptor=os.open(temporary,os.O_CREAT|os.O_TRUNC|os.O_WRONLY,0o600)
+    with os.fdopen(descriptor,'w') as file:
+        json.dump(value,file,ensure_ascii=False,indent=2)
+        file.write('\n')
+    temporary.replace(path)
+
+
+def main():
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--home',type=Path,default=Path.home()/'Library/Application Support/PersonalAsis')
+    parser.add_argument('--apply',action='store_true')
+    args=parser.parse_args()
+    path=args.home/'sources.yaml'
+    data=json.loads(path.read_text())
+    fields=('model_providers','model_paths','private_model_providers','model_all_files')
+    changed=any(any(field in source for field in fields) for source in data['sources'])
+    if args.apply and changed:
+        snapshot=args.home/'pa1-sources-before-recovery.json'
+        # Do not overwrite the original grant snapshot on a repeated recovery.
+        if not snapshot.exists():
+            write(snapshot,data)
+        for source in data['sources']:
+            for field in fields:
+                source.pop(field,None)
+        write(path,data)
+    print(json.dumps({'applied':args.apply,'source_config_changed':changed,
+                      'pa0_remote_permissions_unchanged':True,'service_restarted':False}))
+
+
+if __name__=='__main__':
+    main()

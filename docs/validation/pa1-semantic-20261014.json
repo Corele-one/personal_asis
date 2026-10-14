@@ -1,0 +1,133 @@
+{
+  "synthetic_only": true,
+  "cloud_calls": 0,
+  "model_fingerprint": "b76e832384baf0e7a5433cfd102c3c9a86ae287f3a802df44edc3a32386ebc44",
+  "cases": [
+    {
+      "query": "多个处理器如何保证共享数据副本相同",
+      "expected": "coherence.md",
+      "actual": "coherence.md",
+      "top1": true,
+      "top3": true,
+      "retrieved": [
+        "coherence.md",
+        "tail.md",
+        "scholarship.md"
+      ],
+      "seconds": 0.359,
+      "mode": "hybrid_semantic",
+      "vector_cache": {
+        "hits": 0,
+        "encoded": 51,
+        "persistent": true
+      }
+    },
+    {
+      "query": "How are outdated entries discarded?",
+      "expected": "cache.md",
+      "actual": "cache.md",
+      "top1": true,
+      "top3": true,
+      "retrieved": [
+        "cache.md",
+        "coherence.md",
+        "tail.md"
+      ],
+      "seconds": 0.018,
+      "mode": "hybrid_semantic",
+      "vector_cache": {
+        "hits": 51,
+        "encoded": 0,
+        "persistent": true
+      }
+    },
+    {
+      "query": "What paperwork is needed for financial aid?",
+      "expected": "scholarship.md",
+      "actual": "scholarship.md",
+      "top1": true,
+      "top3": true,
+      "retrieved": [
+        "scholarship.md",
+        "tail.md",
+        "coherence.md"
+      ],
+      "seconds": 0.018,
+      "mode": "hybrid_semantic",
+      "vector_cache": {
+        "hits": 51,
+        "encoded": 0,
+        "persistent": true
+      }
+    },
+    {
+      "query": "怎样制作南瓜浓汤",
+      "expected": "cooking.md",
+      "actual": "tail.md",
+      "top1": false,
+      "top3": true,
+      "retrieved": [
+        "tail.md",
+        "scholarship.md",
+        "cooking.md"
+      ],
+      "seconds": 0.017,
+      "mode": "hybrid_semantic",
+      "vector_cache": {
+        "hits": 51,
+        "encoded": 0,
+        "persistent": true
+      }
+    },
+    {
+      "query": "水下机器人没有卫星信号怎样定位",
+      "expected": "tail.md",
+      "actual": "tail.md",
+      "top1": true,
+      "top3": true,
+      "retrieved": [
+        "tail.md",
+        "scholarship.md",
+        "cache.md"
+      ],
+      "seconds": 0.019,
+      "mode": "hybrid_semantic",
+      "vector_cache": {
+        "hits": 51,
+        "encoded": 0,
+        "persistent": true
+      }
+    },
+    {
+      "query": "How can submarines find their way without GPS?",
+      "expected": "tail.md",
+      "actual": "tail.md",
+      "top1": true,
+      "top3": true,
+      "retrieved": [
+        "tail.md",
+        "cache.md",
+        "coherence.md"
+      ],
+      "seconds": 0.017,
+      "mode": "hybrid_semantic",
+      "vector_cache": {
+        "hits": 51,
+        "encoded": 0,
+        "persistent": true
+      }
+    }
+  ],
+  "top1_passed": 5,
+  "top3_passed": 6,
+  "total": 6,
+  "tail_excerpt_verified": true,
+  "warm_seconds": 0.017,
+  "warm_cache": {
+    "hits": 51,
+    "encoded": 0,
+    "persistent": true
+  },
+  "acceptance_criterion": "all_expected_evidence_in_top3_with_exact_tail_excerpt",
+  "passed": true
+}

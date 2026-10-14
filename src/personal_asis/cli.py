@@ -123,11 +123,21 @@ def main(argv=None):
     p.add_argument("--port", type=int, default=8766)
     p.add_argument("--reset", action="store_true", help="重设 Web 用户并撤销全部 Web 会话")
     p = commands.add_parser("pa1", help="本机最小上下文、MiMo 与预算；默认仅合成联调")
-    p.add_argument("action", choices=["init", "configure", "key", "models", "retrieve", "bundle", "analyze", "budget", "self-test"])
+    p.add_argument("action", choices=["init", "configure", "authorize", "revoke", "key", "models", "retrieve", "bundle", "analyze", "budget", "self-test", "semantic-test"])
     p.add_argument("--query")
     p.add_argument("--model")
     p.add_argument("--enable", action="store_true")
     p.add_argument("--disable", action="store_true")
+    p.add_argument("--semantic-model-dir", type=Path, help="预先准备好的本机模型目录；检索不下载")
+    p.add_argument("--semantic-query-prefix")
+    p.add_argument("--semantic-document-prefix")
+    p.add_argument("--disable-semantic", action="store_true")
+    p.add_argument("--source", action="append", help="筛选或授权的已有来源 ID，可重复")
+    p.add_argument("--all-current-files", action="store_true", help="仅许可当前已索引且版本有效的文件")
+    p.add_argument("--all-source-files", action="store_true", help="许可指定已有来源下的全部文件，含后续新增路径；排除规则仍优先")
+    p.add_argument("--include-private", action="store_true", help="单独许可指定来源中的私密资料进入当前提供商")
+    p.add_argument("--allow-real-sources", action="store_true", help="解除合成限制，逐文件许可仍生效")
+    p.add_argument("--synthetic-only", action="store_true", help="恢复仅合成资料限制")
     p.add_argument("--live", action="store_true", help="合成资料真实 API 联调；需显式请求编号")
     p.add_argument("--request-id")
     args = parser.parse_args(argv)
@@ -137,17 +147,29 @@ def main(argv=None):
             result = doctor()
         elif args.command == "pa1":
             from . import pa1
+            from .config import load_pa1_config
             from .model_provider import MiMo
             from .credentials import CredentialStore
             from .retrieval import retrieve, build_bundle
             if args.action in {"init", "configure"}:
                 if args.enable and args.disable:
                     raise ValueError("enable_disable_are_mutually_exclusive")
-                result = pa1.configure(home, args.model, True if args.enable else False if args.disable else None)
+                if args.allow_real_sources and args.synthetic_only:
+                    raise ValueError('real_synthetic_are_mutually_exclusive')
+                result = pa1.configure(home, args.model, True if args.enable else False if args.disable else None,
+                                       args.semantic_model_dir, args.semantic_query_prefix,
+                                       args.semantic_document_prefix, args.disable_semantic,
+                                       False if args.allow_real_sources else True if args.synthetic_only else None)
             else:
                 data = pa1.settings(home)
-                config = load_config(home / "sources.yaml")
-                if args.action == "key":
+                config = load_pa1_config(home)
+                if args.action == 'authorize':
+                    if not args.source or args.all_current_files==args.all_source_files:
+                        raise ValueError('authorization_requires_sources_and_all_current_files')
+                    result=pa1.authorize_current_files(home,args.source,args.include_private,args.all_source_files)
+                elif args.action == 'revoke':
+                    result=pa1.revoke_sources(home,args.source)
+                elif args.action == "key":
                     if not sys.stdin.isatty():
                         raise ValueError("model_key_requires_local_interactive_terminal")
                     secret = getpass.getpass("MiMo API Key（隐藏输入，不保存到配置）: ")
@@ -165,24 +187,33 @@ def main(argv=None):
                         ledger.close()
                 elif args.action == "self-test":
                     result = pa1.self_test(home, args.live, args.request_id)
+                elif args.action == 'semantic-test':
+                    from .semantic_acceptance import run
+                    encoder,degradation=pa1.encoder_for(data)
+                    if encoder is None:
+                        raise ValueError(degradation)
+                    result=run(encoder)
+                    emit(result)
+                    return 0 if result['passed'] else 1
                 elif args.action == "analyze":
                     if not args.query or not args.request_id:
                         raise ValueError("analysis_requires_query_and_request_id")
-                    result = pa1.analyze(home, args.query, args.request_id)
+                    result = pa1.analyze(home, args.query, args.request_id, source_ids=args.source)
                 elif args.action == "bundle":
                     if not args.query:
                         raise ValueError("bundle_requires_query")
                     encoder, degradation = pa1.encoder_for(data)
-                    bundle = build_bundle(home, args.query, data["provider"], encoder)
+                    bundle = build_bundle(home, args.query, data["provider"], encoder, args.source)
                     result = {"provider": bundle.provider, "retrieval_mode": bundle.retrieval_mode,
-                              "degradation": degradation, "cloud_input": bundle.cloud_input(),
+                              "degradation": degradation or bundle.degradation, "cloud_input": bundle.cloud_input(),
                               "local_evidence": bundle.evidence}
                 else:
                     if not args.query:
                         raise ValueError("retrieval_requires_query")
                     encoder, degradation = pa1.encoder_for(data)
                     with Index(home / "index.sqlite3", config) as index:
-                        result = {**retrieve(index, args.query, encoder=encoder), "degradation": degradation}
+                        result = retrieve(index, args.query, encoder=encoder, source_ids=args.source)
+                        result['degradation'] = degradation or result['degradation']
         elif args.command == "backup":
             from .backup import create as create_backup, restore as restore_backup, key_store
             if args.action == "create":

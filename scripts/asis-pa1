@@ -1,0 +1,10 @@
+#!/bin/sh
+# Use the isolated semantic environment; PA0 keeps its existing interpreter.
+ASIS_REPO_ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+ASIS_PA1_PYTHON=${ASIS_PYTHON:-"$HOME/Library/Application Support/PersonalAsis/pa1-env/bin/python"}
+export HF_HUB_OFFLINE=1
+export TRANSFORMERS_OFFLINE=1
+export HF_HUB_DISABLE_TELEMETRY=1
+export TOKENIZERS_PARALLELISM=false
+export ASIS_PYTHON="$ASIS_PA1_PYTHON"
+exec "$ASIS_REPO_ROOT/scripts/asis" pa1 "$@"

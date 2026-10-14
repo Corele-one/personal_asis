@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 import fnmatch
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -30,11 +31,14 @@ class Source:
     remote_evidence: bool = False
     model_providers: tuple[str, ...] = ()
     model_paths: tuple[str, ...] = ()
+    private_model_providers: tuple[str, ...] = ()
+    model_all_files: bool = False
 
     def allows_model(self, provider: str, private: bool, relative: str) -> bool:
-        return (self.index and self.policy != "private" and not private
+        return (self.index and (not (private or self.policy == 'private')
+                               or provider in self.private_model_providers)
                 and not self.excludes(relative) and provider in self.model_providers
-                and relative in self.model_paths)
+                and (self.model_all_files or relative in self.model_paths))
 
     def shares_metadata(self, private: bool, relative: str = "") -> bool:
         return (self.remote_metadata and (not private or self.private_remote_metadata)
@@ -66,6 +70,37 @@ def load_config(path: Path) -> Config:
         data = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
         raise ValueError("sources.yaml 须使用 JSON 兼容的 YAML 1.2 语法，参见配置样例") from exc
+    return parse_config(data)
+
+
+def root_identity(root):
+    return hashlib.sha256(str(Path(root).expanduser().resolve()).encode()).hexdigest()
+
+
+def load_pa1_config(home: Path) -> Config:
+    """PA1 grants are separate from the production PA0 source configuration."""
+    path=Path(home)/'pa1-policy.json'
+    if not path.exists():
+        return load_config(Path(home)/'sources.yaml')
+    data=json.loads((Path(home)/'sources.yaml').read_text())
+    policy=json.loads(path.read_text())
+    if (not isinstance(policy,dict) or set(policy)!={'version','sources'}
+            or policy['version']!=1 or not isinstance(policy['sources'],dict)):
+        raise ValueError('invalid_pa1_source_policy')
+    fields={'model_providers','model_paths','private_model_providers','model_all_files'}
+    for grant in policy['sources'].values():
+        if (not isinstance(grant,dict) or set(grant)!=fields|{'root_identity'}
+                or not isinstance(grant['root_identity'],str) or len(grant['root_identity'])!=64):
+            raise ValueError('invalid_pa1_source_policy')
+    for source in data['sources']:
+        source.update(model_providers=[],model_paths=[],private_model_providers=[],model_all_files=False)
+        grant=policy['sources'].get(source['id'])
+        if grant and grant['root_identity']==root_identity(source['root']):
+            source.update({field:grant[field] for field in fields})
+    return parse_config(data)
+
+
+def parse_config(data) -> Config:
     if not isinstance(data, dict) or not isinstance(data.get("sources"), list):
         raise ValueError("配置必须是对象，sources 必须是数组")
     node = data.get("node_id")
@@ -86,7 +121,7 @@ def load_config(path: Path) -> Config:
         policy = item["policy"]
         if policy not in {"normal", "private"}:
             raise ValueError("policy 仅支持 normal/private")
-        for key in ("index", "remote_metadata", "private_remote_metadata", "remote_evidence"):
+        for key in ("index", "remote_metadata", "private_remote_metadata", "remote_evidence", "model_all_files"):
             if type(item.get(key, False)) is not bool:
                 raise ValueError(f"{key} 必须是布尔值")
         if (policy == "private" and item.get("remote_metadata", False)
@@ -95,11 +130,14 @@ def load_config(path: Path) -> Config:
         excludes = item.get("exclude", [])
         if not isinstance(excludes, list) or not all(isinstance(x, str) for x in excludes):
             raise ValueError("exclude 必须是字符串数组")
-        for key in ("private_paths", "remote_metadata_paths", "model_providers", "model_paths"):
+        for key in ("private_paths", "remote_metadata_paths", "model_providers", "model_paths", "private_model_providers"):
             if key in item and (not isinstance(item[key], list) or not all(isinstance(x, str) for x in item[key])):
                 raise ValueError(f"{key} 必须是字符串数组")
-        if policy == "private" and item.get("model_providers"):
-            raise ValueError("private 来源不允许云模型处理")
+        if (policy == 'private' and set(item.get('model_providers', []))
+                - set(item.get('private_model_providers', []))):
+            raise ValueError('private 来源云模型需要单独 private_model_providers 许可')
+        if set(item.get('private_model_providers', [])) - set(item.get('model_providers', [])):
+            raise ValueError('private_model_providers 必须同时具有 model_providers 许可')
         if any(not p or not p.isascii() or not all(c.isalnum() or c in "_-" for c in p)
                for p in item.get("model_providers", [])):
             raise ValueError("model_providers 须为非空提供商标识")
@@ -116,7 +154,8 @@ def load_config(path: Path) -> Config:
                               tuple(item.get("private_paths", [])),
                               tuple(item["remote_metadata_paths"]) if "remote_metadata_paths" in item else None,
                               tuple(dict.fromkeys(formats)), item.get("remote_evidence", False),
-                              tuple(item.get("model_providers", [])), tuple(item.get("model_paths", []))))
+                              tuple(item.get("model_providers", [])), tuple(item.get("model_paths", [])),
+                              tuple(item.get('private_model_providers', [])), item.get('model_all_files',False)))
     if not sources:
         raise ValueError("至少配置一个来源")
     # Overlapping roots could bypass a private source's classification.

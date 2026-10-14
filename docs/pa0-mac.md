@@ -33,7 +33,7 @@
 | `formats` | 本机显式启用的文本格式，默认 `["md"]` |
 | `remote_evidence` | 单独许可已获元数据权限的非私密条目按需加密阅读，默认关闭；不能开放私密正文 |
 
-private 默认不允许远程元数据；启用时必须另有明确的 `private_remote_metadata` 许可。frontmatter 的 `sensitivity: private`、`policy: private` 或 `classification: private` 覆盖普通来源分类；排除规则仍生效。程序不从正文推断健康分类。本轮用户精确允许 Life 私密条目的元数据展示，Life 保持 private；Study 只显示非私密元数据，Life 私密正文与云模型权限均未扩展；非私密资料另按用户新授权及本机 `remote_evidence` 提供 PWA 加密阅读。
+private 默认不允许远程元数据；启用时必须另有明确的 `private_remote_metadata` 许可。frontmatter 的 `sensitivity: private`、`policy: private` 或 `classification: private` 覆盖普通来源分类；排除规则仍生效。程序不从正文推断健康分类。本轮用户精确允许 Life 私密条目的元数据展示，Life 保持 private；Study 只显示非私密元数据，Life 私密正文远程展示未扩展；当前文件的 MiMo 模型处理另有独立 PA1 许可，见 [记录](pa1-local.md)；非私密资料另按用户新授权及本机 `remote_evidence` 提供 PWA 加密阅读。
 
 ROG 混杂 Windows 来源采用 `private_paths` 和精确 `remote_metadata_paths` 白名单；该配置不改变 Mac 的既有权限。新增路径不会自动通过 ROG 白名单；分类／白名单变化参与政策摘要，下次轮询撤销 VPS 旧缓存。见 [ROG 现场记录](pa0-rog.md)。
 

@@ -1,12 +1,24 @@
-# PA1 首个本机切片
+# PA1 本机检索与模型分析
 
-状态（2026-10-14）：已实现本机排序检索、按提供商授权的最小 Context Bundle、MiMo 适配器、日／月 Token 预留及引用校验。模拟检查及真实 MiMo 合成联调通过，用户指定使用 **`mimo-v2.6-flash`**。实际语义模型、PWA／飞书分析入口和 Agent 执行框架仍需分别验证，不能据此宣布完整 PA1 上线。
+状态（2026-10-14）：已实现 FTS5＋实际离线语义检索、分段向量缓存、独立来源模型政策、最小 Context Bundle、MiMo 适配器、日／月 Token 预留及引用校验。用户指定 **`mimo-v2.6-flash`**，并明确授权当前 Study／Life 的全部文件，包括日记与健康资料。PWA／飞书分析入口、外部研究适配器和 Agent 框架仍未交付，不能据此宣布完整 PA1 上线。
 
-用户确认首次联调只使用合成资料，预算为每日 **100,000**、每月 **1,000,000 Token**。当前 Mac CLI 的本机配置为 `synthetic_only: true`、`enabled: true`、`model: mimo-v2.6-flash`，密钥由用户经隐藏输入存入系统凭据库。仓库默认仍关闭调用且不预填模型。Study／Life 没有自动添加模型许可。
+首次联调仅用合成资料。随后用户明确授权真实及私密材料分析，当前 Mac CLI 为 `synthetic_only: false`、`enabled: true`、`model: mimo-v2.6-flash`；共享预算仍为每日 **100,000**、每月 **1,000,000 Token**。密钥存系统凭据库，仓库默认关闭模型调用。当前独立政策逐项许可 Study 267、Life 181，共 **448** 个文件，后续新增路径或根目录不自动继承。
 
 ## 本机接口
 
 在仓库根目录使用 `scripts/asis pa1`，运行状态位于仓库外私密目录。基础切片仅需标准库；`pa1.json`、`pa1.sqlite3` 与真实来源配置均排除 Git。
+
+已安装的语义环境可直接使用：
+
+```sh
+scripts/asis-pa1 retrieve --source study --query "共享内存副本如何保持一致"
+scripts/asis-pa1 bundle --source life --query "作息记录"
+scripts/asis-pa1 analyze --source life --query "概括相关记录的自述与缺失信息，不作诊断" --request-id UNIQUE_REQUEST_ID
+scripts/asis-pa1 budget
+scripts/asis-pa1 semantic-test
+```
+
+`scripts/asis-pa1` 使用仓库外独立 `pa1-env`，并关闭 Hugging Face 在线访问与遥测；MiMo 调用仍按已配置端点执行。PA0 保持原生产代码与解释器。结果与上下文只显示在本机 CLI；实测完整结果保存在本机私密 `pa1-validation/`，不进入 Git 或远端。
 
 ```sh
 scripts/asis pa1 init
@@ -29,26 +41,52 @@ scripts/asis pa1 configure --model mimo-v2.6-flash --enable
 scripts/asis pa1 self-test --live --request-id UNIQUE_REQUEST_ID
 ```
 
-合成限制继续生效，开启 `enabled` 不开放真实来源。自检会核对内置合成文件的内容哈希和固定合成问题，不能仅靠把任意目录叫作“synthetic”通过检查。密钥不存在时在预留和网络调用前失败，不使用明文配置或环境变量回退；密钥不进入参数、聊天、日志或预算库。
+新安装的合成限制继续生效，开启 `enabled` 不开放真实来源；本机另经 `configure --allow-real-sources` 解除限制，逐来源许可仍检查。自检核对内置合成文件哈希和固定问题，不能把任意目录叫作“synthetic”通过检查。密钥不存在时在预留和网络调用前失败，不使用明文配置或环境变量回退；密钥不进入参数、聊天、日志或预算库。
 
 ## 来源模型权限
 
-`sources.yaml` 新增两个默认空字段，必须在本机单独配置：
+当前 CLI 将模型政策写入本机独立 `pa1-policy.json`，绑定来源 ID 和根目录身份，避免旧 PA0 运行代码读取新模型字段而失败。底层字段也兼容合成样例中的 `sources.yaml`；独立政策存在时由它管理模型许可，来源读取／分类／排除规则仍来自原配置：
 
 | 字段 | 执行含义 |
 |---|---|
 | `model_providers` | 明确许可的提供商标识；当前适配器为 `mimo` |
 | `model_paths` | 逐文件精确相对路径，不解释目录或 glob，也不自动许可新增／移动文件 |
+| `private_model_providers` | 私密资料的独立提供商许可，必须同时具有普通提供商许可 |
+| `model_all_files` | 可选源级全文件许可，默认关闭；当前生产配置关闭，不包含未来新增路径 |
 
-模型许可不继承 `remote_metadata`、`private_remote_metadata` 或 `remote_evidence`。private 来源不能启用云模型，frontmatter／路径私密规则仍优先。没有当前、明确允许的证据时不调用模型。
+模型许可不继承 `remote_metadata`、`private_remote_metadata` 或 `remote_evidence`。private 来源、frontmatter 和路径私密分类保持有效，另有 `private_model_providers` 才可使用。用户本轮授权已明确包含日记与健康资料，见 [ADR 0032](adr/0032-allow-private-model-context-with-explicit-provider-grants.md)。包含私密证据的派生回答标为 private，不因模型处理而开放飞书／PWA 展示；没有当前、明确允许的证据时不调用模型。
+
+```sh
+# 仅在用户已明确授权这些已有来源及私密处理时执行
+scripts/asis-pa1 authorize --source study --source life --all-current-files --include-private
+# 立即撤回一个来源；缓存不构成许可
+scripts/asis-pa1 revoke --source life
+# 暂停所有真实来源模型分析，仍可本机检索
+scripts/asis-pa1 configure --synthetic-only
+```
+
+当前只授权现有路径。源级 `--all-source-files` 会包含未来新增文件，需要额外明确范围；本轮自动审批拒绝了该扩大范围的操作，随后改为当前文件快照并成功执行。首次尝试将新字段写入 PA0 来源配置曾导致旧节点轮询错误；现已移除这些字段、恢复兼容配置，并改用独立政策。生产发布／服务重启未执行。
 
 上下文最多选择 3 个当前内容版本，每个只取最多 600 字符摘录及截断标题。摘录优先正文、跳过 frontmatter，保留准确行列位置，避免标题命中掩盖实际内容。云端只收到问题、`E1` 等临时引用编号、标题和片段；绝对根目录、原文 URI、路径提示与本机身份／版本映射保留本机。调用前和结果返回前重新检查原文哈希、许可及摘录内容，拒绝过期、撤权或被替换的内容。
 
 ## 检索及降级
 
-当前默认使用 SQLite FTS5 与本机词项／汉字二元特征相似度排序，通过 reciprocal rank fusion 合并排名；这是词法模式，不声称已有实际语义模型。相同内容版本在上下文中去重。
+未配置语义模型时使用 SQLite FTS5 与本机词项／汉字二元特征相似度排序，通过 reciprocal rank fusion 合并排名。当前已配置实际语义模型，融合全文与语义排名；相同内容版本去重，指定 `--source` 时仅检索对应来源。
 
-可选 `semantic_model_dir` 指向已在本机准备好的 Sentence Transformers 模型目录。适配器仅离线加载，不在检索期间下载权重，不允许 remote code；余弦相似度与全文排名合并。缺少目录／依赖时明确返回降级原因并保留词法检索。真实权重、性能及中文／英文语义质量未测，模拟编码器只验证融合与语义分支协议。接口依据 [SentenceTransformer 官方参数](https://sbert.net/docs/package_reference/sentence_transformer/SentenceTransformer.html)。
+实际模型为 `intfloat/multilingual-e5-small`，固定版本 `614241f622f53c4eeff9890bdc4f31cfecc418b3`，仅加载 safetensors 和标准 Sentence Transformers 模块，CPU 本机运行。依照 [官方模型说明](https://huggingface.co/intfloat/multilingual-e5-small/blob/614241f622f53c4eeff9890bdc4f31cfecc418b3/README.md)，查询加 `query: `、正文加 `passage: `，384 维、最多 512 Token；按正文段落拆分为最多 400 字符、重叠 80 字符的窗口，跳过 frontmatter 和独立标题，覆盖长文尾部。窗口仍可能被分词器截断，不承诺所有语言或极端符号组合都完整编码。
+
+`semantic.sqlite3` 仅存来源文档身份、内容哈希、模型指纹和向量，不存原文、标题、路径或问题；按本机／提供商与来源筛选范围隔离。当前内容和许可先于缓存检查；修改、删除、撤权、禁用来源或模型变化后清理对应作用域的旧向量。其他未访问作用域可能仍有旧向量，但不能绕过当前许可用于检索。损坏缓存或推理失败会明确降级到词法检索，不影响预算和模型许可。关闭语义设置不会自动删除文件，可手工删除私密缓存后重建。
+
+重建环境与显式下载公开权重：
+
+```sh
+python3 -m venv "$HOME/Library/Application Support/PersonalAsis/pa1-env"
+"$HOME/Library/Application Support/PersonalAsis/pa1-env/bin/python" -m pip install -r requirements/pa1-semantic.txt
+"$HOME/Library/Application Support/PersonalAsis/pa1-env/bin/python" scripts/pa1-fetch-semantic --target "$HOME/Library/Application Support/PersonalAsis/models/multilingual-e5-small"
+scripts/asis-pa1 configure --semantic-model-dir "$HOME/Library/Application Support/PersonalAsis/models/multilingual-e5-small" --semantic-query-prefix 'query: ' --semantic-document-prefix 'passage: '
+```
+
+缺少目录／依赖或推理故障时返回降级原因；检索期间不下载权重、不运行远程代码。接口依据 [SentenceTransformer 官方参数](https://sbert.net/docs/package_reference/sentence_transformer/SentenceTransformer.html)。
 
 ## 预算与失败
 
@@ -77,6 +115,27 @@ HTTPS 使用系统证书校验；不跟随重定向、不使用环境 HTTP 代�
 | `pa1-synthetic-20261014-first` | `mimo-v2.6-pro` | 159／83／242 | 引用／结构校验通过；发现首条摘录只含标题，随后修正 |
 | `pa1-synthetic-20261014-flash` | `mimo-v2.6-flash` | 169／71／240 | 两条正文均被正确引用，服务端 reasoning Token 为 0 |
 
-用户在首调后指定 Flash，当前及后续配置使用 Flash。本轮累计 **482 Token**、未知调用 **0**；日剩余 99,518、月剩余 999,518，仅为验收时快照。未向云模型发送私密／未授权 canary、真实资料或路径，VPS 未接收模型密钥或上下文。当前入口为仓库 Mac CLI，PA0 的既有生产 daemon 和 VPS 未增加分析入口。
+用户在首调后指定 Flash，当前及后续配置使用 Flash。首次合成联调累计 **482 Token**、未知调用 **0**；当时日剩余 99,518、月剩余 999,518，仅为初次验收快照。当时未向云模型发送私密／未授权 canary、真实资料或路径，VPS 未接收模型密钥或上下文。当前入口为仓库 Mac CLI，PA0 的既有生产 daemon 和 VPS 未增加分析入口。
 
-后续仍需实际本机语义模型与向量缓存、授权真实材料的证据质量检查，以及 PWA／飞书分析入口；Pi／领域角色／持续委托另按 [运行框架计划](agent-runtime-validation.md)验证。本次不扩大真实资料、私密正文或其他提供商授权。
+### 实际语义模型与真实材料续验（2026-10-14）
+
+独立环境实际版本为 Python 3.14、Sentence Transformers 5.7.0、Transformers 4.57.6、PyTorch 2.14.1（完整直接依赖见 [固定版本](../requirements/pa1-semantic.txt)）。对模型加载和合成检索拦截 `socket.connect`，确认不联网；[可复查结果](validation/pa1-semantic-20261014.json)包含中英文转述、双向跨语言查询、长文尾部、私密／未授权 canary 与热缓存。**Top-1 为 5/6，Top-3 为 6/6**；“中文南瓜浓汤→英文烹饪段落”仅排第三，不能声称语义质量完全通过或覆盖所有真实资料。修正段落分割后，长文尾部摘录可精确回到原文；合成冷检索约 0.4 秒、热检索约 0.02 秒（不含首次加载），这不是 448 篇真实语料的性能承诺。
+
+本轮新增 21 项检查，包含缓存复用／失效／损坏、来源筛选、长文定位、独立私密模型许可、根目录变更、撤权、来源级可选范围、派生结果分类、引用组和证据不足拒答。完整应用回归 **140 项：134 通过、6 跳过**，最终许可入口及错误阶段诊断修改后另有 27 项 PA1 针对性检查通过。跳过项仍为可选 SDK／格式或 Linux 工具环境。文档链接、围栏与配置 JSON 检查通过。
+
+用户明确授权后，仅从 Study／Life 分别选取当前相关的三条最小摘录，按本机来源筛选真实调用；以下不记录真实正文、标题、路径或个人分析内容：
+
+| 请求 | 来源 | 总 Token | 结果 |
+|---|---|---|---|
+| `pa1-real-study-20261014T214722` | Study | 405 | 引用／结构通过，冷检索加模型约 96.6 秒 |
+| `pa1-real-life-20261014T214859` | Life | 400 | 引用校验拒绝展示，实际用量正常结算 |
+| `pa1-real-life-structured-20261014T215406` | Life | 511 | 格式校验拒绝展示，实际用量正常结算 |
+| `pa1-real-life-citations-20261014T215619` | Life | 555 | 引用／结构通过，private 派生分类保留；热缓存加模型约 7.3 秒 |
+
+Life 的失败暴露了更稳健的输出处理需求：协议明确逐个引用，校验也支持 `[E1, E2]` 等常规引用组，但编号集合必须准确对应；未知编号、缺引和不一致仍拒绝。模型可返回 `insufficient_evidence`，此时只显示程序生成的证据不足提示，绝不展示无引用的模型个人断言。最终 Life 结果的三个编号及正文引用一致；以禁止实际 API 调用的提供商桩重放同一真实请求，命中本机结果，没有重复付费。
+
+最终预算快照：含初次合成调用与两次格式失败，日／月累计均为 **2,353 Token**；日剩余 **97,647**、月剩余 **997,647**，未知调用 **0**。完整成功结果及最后一次提供商响应只保留在本机私密 `pa1-validation/`。结构和引用检查不等于个人事实、医疗解释或模型理解的人工验收。
+
+PA0 仍使用原发布包与原 Python。本轮发现旧 SSH 隧道自 18:02 已断开；仅唤起既有隧道后，loopback 返回协调服务 404（证明已连通），隧道与节点进程均 running。没有发布新生产代码、重启节点或修改 VPS。独立政策避免了将 PA1 模型许可写进 PA0 配置所需的生产升级。
+
+后续仍需更广的真实检索质量评估、PWA／飞书分析入口和外部研究适配器；Pi／领域角色／持续委托另按 [运行框架计划](agent-runtime-validation.md)验证。当前明确扩大的是本机来源的 MiMo 模型处理许可；私密分类、远程展示、其他提供商和永久个人模型权限保持各自独立。

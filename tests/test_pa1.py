@@ -7,7 +7,7 @@ import threading
 import unittest
 from urllib.error import HTTPError
 
-from personal_asis.config import load_config
+from personal_asis.config import load_config, load_pa1_config
 from personal_asis.index import Index
 from personal_asis.model_budget import ModelBudget
 from personal_asis.model_provider import MiMo, NoRedirect, ProviderUnknown, ProviderRejected
@@ -63,12 +63,111 @@ class PA1Tests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'no_current_provider_authorized'):
             build_bundle(self.home,'cache')
 
-    def test_private_source_cannot_enable_cloud_models(self):
+    def test_private_source_requires_separate_explicit_model_grant(self):
         data=json.loads((self.home/'sources.yaml').read_text())
         data['sources'][0]['policy']='private'
         (self.home/'sources.yaml').write_text(json.dumps(data))
         with self.assertRaisesRegex(ValueError,'private'):
             load_config(self.home/'sources.yaml')
+
+    def test_private_model_grant_does_not_grant_remote_reading_or_new_paths(self):
+        from personal_asis.pa1 import authorize_current_files
+        result=authorize_current_files(self.home,['synthetic'],include_private=True)
+        self.assertEqual(result['granted_current_files'],{'synthetic':4})
+        source=load_pa1_config(self.home).sources[0]
+        self.assertTrue(source.allows_model('mimo',True,'private.md'))
+        self.assertFalse(source.shares_metadata(True,'private.md'))
+        self.assertFalse(source.remote_evidence)
+        self.assertFalse(source.allows_model('other',True,'private.md'))
+        self.assertFalse(source.allows_model('mimo',True,'new.md'))
+        self.assertEqual(len(build_bundle(self.home,'cache').evidence),3)
+        data=json.loads((self.home/'pa1-policy.json').read_text())
+        data['sources']['synthetic']['private_model_providers']=[]
+        (self.home/'pa1-policy.json').write_text(json.dumps(data))
+        self.assertNotIn('PRIVATE',json.dumps(build_bundle(self.home,'cache').cloud_input()))
+
+    def test_private_source_grant_and_real_source_switch_are_independent(self):
+        from personal_asis.pa1 import authorize_current_files
+        data=json.loads((self.home/'sources.yaml').read_text())
+        data['sources'][0].update(policy='private',model_providers=[],model_paths=[])
+        (self.home/'sources.yaml').write_text(json.dumps(data))
+        authorize_current_files(self.home,['synthetic'],include_private=True)
+        self.assertEqual(len(build_bundle(self.home,'cache').evidence),3)
+        with self.assertRaisesRegex(ValueError,'synthetic_only'):
+            analyze(self.home,'cache','private-grant-only',FakeProvider())
+        configure(self.home,synthetic_only=False)
+        provider=FakeProvider()
+        self.assertEqual(analyze(self.home,'cache','private-real',provider)['citations'],['E1'])
+        self.assertEqual(provider.calls,1)
+
+    def test_source_wide_private_model_grant_includes_new_files_but_not_new_sources(self):
+        from personal_asis.pa1 import authorize_current_files
+        authorize_current_files(self.home,['synthetic'],include_private=True,all_source_files=True)
+        source=load_pa1_config(self.home).sources[0]
+        self.assertTrue(source.allows_model('mimo',True,'new-diary.md'))
+        self.assertFalse(source.allows_model('other',True,'new-diary.md'))
+        self.assertFalse(source.shares_metadata(True,'new-diary.md'))
+        data=json.loads((self.home/'sources.yaml').read_text())
+        data['sources'][0]['exclude']=['excluded']
+        (self.home/'sources.yaml').write_text(json.dumps(data))
+        self.assertFalse(load_pa1_config(self.home).sources[0].allows_model('mimo',True,'excluded/a.md'))
+        configure(self.home,synthetic_only=False)
+        result=analyze(self.home,'cache','private-derived',FakeProvider())
+        self.assertEqual(result['sensitivity'],'private')
+
+    def test_separate_model_policy_preserves_pa0_config_and_rechecks_root_and_revocation(self):
+        from personal_asis.config import load_pa1_config
+        from personal_asis.pa1 import authorize_current_files, revoke_sources
+        before=(self.home/'sources.yaml').read_bytes()
+        authorize_current_files(self.home,['synthetic'],True,True)
+        self.assertEqual((self.home/'sources.yaml').read_bytes(),before)
+        self.assertFalse(load_config(self.home/'sources.yaml').sources[0].allows_model('mimo',True,'private.md'))
+        self.assertTrue(load_pa1_config(self.home).sources[0].allows_model('mimo',True,'new.md'))
+        data=json.loads(before)
+        data['sources'][0]['root']=str(self.home/'other-root')
+        (self.home/'sources.yaml').write_text(json.dumps(data))
+        self.assertFalse(load_pa1_config(self.home).sources[0].allows_model('mimo',True,'private.md'))
+        (self.home/'sources.yaml').write_bytes(before)
+        bundle=build_bundle(self.home,'cache')
+        revoke_sources(self.home,['synthetic'])
+        with self.assertRaisesRegex(ValueError,'permission_revoked'):
+            bundle.revalidate(self.home)
+
+    def test_separate_private_grant_revoked_during_model_call_refuses_result(self):
+        from personal_asis.pa1 import authorize_current_files, revoke_sources
+        authorize_current_files(self.home,['synthetic'],True,True)
+        configure(self.home,synthetic_only=False)
+        provider=FakeProvider(hook=lambda:revoke_sources(self.home,['synthetic']))
+        with self.assertRaisesRegex(ValueError,'permission_revoked'):
+            analyze(self.home,'cache','sidecar-revoked',provider)
+
+    def test_insufficient_evidence_uses_fixed_abstention_and_never_shows_uncited_model_claims(self):
+        from personal_asis.model_provider import validate_answer
+        bundle=build_bundle(self.home,'cache')
+        response={'finish_reason':'stop','tool_calls':None,'content':json.dumps({
+            'status':'insufficient_evidence','answer':'SYNTHETIC_UNCITED_PERSONAL_ASSERTION',
+            'citations':[],'uncertainty':'SYNTHETIC_UNGROUNDED_EXPLANATION'})}
+        result=validate_answer(response,bundle)
+        self.assertEqual(result['status'],'insufficient_evidence')
+        self.assertEqual(result['citations'],[])
+        self.assertNotIn('SYNTHETIC_',json.dumps(result))
+        bad=json.loads(response['content']);bad['status']='supported'
+        response['content']=json.dumps(bad)
+        with self.assertRaisesRegex(ValueError,'invalid_evidence'):
+            validate_answer(response,bundle)
+
+    def test_citation_groups_still_require_exact_existing_reference_set(self):
+        from personal_asis.model_provider import validate_answer
+        bundle=build_bundle(self.home,'cache')
+        response={'finish_reason':'stop','tool_calls':None,'content':json.dumps({
+            'status':'supported','answer':'Synthetic evidence [E1, E2]。',
+            'citations':['E1','E2'],'uncertainty':''})}
+        self.assertEqual(validate_answer(response,bundle)['citations'],['E1','E2'])
+        for group in ('E1, E999','E1-E2','E1, OTHER','E1'):
+            response['content']=json.dumps({'status':'supported','answer':f'Synthetic [{group}]',
+                                            'citations':['E1','E2'],'uncertainty':''})
+            with self.subTest(group=group),self.assertRaisesRegex(ValueError,'invalid_evidence'):
+                validate_answer(response,bundle)
 
     def test_model_paths_are_exact_files_not_directory_or_wildcard_grants(self):
         data=json.loads((self.home/'sources.yaml').read_text())

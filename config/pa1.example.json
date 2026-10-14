@@ -9,5 +9,7 @@
   "timezone": "Asia/Shanghai",
   "max_completion_tokens": 512,
   "max_prompt_bytes": 8192,
-  "semantic_model_dir": null
+  "semantic_model_dir": null,
+  "semantic_query_prefix": "",
+  "semantic_document_prefix": ""
 }

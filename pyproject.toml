@@ -14,7 +14,7 @@ pdf = ["pypdf>=6,<7", "cryptography>=44"]
 backup = ["cryptography>=44"]
 reader = ["cryptography>=44"]
 test-formats = ["reportlab>=4,<5"]
-semantic = ["sentence-transformers>=5,<6"]
+semantic = ["sentence-transformers>=5,<6", "transformers>=4.41,<5"]
 
 [project.scripts]
 asis = "personal_asis.cli:main"

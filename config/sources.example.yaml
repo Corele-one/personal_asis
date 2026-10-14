@@ -12,6 +12,8 @@
       "private_remote_metadata": false,
       "model_providers": [],
       "model_paths": [],
+      "private_model_providers": [],
+      "model_all_files": false,
       "exclude": ["Health", "health", "健康", "**/Health", "**/health", "**/健康"]
     },
     {
@@ -25,6 +27,8 @@
       "private_remote_metadata": false,
       "model_providers": [],
       "model_paths": [],
+      "private_model_providers": [],
+      "model_all_files": false,
       "exclude": []
     }
   ]

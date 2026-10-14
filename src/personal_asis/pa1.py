@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 import tempfile
 
-from .config import load_config
+from .config import load_config, load_pa1_config, root_identity
 from .index import Index
 from .model_budget import ModelBudget
 from .model_provider import ENDPOINT, MiMo, ProviderRejected, ProviderUnknown, validate_answer
@@ -16,7 +16,8 @@ from .retrieval import build_bundle, retrieve, LocalSemanticEncoder
 DEFAULTS = {"provider":"mimo","endpoint":ENDPOINT,"model":None,"enabled":False,
             "synthetic_only":True,"daily_tokens":100000,"monthly_tokens":1000000,
             "timezone":"Asia/Shanghai","max_completion_tokens":512,
-            "max_prompt_bytes":8192,"semantic_model_dir":None}
+            "max_prompt_bytes":8192,"semantic_model_dir":None,
+            "semantic_query_prefix":"", "semantic_document_prefix":""}
 
 SYNTHETIC_DOCUMENTS = {
     'cache.md':'# Synthetic cache\n\ncache invalidation removes a stale entry in this synthetic example.\n',
@@ -53,10 +54,15 @@ def settings(home):
     directory=data['semantic_model_dir']
     if directory is not None and (not isinstance(directory,str) or not Path(directory).expanduser().is_absolute()):
         raise ValueError('semantic_model_requires_local_absolute_directory')
+    for key in ('semantic_query_prefix', 'semantic_document_prefix'):
+        if not isinstance(data[key],str) or len(data[key])>80:
+            raise ValueError('invalid_semantic_prefix')
     return data
 
 
-def configure(home, model=None, enabled=None):
+def configure(home, model=None, enabled=None, semantic_model_dir=None,
+              semantic_query_prefix=None, semantic_document_prefix=None, disable_semantic=False,
+              synthetic_only=None):
     home=Path(home)
     home.mkdir(parents=True,exist_ok=True,mode=0o700)
     path=home/'pa1.json'
@@ -66,6 +72,25 @@ def configure(home, model=None, enabled=None):
         data['model']=model
     if enabled is not None:
         data['enabled']=enabled
+    if synthetic_only is not None:
+        if type(synthetic_only) is not bool:
+            raise ValueError('invalid_pa1_configuration')
+        data['synthetic_only']=synthetic_only
+    if disable_semantic:
+        if semantic_model_dir is not None:
+            raise ValueError('semantic_enable_disable_are_mutually_exclusive')
+        data['semantic_model_dir']=None
+    elif semantic_model_dir is not None:
+        directory=Path(semantic_model_dir).expanduser()
+        if not directory.is_absolute() or not directory.is_dir():
+            raise ValueError('local_semantic_model_missing')
+        data['semantic_model_dir']=str(directory)
+    for key,value in [('semantic_query_prefix',semantic_query_prefix),
+                      ('semantic_document_prefix',semantic_document_prefix)]:
+        if value is not None:
+            if not isinstance(value,str) or len(value)>80:
+                raise ValueError('invalid_semantic_prefix')
+            data[key]=value
     temporary=path.with_suffix('.tmp')
     descriptor=os.open(temporary,os.O_WRONLY|os.O_CREAT|os.O_TRUNC,0o600)
     with os.fdopen(descriptor,'w') as file:
@@ -75,20 +100,83 @@ def configure(home, model=None, enabled=None):
     return data
 
 
+def authorize_current_files(home, source_ids, include_private=False, all_source_files=False):
+    """Grant model use in independent PA1 policy; never rewrite PA0 sources."""
+    home=Path(home)
+    config=load_config(home/'sources.yaml')
+    if not source_ids or set(source_ids)-{s.id for s in config.sources}:
+        raise ValueError('authorization_requires_known_source_ids')
+    data=settings(home)
+    grants={sid:[] for sid in source_ids}
+    with Index(home/'index.sqlite3',config) as index:
+        for row in index.db.execute('SELECT * FROM documents WHERE active=1').fetchall():
+            if row['source_id'] not in grants:
+                continue
+            current=index._current(row)
+            if current is None:
+                continue
+            source,_,_,private=current
+            if source.index and (include_private or not private):
+                grants[source.id].append(row['path'])
+    path=home/'pa1-policy.json'
+    policy=json.loads(path.read_text()) if path.exists() else {'version':1,'sources':{}}
+    load_pa1_config(home)
+    for source in config.sources:
+        if source.id in grants:
+            policy['sources'][source.id]={
+                'root_identity':root_identity(source.root),
+                'model_providers':[data['provider']] if source.policy!='private' or include_private else [],
+                'private_model_providers':[data['provider']] if include_private else [],
+                'model_paths':sorted(set(grants[source.id])),
+                'model_all_files':all_source_files}
+    temporary=path.with_suffix('.tmp')
+    descriptor=os.open(temporary,os.O_WRONLY|os.O_CREAT|os.O_TRUNC,0o600)
+    with os.fdopen(descriptor,'w') as file:
+        json.dump(policy,file,ensure_ascii=False,indent=2)
+        file.write('\n')
+    temporary.replace(path)
+    return {'provider':data['provider'],'include_private':include_private,
+            'granted_current_files':{sid:len(paths) for sid,paths in grants.items()},
+            'new_paths_automatically_allowed':all_source_files,'policy_store':'pa1-policy.json',
+            'pa0_source_configuration_changed':False}
+
+
 def encoder_for(data):
     if data['semantic_model_dir'] is None:
         return None,'semantic_model_not_configured'
     try:
-        return LocalSemanticEncoder(data['semantic_model_dir']),None
-    except (ImportError,OSError,ValueError):
+        return LocalSemanticEncoder(data['semantic_model_dir'],data['semantic_query_prefix'],
+                                    data['semantic_document_prefix']),None
+    except (ImportError,OSError,ValueError,RuntimeError,TypeError):
         return None,'semantic_backend_unavailable'
+
+
+def revoke_sources(home, source_ids):
+    home=Path(home)
+    config=load_config(home/'sources.yaml')
+    if not source_ids or set(source_ids)-{source.id for source in config.sources}:
+        raise ValueError('authorization_requires_known_source_ids')
+    path=home/'pa1-policy.json'
+    if not path.exists():
+        raise ValueError('separate_pa1_policy_not_configured')
+    load_pa1_config(home)
+    data=json.loads(path.read_text())
+    for sid in source_ids:
+        data['sources'].pop(sid,None)
+    temporary=path.with_suffix('.tmp')
+    descriptor=os.open(temporary,os.O_WRONLY|os.O_CREAT|os.O_TRUNC,0o600)
+    with os.fdopen(descriptor,'w') as file:
+        json.dump(data,file,ensure_ascii=False,indent=2)
+        file.write('\n')
+    temporary.replace(path)
+    return {'revoked_sources':source_ids,'policy_store':'pa1-policy.json'}
 
 
 def budget(home, node_id, data):
     return ModelBudget(Path(home)/'pa1.sqlite3',node_id,data['daily_tokens'],data['monthly_tokens'],data['timezone'])
 
 
-def analyze(home, query, request_id, provider=None, synthetic_home=None):
+def analyze(home, query, request_id, provider=None, synthetic_home=None, source_ids=None):
     home=Path(home)
     data=settings(home)
     if not data['enabled']:
@@ -96,9 +184,9 @@ def analyze(home, query, request_id, provider=None, synthetic_home=None):
     if data['synthetic_only'] and synthetic_home is None:
         raise ValueError('pa1_synthetic_only_real_sources_disabled')
     source_home=Path(synthetic_home) if synthetic_home is not None else home
-    config=load_config(source_home/'sources.yaml')
+    config=load_pa1_config(source_home)
     encoder,degradation=encoder_for(data)
-    bundle=build_bundle(source_home,query,data['provider'],encoder)
+    bundle=build_bundle(source_home,query,data['provider'],encoder,source_ids)
     if data['synthetic_only']:
         verify_synthetic_bundle(bundle)
     client=provider or MiMo(config.node_id,data['model'])
@@ -142,8 +230,9 @@ def analyze(home, query, request_id, provider=None, synthetic_home=None):
             ledger.finish(request_id,'invalid_output',total)
             raise
         result={**answer,'evidence':[{"id":f'E{i+1}',**e} for i,e in enumerate(bundle.evidence)],
+                'sensitivity':'private' if any(e['sensitivity']=='private' for e in bundle.evidence) else 'normal',
                 'usage':response['usage'],'retrieval_mode':bundle.retrieval_mode,
-                'degradation':degradation,'request_id':request_id,'provider':'mimo',
+                'degradation':degradation or bundle.degradation,'request_id':request_id,'provider':'mimo',
                 'model':data['model'],'cached':False}
         ledger.finish(request_id,'succeeded',total,result)
         return result

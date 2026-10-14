@@ -2,7 +2,7 @@
 
 **PA0 已完成验收（2026-10-14）**：当前只运行 Mac 检索节点，VPS 提供协调，飞书与 [私有 PWA](https://35.209.202.207/) 提供入口。支持资料搜索、证据定位、获准非私密正文的按需加密阅读，以及休眠后的任务自动恢复。
 
-Mac 在验收时索引 Study 267 篇、Life 181 篇，共 448 篇 Markdown。ROG 已停用；独立备份和恢复密钥按用户选择暂缓。PA1 首个本机 CLI 切片已实现并通过 MiMo Flash 合成联调；当前仅允许合成模型输入，语义模型、分析网页入口与 Agent 框架仍待交付。
+Mac 在验收时索引 Study 267 篇、Life 181 篇，共 448 篇 Markdown。ROG 已停用；独立备份和恢复密钥按用户选择暂缓。PA1 本机 CLI、实际离线语义模型与向量缓存已交付，当前文件（含日记／健康）的 MiMo Flash 最小分析已获独立授权；网页／飞书分析、外部研究与 Agent 框架仍待交付。
 
 ## 使用入口
 
@@ -19,7 +19,7 @@ Mac 在验收时索引 Study 267 篇、Life 181 篇，共 448 篇 Markdown。ROG
 | 完整文档导航 | [文档索引](docs/README.md) |
 | 当前日常运行与排障 | [Mac 单节点运行](docs/pa0-mac-only.md) |
 | PA0 是否通过及验证依据 | [最终验收](docs/pa0-acceptance.md) |
-| PA1 当前能力、模型及预算 | [首个本机切片](docs/pa1-local.md) |
+| PA1 当前能力、模型及预算 | [本机检索与模型分析](docs/pa1-local.md) |
 | 配置、权限、协议与阅读 | [Mac](docs/pa0-mac.md)、[协调](docs/pa0-coordinator.md)、[PWA](docs/pa0-pwa.md)、[飞书](docs/pa0-feishu.md)、[文本阅读](docs/pa0-text.md) |
 | 后续交付顺序 | [实施计划](docs/implementation-plan.md) |
 | 项目规则与规格 | [AGENT.md](AGENT.md)、[SPECIFICATION.md](SPECIFICATION.md)、[CONTEXT.md](CONTEXT.md) |
@@ -34,6 +34,8 @@ scripts/asis status
 scripts/asis search "芯片" --limit 5
 scripts/asis reconcile
 scripts/asis audit
+scripts/asis-pa1 retrieve --source study --query "共享内存副本如何保持一致"
+scripts/asis-pa1 budget
 ```
 
 仓库入口默认使用 `python3`。生产 Mac 使用私密运行目录中的 Python 环境及发布包；可选依赖和维护方法见 [运行说明](docs/pa0-mac-only.md)，不要用缺少加密依赖的基础解释器覆盖生产服务。
