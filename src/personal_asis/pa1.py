@@ -169,7 +169,8 @@ def revoke_sources(home, source_ids):
         json.dump(data,file,ensure_ascii=False,indent=2)
         file.write('\n')
     temporary.replace(path)
-    return {'revoked_sources':source_ids,'policy_store':'pa1-policy.json'}
+    from .pa1_maintenance import clean
+    return {'revoked_sources':source_ids,'policy_store':'pa1-policy.json','cleanup':clean(home)}
 
 
 def budget(home, node_id, data):
@@ -206,7 +207,11 @@ def analyze(home, query, request_id, provider=None, synthetic_home=None, source_
     try:
         booked=ledger.reserve(request_id,fingerprint,reservation)
         if 'cached' in booked:
-            return {**booked['cached'],'cached':True}
+            bundle.revalidate(source_home)
+            return {**booked['cached'],'cached':True,
+                    'evidence':[{"id":f'E{i+1}',**e} for i,e in enumerate(bundle.evidence)],
+                    'sensitivity':'private' if any(e['sensitivity']=='private' for e in bundle.evidence) else 'normal',
+                    'retrieval_mode':bundle.retrieval_mode,'degradation':degradation or bundle.degradation}
         try:
             bundle.revalidate(source_home)
         except (OSError,ValueError):

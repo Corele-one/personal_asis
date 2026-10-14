@@ -2,7 +2,7 @@
 
 状态（2026-10-14）：已实现 FTS5＋实际离线语义检索、分段向量缓存、独立来源模型政策、最小 Context Bundle、MiMo 适配器、日／月 Token 预留及引用校验。用户指定 **`mimo-v2.6-flash`**，并明确授权当前 Study／Life 的全部文件，包括日记与健康资料。PWA／飞书分析入口、外部研究适配器和 Agent 框架仍未交付，不能据此宣布完整 PA1 上线。
 
-首次联调仅用合成资料。随后用户明确授权真实及私密材料分析，当前 Mac CLI 为 `synthetic_only: false`、`enabled: true`、`model: mimo-v2.6-flash`；共享预算仍为每日 **100,000**、每月 **1,000,000 Token**。密钥存系统凭据库，仓库默认关闭模型调用。当前独立政策逐项许可 Study 267、Life 181，共 **448** 个文件，后续新增路径或根目录不自动继承。
+首次联调仅用合成资料。随后用户明确授权真实及私密材料分析，当前 Mac CLI 为 `synthetic_only: false`、`enabled: true`、`model: mimo-v2.6-flash`；共享预算仍为每日 **100,000**、每月 **1,000,000 Token**。密钥存系统凭据库，仓库默认关闭模型调用。当前独立政策按根目录持续许可 Study／Life，包含新增、修改和移动文件；本次核对 Study 267、Life 181，共 **448** 个 Markdown。新增根目录或提供商确认一次，凭据和显式排除项优先，详见[持续授权](private-data-authority.md)。
 
 ## 本机接口
 
@@ -52,20 +52,20 @@ scripts/asis pa1 self-test --live --request-id UNIQUE_REQUEST_ID
 | `model_providers` | 明确许可的提供商标识；当前适配器为 `mimo` |
 | `model_paths` | 逐文件精确相对路径，不解释目录或 glob，也不自动许可新增／移动文件 |
 | `private_model_providers` | 私密资料的独立提供商许可，必须同时具有普通提供商许可 |
-| `model_all_files` | 可选源级全文件许可，默认关闭；当前生产配置关闭，不包含未来新增路径 |
+| `model_all_files` | 源级全文件许可，新安装默认关闭；当前 Study／Life 已按确认范围启用，包含根目录内后续新增路径 |
 
-模型许可不继承 `remote_metadata`、`private_remote_metadata` 或 `remote_evidence`。private 来源、frontmatter 和路径私密分类保持有效，另有 `private_model_providers` 才可使用。用户本轮授权已明确包含日记与健康资料，见 [ADR 0032](adr/0032-allow-private-model-context-with-explicit-provider-grants.md)。包含私密证据的派生回答标为 private，不因模型处理而开放飞书／PWA 展示；没有当前、明确允许的证据时不调用模型。
+模型许可不继承 `remote_metadata`、`private_remote_metadata` 或 `remote_evidence`。private 来源、frontmatter 和路径私密分类保持有效，另有 `private_model_providers` 才可使用。用户本轮授权已明确包含日记与健康资料，见 [ADR 0032](adr/0032-allow-private-model-context-with-explicit-provider-grants.md)。包含私密证据的派生回答仍标为 private；本人飞书私聊／已启用工作通知和私有 PWA 展示另获持续授权，能力需逐项实现。没有当前、明确允许的证据时不调用模型。
 
 ```sh
 # 仅在用户已明确授权这些已有来源及私密处理时执行
-scripts/asis-pa1 authorize --source study --source life --all-current-files --include-private
+scripts/asis-pa1 authorize --source study --source life --all-source-files --include-private
 # 立即撤回一个来源；缓存不构成许可
 scripts/asis-pa1 revoke --source life
 # 暂停所有真实来源模型分析，仍可本机检索
 scripts/asis-pa1 configure --synthetic-only
 ```
 
-当前只授权现有路径。源级 `--all-source-files` 会包含未来新增文件，需要额外明确范围；本轮自动审批拒绝了该扩大范围的操作，随后改为当前文件快照并成功执行。首次尝试将新字段写入 PA0 来源配置曾导致旧节点轮询错误；现已移除这些字段、恢复兼容配置，并改用独立政策。生产发布／服务重启未执行。
+早期授权仅包含现有路径，自动审批曾拒绝把它推断为未来文件许可；后来用户通过 Q1–Q11 访谈及整体确认，明确选择源级持续授权，现已启用。早期新字段写入 PA0 配置的兼容问题已通过独立 PA1 政策解决；本轮生产更新、重启和回滚准备按新维护许可执行，见[应用记录](private-data-authority.md)。
 
 上下文最多选择 3 个当前内容版本，每个只取最多 600 字符摘录及截断标题。摘录优先正文、跳过 frontmatter，保留准确行列位置，避免标题命中掩盖实际内容。云端只收到问题、`E1` 等临时引用编号、标题和片段；绝对根目录、原文 URI、路径提示与本机身份／版本映射保留本机。调用前和结果返回前重新检查原文哈希、许可及摘录内容，拒绝过期、撤权或被替换的内容。
 
@@ -136,6 +136,17 @@ Life 的失败暴露了更稳健的输出处理需求：协议明确逐个引用
 
 最终预算快照：含初次合成调用与两次格式失败，日／月累计均为 **2,353 Token**；日剩余 **97,647**、月剩余 **997,647**，未知调用 **0**。完整成功结果及最后一次提供商响应只保留在本机私密 `pa1-validation/`。结构和引用检查不等于个人事实、医疗解释或模型理解的人工验收。
 
-PA0 仍使用原发布包与原 Python。本轮发现旧 SSH 隧道自 18:02 已断开；仅唤起既有隧道后，loopback 返回协调服务 404（证明已连通），隧道与节点进程均 running。没有发布新生产代码、重启节点或修改 VPS。独立政策避免了将 PA1 模型许可写进 PA0 配置所需的生产升级。
+该轮验证时 PA0 仍使用原发布包与原 Python。该轮发现旧 SSH 隧道自 18:02 已断开；仅唤起既有隧道后，loopback 返回协调服务 404（证明已连通），隧道与节点进程均 running。该轮没有发布新生产代码、重启节点或修改 VPS。随后确认持续维护许可并完成的新发布另见[应用记录](private-data-authority.md)。
 
-后续仍需更广的真实检索质量评估、PWA／飞书分析入口和外部研究适配器；Pi／领域角色／持续委托另按 [运行框架计划](agent-runtime-validation.md)验证。当前明确扩大的是本机来源的 MiMo 模型处理许可；私密分类、远程展示、其他提供商和永久个人模型权限保持各自独立。
+后续仍需更广的真实检索质量评估、PWA／飞书分析入口和外部研究适配器；Pi／领域角色／持续委托另按 [运行框架计划](agent-runtime-validation.md)验证。当前已明确许可源级持续读取／分析、本人私密展示与可纠正的自动记忆；这些权限可分别检查和撤销，长期记忆及渠道分析仍需实现。
+
+### 持续授权应用
+
+用户已确认源级持续授权与维护范围，详情以[当前政策和落地状态](private-data-authority.md)为准。本机配置 `model_all_files: true` 后仍执行根目录边界、来源排除、凭据内容和 `assistant_exclude: true` frontmatter 检查；命中已知凭据格式或显式排除标记的整篇资料暂不索引，也不进入模型。内置检测覆盖已知路径、私钥／Token 形态、明显凭据赋值及认证／Cookie 头，不承诺识别所有可能的秘密；用户可将凭据独立存放并维护显式排除项。普通健康／日记类别不会单独触发禁止。
+
+```sh
+# 清理已过期、删除或撤权的本机 PA1 缓存；保留必要计费／防重标记
+scripts/asis-pa1 clean
+```
+
+PA1 成功回答在 30 天后不再复用，过期或撤权后的旧请求编号会拒绝再次付费执行。`clean` 检查全部向量作用域、缓存回答及 `pa1-validation/` 内关联原响应；模型撤权立即触发清理，本机节点每次索引核对后也清理。提供商或飞书历史副本、离线节点及备份不被声称为同时抹除；自动长期记忆和相应复核仍未交付。

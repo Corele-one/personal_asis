@@ -105,6 +105,18 @@ class CoordinatorTests(unittest.TestCase):
         self.assertEqual(self.c.db.execute("SELECT count(*) FROM tasks").fetchone()[0], 1)
         self.assertEqual(job["task_id"], task)
 
+    def test_new_unanswered_query_precedes_historical_revalidation_without_losing_old_work(self):
+        historical=self.task('historical')
+        job=self.claim()
+        self.c.complete('mac',historical,job['lease'],result())
+        self.time+=1
+        active=self.task('active-new-query')
+        job=self.claim(policy='c'*64)
+        self.assertEqual(job['task_id'],active)
+        self.assertEqual(self.c.view(historical)['results'],[])
+        self.c.complete('mac',active,job['lease'],result())
+        self.assertEqual(self.claim(policy='c'*64)['task_id'],historical)
+
     def test_concurrent_pollers_cannot_claim_the_same_live_lease(self):
         self.task()
         barrier = threading.Barrier(2)

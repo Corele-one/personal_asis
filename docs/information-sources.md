@@ -14,7 +14,7 @@
 - 小红书采用用户指定的 [xpzouying/xiaohongshu-mcp](https://github.com/xpzouying/xiaohongshu-mcp)，封装为受控来源适配器，纳入关键词搜索、用户分享、可见收藏和首页推荐流；搜索可限定已关注作者，具体主题和抓取上限待配置。
 - 留存选择分层策略：个人精选保持可检索；订阅条目先筛选，相关时再读取和缓存可用正文，未进入精选的正文缓存默认保留 30 天。Agent 可按用户认可的规则自动把部分缓存正文加入本机精选，标注代选、理由和出处，允许撤销；不回写平台收藏，也不把代选当作用户认同。移除精选不自动排除再次代选，之后仍可按规则重新选入，每次重新满足来源政策并保留选择记录。规则细节、到期计算与最小引用证据保留仍待设置。依据：[阅读内容分层留存 ADR](adr/0027-retain-personal-selections-and-cache-relevant-subscription-content.md)、[规则代选 ADR](adr/0030-promote-reading-cache-under-approved-selection-rules.md)。
 - 首次接入对个人精选尽量回溯全部可获取历史，订阅流主要从启用后增量获取。各连接器记录可获取日期范围、分页覆盖与失败，不能把平台当前可见记录称为完整历史；历史精选回溯也不意味着将全部内容放入模型上下文。
-- 普通文章和非敏感用户批注可按最小上下文供 MiMo 分析；私密、健康资料继续受原有本机限制。敏感性尚不能确定的内容需先在本机处理分类，不先发给云模型判定其是否敏感。此选择不授权全量账户数据上传、个人模型形成或其他提供商披露。依据：[阅读模型披露 ADR](adr/0028-allow-minimal-mimo-context-for-nonsensitive-reading-content.md)。
+- 普通文章和非敏感用户批注可按最小上下文供 MiMo 分析；Study／Life 的私密和健康资料按用户另行确认的[持续授权](private-data-authority.md)使用，新外部来源仍需明确接入范围。敏感性尚不能确定的内容需先在本机处理分类，不先发给云模型判定其是否敏感。此阅读来源选择不授权全量账户数据上传；个人模型和其他提供商需适用明确的持续许可或新增确认。依据：[阅读模型披露 ADR](adr/0028-allow-minimal-mimo-context-for-nonsensitive-reading-content.md)。
 
 ## 来源关系与建议流程
 

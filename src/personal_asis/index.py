@@ -14,6 +14,7 @@ import uuid
 from .config import Config
 from .markdown import digest, excerpt, parse
 from .extractors import extract, ExtractionError, MAX_SOURCE_BYTES, EXTRACTOR_VERSION
+from .data_policy import exclusion_reason, VERSION as DATA_POLICY_VERSION
 
 
 def now() -> str:
@@ -68,6 +69,7 @@ class Index:
         self.db.row_factory = sqlite3.Row
         self.db.execute("PRAGMA foreign_keys=ON")
         self.db.execute("PRAGMA journal_mode=WAL")
+        self.db.execute("PRAGMA secure_delete=ON")
         version = self.db.execute("PRAGMA user_version").fetchone()[0]
         if version not in {0, 1, 2}:
             raise ValueError("不支持此数据库版本")
@@ -91,6 +93,12 @@ class Index:
     def _remove(self, row):
         self.db.execute("DELETE FROM search_index WHERE rowid=?", (row["rowid"],))
         self.db.execute("UPDATE documents SET active=0 WHERE rowid=?", (row["rowid"],))
+
+    def _forget_excluded(self, row):
+        self.db.execute('DELETE FROM search_index WHERE rowid=?',(row['rowid'],))
+        self.db.execute('DELETE FROM extractions WHERE document_id=?',(row['document_id'],))
+        self.db.execute('DELETE FROM versions WHERE document_id=?',(row['document_id'],))
+        self.db.execute('DELETE FROM documents WHERE rowid=?',(row['rowid'],))
 
     def _sync_config(self):
         current = {s.id: s for s in self.config.sources}
@@ -116,7 +124,10 @@ class Index:
             for row in self.db.execute("SELECT * FROM documents WHERE source_id=? AND active=1",
                                        (source.id,)).fetchall():
                 if source.excludes(row["path"]) or Path(row["path"]).suffix.lower().lstrip(".") not in source.formats:
-                    self._remove(row)
+                    if source.excludes(row['path']):
+                        self._forget_excluded(row)
+                    else:
+                        self._remove(row)
             for row in self.db.execute("SELECT path FROM extraction_failures WHERE source_id=?", (source.id,)).fetchall():
                 if source.excludes(row["path"]) or Path(row["path"]).suffix.lower().lstrip(".") not in source.formats:
                     self.db.execute("DELETE FROM extraction_failures WHERE source_id=? AND path=?", (source.id, row["path"]))
@@ -206,6 +217,9 @@ class Index:
                 if not source.index:
                     continue
                 try:
+                    revision = self.db.execute("SELECT value FROM state WHERE key=?",
+                                               ('data_policy:'+source.id,)).fetchone()
+                    force_source = force or revision is None or revision[0] != DATA_POLICY_VERSION
                     found = self._scan(source)
                     old = {r["path"]: r for r in self.db.execute(
                         "SELECT * FROM documents WHERE source_id=? AND active=1", (source.id,))}
@@ -233,10 +247,10 @@ class Index:
                             row = None
                         signature = (stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns)
                         failed = prior_failures.get(rel)
-                        if not force and failed and failed["signature"] == json.dumps(signature):
+                        if not force_source and failed and failed["signature"] == json.dumps(signature):
                             failures.append((rel, json.dumps(signature), failed["reason"]))
                             continue
-                        if row and not force and signature == tuple(row[k] for k in
+                        if row and not force_source and signature == tuple(row[k] for k in
                               ("device", "inode", "size", "mtime_ns", "ctime_ns")):
                             unchanged += 1
                             retained.add(row["rowid"])
@@ -247,6 +261,9 @@ class Index:
                             raw, stat = self._read(path, stat, source.root)
                             extraction = extract(raw, path)
                             text = extraction["text"]
+                            reason = exclusion_reason(rel,text)
+                            if reason:
+                                raise ExtractionError(reason)
                         except ExtractionError as exc:
                             failures.append((rel, json.dumps(signature), exc.reason))
                             continue
@@ -277,7 +294,11 @@ class Index:
                 with self.db:
                     for row in old.values():
                         if row["rowid"] not in retained:
-                            self._remove(row)
+                            reason = next((f[2] for f in failures if f[0]==row['path']),None)
+                            if reason in {'credential_content','assistant_excluded'}:
+                                self._forget_excluded(row)
+                            else:
+                                self._remove(row)
                             report["deleted"] += 1
                     # Release unique current paths before applying moves, including path swaps.
                     self.db.execute("DELETE FROM extraction_failures WHERE source_id=?", (source.id,))
@@ -314,6 +335,8 @@ class Index:
                     report["unchanged"] += unchanged
                     report["hashes_computed"] += hashes
                     self.db.execute("UPDATE sources SET available=1,checked_at=? WHERE id=?", (now(), source.id))
+                    self.db.execute('INSERT OR REPLACE INTO state VALUES(?,?)',
+                                    ('data_policy:'+source.id,DATA_POLICY_VERSION))
                     report["sources"].append({"source_id": source.id, "status": "ready",
                         "documents": len(found) - len(failures), "files_seen": len(found),
                         "skipped_documents": len(failures), "skipped_reasons": dict(Counter(f[2] for f in failures))})
@@ -347,6 +370,8 @@ class Index:
                     return None
                 text, marked_private = stored[0], False
             private = source.policy == "private" or source.is_private_path(row["path"]) or marked_private
+            if exclusion_reason(row['path'],text):
+                return None
             return source, path, text, private
         except (OSError, UnicodeError, ExtractionError):
             return None
@@ -406,9 +431,9 @@ class Index:
                     hit["location"] = next(({k:v for k,v in unit.items() if k not in {"line_start", "line_end"}}
                         for unit in json.loads(extraction["locations"])
                         if unit["line_start"] <= location["line_start"] <= unit["line_end"]), {})
-            elif source.remote_evidence and not private:
+            elif source.allows_remote_evidence(private,row['path']):
                 hit["reader_allowed"] = True
-            # PA0 remote payloads are metadata only; private evidence transport is deferred.
+            # Search payloads stay metadata-only; reader text is separately encrypted.
             hits.append(hit)
             if len(hits) >= limit:
                 break
@@ -448,7 +473,7 @@ class Index:
         if current is None:
             return {"status": "stale"}
         source, path, text, private = current
-        if private or not source.remote_evidence or not source.shares_metadata(False, row["path"]):
+        if not source.allows_remote_evidence(private,row['path']):
             return {"status": "denied"}
         extraction = self.db.execute("SELECT * FROM extractions WHERE document_id=?", (row["document_id"],)).fetchone()
         fmt = path.suffix.lower().lstrip(".")

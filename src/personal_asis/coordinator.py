@@ -112,6 +112,7 @@ CREATE TABLE IF NOT EXISTS events (
  sequence INTEGER PRIMARY KEY AUTOINCREMENT, task_id TEXT, node_id TEXT,
  kind TEXT NOT NULL, at REAL NOT NULL
 );
+CREATE INDEX IF NOT EXISTS task_event_kind ON events(task_id,node_id,kind);
 """
 
 
@@ -275,7 +276,9 @@ class Coordinator:
             self.db.execute("UPDATE nodes SET last_seen=?,policy_hash=? WHERE id=?", (self.clock(), policy_hash, node_id))
             job = self.db.execute("""SELECT j.*,t.query,t.channel,t.result_limit FROM jobs j JOIN tasks t ON t.id=j.task_id
                 WHERE j.node_id=? AND j.state!='done' AND j.retry_at<=?
-                AND (j.lease IS NULL OR j.lease_until<=?) ORDER BY t.created,t.id LIMIT 1""",
+                AND (j.lease IS NULL OR j.lease_until<=?)
+                ORDER BY EXISTS(SELECT 1 FROM events e WHERE e.task_id=j.task_id AND e.node_id=j.node_id
+                    AND e.kind='completed'),t.created,t.id LIMIT 1""",
                                   (node_id, self.clock(), self.clock())).fetchone()
             if job is None:
                 return {"job": None}

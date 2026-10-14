@@ -12,6 +12,7 @@ import sqlite3
 from .config import load_pa1_config
 from .index import Index
 from .semantic import LocalSemanticEncoder, semantic_scores
+from .data_policy import exclusion_reason
 
 
 def features(text):
@@ -68,6 +69,8 @@ def context_excerpt(text, query, max_chars=600, window=None):
 def retrieve(index, query, limit=5, provider=None, encoder=None, source_ids=None):
     if not isinstance(query, str) or not query.strip() or len(query) > 512 or not 1 <= limit <= 20:
         raise ValueError("invalid_retrieval_query")
+    if provider and exclusion_reason('',query):
+        raise ValueError('model_query_contains_credentials')
     if source_ids is not None and (not source_ids or set(source_ids)-{s.id for s in index.config.sources}):
         raise ValueError('retrieval_requires_known_source_ids')
     lexical = index.search(query, "local", 100)

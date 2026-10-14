@@ -23,7 +23,7 @@ HTTP 服务固定监听 `127.0.0.1`，无跨源许可，不记录请求日志。
 
 来源配置变更、索引核对发现的版本／分类／可用性变化会改变节点政策摘要。下一次成功轮询清空该节点历史任务中的缓存元数据和旧租约，然后重新检索。离线时 VPS 不能立即获知本机政策变更。文档 frontmatter 分类变更需要显式／定期核对后同步；发送新的搜索和重传结果前仍检查原文，阻止未核对的新私密分类被发送。
 
-搜索结果严格限定 UUID、版本、标题、节点、来源、相对路径及可选阅读资格等元数据；拒绝正文、摘录、文件 URI、绝对路径或未知字段。private 默认禁止远程，只有单独精确授权的源级 `private_remote_metadata` 许可可展示私密元数据，仍不改分类／正文权限。排除规则及 `remote_metadata: false` 始终生效。现有来源为 Study／Life，旧 Note／Daily 已移除。
+搜索结果严格限定 UUID、版本、标题、节点、来源、相对路径及可选阅读资格等元数据；拒绝正文、摘录、文件 URI、绝对路径或未知字段。private 保持分类并分别执行授权：`private_remote_metadata` 允许私密元数据，`private_remote_evidence` 配合 `remote_evidence` 允许按需加密阅读；当前 Study／Life 的范围见[持续授权](private-data-authority.md)。排除规则及 `remote_metadata: false` 始终生效。现有来源为 Study／Life，旧 Note／Daily 已移除。
 
 ## 当前部署与 SSH 节点通信
 

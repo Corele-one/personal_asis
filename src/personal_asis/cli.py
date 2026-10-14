@@ -123,7 +123,7 @@ def main(argv=None):
     p.add_argument("--port", type=int, default=8766)
     p.add_argument("--reset", action="store_true", help="重设 Web 用户并撤销全部 Web 会话")
     p = commands.add_parser("pa1", help="本机最小上下文、MiMo 与预算；默认仅合成联调")
-    p.add_argument("action", choices=["init", "configure", "authorize", "revoke", "key", "models", "retrieve", "bundle", "analyze", "budget", "self-test", "semantic-test"])
+    p.add_argument("action", choices=["init", "configure", "authorize", "revoke", "clean", "key", "models", "retrieve", "bundle", "analyze", "budget", "self-test", "semantic-test"])
     p.add_argument("--query")
     p.add_argument("--model")
     p.add_argument("--enable", action="store_true")
@@ -169,6 +169,9 @@ def main(argv=None):
                     result=pa1.authorize_current_files(home,args.source,args.include_private,args.all_source_files)
                 elif args.action == 'revoke':
                     result=pa1.revoke_sources(home,args.source)
+                elif args.action == 'clean':
+                    from .pa1_maintenance import clean
+                    result=clean(home)
                 elif args.action == "key":
                     if not sys.stdin.isatty():
                         raise ValueError("model_key_requires_local_interactive_terminal")

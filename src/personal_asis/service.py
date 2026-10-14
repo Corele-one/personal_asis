@@ -76,6 +76,14 @@ def daemon(home: Path, emit, interval=21600, tick=30):
                 with Index(home / "index.sqlite3", config) as index:
                     report = index.reconcile()
                 emit({"event": "reconcile", **report})
+                if (home/'pa1-policy.json').exists():
+                    from .pa1_maintenance import clean
+                    try:
+                        cleanup=clean(home)
+                        if any(cleanup.values()):
+                            emit({'event':'pa1_cleanup',**cleanup})
+                    except (OSError,ValueError,sqlite3.Error) as exc:
+                        emit({'event':'pa1_cleanup_error','error_type':type(exc).__name__})
                 unavailable = any(s["status"] != "ready" for s in report["sources"])
                 deadline = time.monotonic() + (60 if unavailable else interval)
                 config_stamp = stamp

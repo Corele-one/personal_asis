@@ -9,6 +9,7 @@ from pathlib import Path
 import sys
 
 from .extractors import FORMATS
+from .data_policy import credential_path
 
 
 DEFAULT_HOME = (Path.home() / "Library" / "Application Support" / "PersonalAsis"
@@ -33,6 +34,7 @@ class Source:
     model_paths: tuple[str, ...] = ()
     private_model_providers: tuple[str, ...] = ()
     model_all_files: bool = False
+    private_remote_evidence: bool = False
 
     def allows_model(self, provider: str, private: bool, relative: str) -> bool:
         return (self.index and (not (private or self.policy == 'private')
@@ -44,6 +46,10 @@ class Source:
         return (self.remote_metadata and (not private or self.private_remote_metadata)
                 and (self.remote_metadata_paths is None or self._matches(relative, self.remote_metadata_paths)))
 
+    def allows_remote_evidence(self, private: bool, relative: str) -> bool:
+        return (self.remote_evidence and (not private or self.private_remote_evidence)
+                and self.shares_metadata(private,relative) and not self.excludes(relative))
+
     @staticmethod
     def _matches(relative: str, patterns: tuple[str, ...]) -> bool:
         path = Path(relative)
@@ -53,7 +59,7 @@ class Source:
                    for candidate in candidates for pattern in patterns)
 
     def excludes(self, relative: str) -> bool:
-        return self._matches(relative, self.exclude)
+        return credential_path(relative) or self._matches(relative, self.exclude)
 
     def is_private_path(self, relative: str) -> bool:
         return self._matches(relative, self.private_paths)
@@ -121,7 +127,7 @@ def parse_config(data) -> Config:
         policy = item["policy"]
         if policy not in {"normal", "private"}:
             raise ValueError("policy 仅支持 normal/private")
-        for key in ("index", "remote_metadata", "private_remote_metadata", "remote_evidence", "model_all_files"):
+        for key in ("index", "remote_metadata", "private_remote_metadata", "remote_evidence", "model_all_files", "private_remote_evidence"):
             if type(item.get(key, False)) is not bool:
                 raise ValueError(f"{key} 必须是布尔值")
         if (policy == "private" and item.get("remote_metadata", False)
@@ -155,7 +161,8 @@ def parse_config(data) -> Config:
                               tuple(item["remote_metadata_paths"]) if "remote_metadata_paths" in item else None,
                               tuple(dict.fromkeys(formats)), item.get("remote_evidence", False),
                               tuple(item.get("model_providers", [])), tuple(item.get("model_paths", [])),
-                              tuple(item.get('private_model_providers', [])), item.get('model_all_files',False)))
+                              tuple(item.get('private_model_providers', [])), item.get('model_all_files',False),
+                              item.get('private_remote_evidence',False)))
     if not sources:
         raise ValueError("至少配置一个来源")
     # Overlapping roots could bypass a private source's classification.

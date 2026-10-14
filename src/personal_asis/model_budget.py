@@ -23,11 +23,14 @@ class ModelBudget:
         os.chmod(path,0o600)
         self.db.row_factory = sqlite3.Row
         self.db.execute("PRAGMA journal_mode=WAL")
+        self.db.execute('PRAGMA secure_delete=ON')
         self.db.execute("""CREATE TABLE IF NOT EXISTS model_calls (
             node TEXT NOT NULL, request_id TEXT NOT NULL, fingerprint TEXT NOT NULL,
             day TEXT NOT NULL, month TEXT NOT NULL, state TEXT NOT NULL,
             tokens INTEGER NOT NULL, response TEXT, at REAL NOT NULL,
             PRIMARY KEY(node,request_id))""")
+        self.db.execute('UPDATE model_calls SET response=NULL WHERE response IS NOT NULL AND at<?',
+                        (self.clock()-30*86400,))
 
     def close(self):
         self.db.close()
@@ -68,6 +71,8 @@ class ModelBudget:
                 if old['fingerprint'] != fingerprint:
                     raise ValueError("model_request_id_conflict")
                 if old['state'] == 'succeeded':
+                    if old['response'] is None:
+                        raise ValueError('model_result_expired_or_revoked_no_retry')
                     return {"cached":json.loads(old['response'])}
                 raise ValueError("model_request_not_retryable_"+old['state'])
             status = self.status()

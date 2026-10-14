@@ -1,6 +1,6 @@
 # 私人资料与持续授权
 
-状态（2026-10-14）：grill-with-docs 的 Q1–Q11 已回答：Q1–Q8、Q10–Q11 为 A，Q9 为 B。访谈决定已完整记录，等待用户确认整体理解后应用；尚未切换运行配置，也不表示渠道分析、远程权限管理或长期记忆已经实现。当前实际能力仍见 [PA1 记录](pa1-local.md)。整体确认后同步项目规则、总规格及受影响的运行文档。
+状态（2026-10-14）：grill-with-docs 的 Q1–Q11 已回答：Q1–Q8、Q10–Q11 为 A，Q9 为 B。用户已确认整体理解并要求先 Git 检查点、再执行。检查点为 `74ef6fb`；项目规范、源级许可及审批补充配置已按本页落实，实施状态见下表。授权不表示渠道模型分析、远程权限管理或长期记忆已经实现。当前模型能力见 [PA1 记录](pa1-local.md)。
 
 ## 已确定的授权
 
@@ -35,18 +35,33 @@
 
 | 工作 | 整体确认后的处理 |
 |---|---|
-| 项目规范 | 同步 AGENT.md、SPECIFICATION.md、CONTEXT.md、相关 ADR 与运行说明；历史验收快照保留日期 |
-| 持续来源许可 | 从当前文件快照迁移为绑定现有根目录的源级许可；排除项优先，新提供商仍须经批准登记 |
-| Codex 补充审批政策 | 将 [政策草案](../config/auto-review.personal-asis.md)的正文作为 `extra_policy` 写入可信项目 `.codex/config.toml`，预览见 [配置草案](../config/codex-auto-review.example.toml)；限定本项目范围，分别验证客户端识别、配置装载与宿主约束 |
-| 私密渠道与远程权限管理 | 当前尚未实现；后续交付须验证本人身份、权限新鲜度、投递防重及服务端不持久化明文 |
-| 自动记忆、复核、到期与撤权清理 | 当前尚未实现；按上述许可和期限实现后验收，不将文档同意报告为运行能力 |
+| 项目规范 | 已同步 AGENT.md、SPECIFICATION.md、CONTEXT.md、ADR 0033 与受影响的运行说明；历史验收快照保留日期 |
+| 持续来源许可 | 已将 Study／Life 迁移为绑定现有根目录的源级 MiMo 许可，包含后续新增路径；凭据／显式排除项在索引和使用时检查。当前适配器仍仅 MiMo，新提供商接入能力需分别实现并批准登记 |
+| Codex 补充审批政策 | 已将[政策正文](../config/auto-review.personal-asis.md)作为 `extra_policy` 写入可信项目 `.codex/config.toml`，与[配置示例](../config/codex-auto-review.example.toml)保持一致；Codex CLI 解析通过，当前无审批宿主会话未验证 reviewer 实际装载 |
+| 飞书模型分析／摘录与远程权限管理 | 当前尚未实现；后续交付须验证本人身份、权限新鲜度、投递防重及服务端不持久化明文 |
+| 自动记忆与复核 | 当前尚未实现；按上述许可和期限后续交付 |
+| 现有 PA1 到期与撤权清理 | 已实现 30 天回答过期、防重标记保留、跨向量作用域清理、关联联调原响应清理；模型撤权立即执行，Mac 每次核对后也执行 |
+| 私密 PWA 阅读 | 已实现独立 `private_remote_evidence` 检查并启用 Study／Life；真实链路验证结果见下文 |
 
-不再有待回答的业务范围问题；下一步是对这份完整方案作整体确认，随后按实际能力逐项落实。
+不再有待确认的业务范围问题；范围内重复处理与维护按持续授权推进，未实现能力按交付门槛分别验收。
 
 ## 审批设置的事实边界
 
-已核查本机 Codex 配置仍为 `approvals_reviewer = "auto_review"`，尚无 `auto_review.extra_policy`。当前会话由宿主提供完整访问和 `approval_policy = never`；这与磁盘配置是不同层，不能据此声称已修改或验证后续会话的自动审批。
+已核查本机 Codex 配置仍为 `approvals_reviewer = "auto_review"`，全局配置未添加 `auto_review.extra_policy`；本项目已使用 `.codex/config.toml` 设置此补充政策。当前会话由宿主提供完整访问和 `approval_policy = never`；这与磁盘配置是不同层，不能据此声称已修改或验证后续会话的自动审批。
 
-[官方配置参考](https://learn.chatgpt.com/docs/config-file/config-reference)说明 `auto_review.extra_policy` 可在主政策旁增加本地 Markdown 政策，托管的 `guardian_extra_policy` 优先；普通配置不能覆盖强制宿主／托管约束。正式应用时须限定到本项目及已经明确授权的动作，并核对实际客户端支持和生效状态。
+[官方配置参考](https://learn.chatgpt.com/docs/config-file/config-reference)说明 `auto_review.extra_policy` 可在主政策旁增加本地 Markdown 政策，托管的 `guardian_extra_policy` 优先；普通配置不能覆盖强制宿主／托管约束。本次补充正文已限定到本项目及明确授权动作；主政策和宿主设置未被替换。
 
-已通过非代理执行核查本机 Codex CLI 0.162.1 的字段解析：字符串及多行 Markdown 配合 `features list` 返回 0，整数值明确返回类型错误并定位到 `auto_review.extra_policy`，没有启动真实代理任务。当前项目已在用户配置中标为 trusted；按 [官方配置优先级](https://learn.chatgpt.com/docs/config-file/config-basic)，可信项目配置适合作为该项目的补充。此验证证明字段与类型受支持，尚不证明 reviewer 已装载该政策；正式应用后仍须区分解析成功与实际审批生效。
+已通过非代理执行核查本机 Codex CLI 0.162.1 的字段解析：字符串及多行 Markdown 配合 `features list` 返回 0，整数值明确返回类型错误并定位到 `auto_review.extra_policy`，没有启动真实代理任务。当前项目已在用户配置中标为 trusted；按 [官方配置优先级](https://learn.chatgpt.com/docs/config-file/config-basic)，可信项目配置适合作为该项目的补充。项目配置落盘后再次执行 `codex features list` 成功，并以 `tomllib` 校验加载内容和政策正文一致。此验证证明字段、类型与客户端配置解析受支持；由于当前宿主是 `approval_policy = never`，不能声称 reviewer 已实际审核或自动通过操作，后续自动审批会话仍需核对。
+
+## 本轮应用验证
+
+- 检查点提交 `74ef6fb` 在应用前完成；提交前 140 项检查中 134 通过、6 跳过。
+- 新增来源持续继承、根目录变更、凭据／显式排除、旧索引重检、私密阅读授权、撤权跨作用域清理、30 天到期防重复付费、历史回填调度及缓存回答重新分类检查。完整回归 151 项，145 通过、6 因可选 SDK／格式或平台条件跳过。
+- Mac 发布为 `standing-a9bf074e26ab3ff3`，保留原生产 Python；旧代码路径、来源配置及模型政策在仓库外私密目录保存回退材料。核对 Study 267、Life 181，共 448 个 Markdown，本轮凭据／显式排除命中 0；不写来源原文。
+- Study／Life 的 `model_all_files`、私密模型许可及独立私密阅读许可均已启用；新根目录仍不继承旧根目录身份。没有添加新提供商或增加预算，也没有因配置验证发起新模型调用。
+- VPS 静态页面与服务 Worker 的许可提示已更新；发现来源政策变化会使历史搜索回填阻塞新请求，已修正为尚未完成的新请求优先，旧任务保留继续补全。VPS 针对性协调测试通过后只重启原协调服务，未重启 AstrBot／PWA。
+- 自动长期记忆、远程权限管理和飞书模型分析尚未实现；来源格式覆盖仍依现有启用格式，不能把源级许可报告为多模态理解已经可用。
+
+真实私密阅读协议验收通过：从获准 Life 条目返回 `reader_allowed`，生产 Mac 经现有 VPS relay 返回密文，本机用临时私钥解密后与当前原文的 1,490 个字符完全一致。VPS 端只接收密文封装；核查时 Mac 心跳距当前约 5.4 秒。该验证覆盖实际链路与私密许可，不冒充用户浏览器逐页人工验收；本次只更新静态许可提示及 shell 缓存版本。
+
+本轮未新增模型调用；预算及未知调用状态继续由本机共享账本核查。自动审批配置已安装且客户端解析通过，当前无需审批会话无法检验 reviewer 的真实判定；后续自动审批会话应核对生效配置，不把解析成功报告为审批已经通过。
