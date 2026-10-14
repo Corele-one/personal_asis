@@ -1,0 +1,13 @@
+{
+  "provider": "mimo",
+  "endpoint": "https://api.xiaomimimo.com/v1",
+  "model": null,
+  "enabled": false,
+  "synthetic_only": true,
+  "daily_tokens": 100000,
+  "monthly_tokens": 1000000,
+  "timezone": "Asia/Shanghai",
+  "max_completion_tokens": 512,
+  "max_prompt_bytes": 8192,
+  "semantic_model_dir": null
+}

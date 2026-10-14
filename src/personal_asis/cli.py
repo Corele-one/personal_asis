@@ -72,7 +72,7 @@ def init(home, root, node_id):
 def main(argv=None):
     # Also restrict SQLite WAL/SHM sidecars and temporary output.
     os.umask(0o077)
-    parser = argparse.ArgumentParser(description="PA0 纯文本证据检索与节点协调")
+    parser = argparse.ArgumentParser(description="本机证据检索、节点协调与受控 PA1 分析")
     parser.add_argument("--home", type=Path, default=DEFAULT_HOME, help="本机私密运行数据目录")
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("doctor")
@@ -122,11 +122,67 @@ def main(argv=None):
     p.add_argument("action", choices=["serve", "bootstrap"])
     p.add_argument("--port", type=int, default=8766)
     p.add_argument("--reset", action="store_true", help="重设 Web 用户并撤销全部 Web 会话")
+    p = commands.add_parser("pa1", help="本机最小上下文、MiMo 与预算；默认仅合成联调")
+    p.add_argument("action", choices=["init", "configure", "key", "models", "retrieve", "bundle", "analyze", "budget", "self-test"])
+    p.add_argument("--query")
+    p.add_argument("--model")
+    p.add_argument("--enable", action="store_true")
+    p.add_argument("--disable", action="store_true")
+    p.add_argument("--live", action="store_true", help="合成资料真实 API 联调；需显式请求编号")
+    p.add_argument("--request-id")
     args = parser.parse_args(argv)
     home = args.home.expanduser().absolute()
     try:
         if args.command == "doctor":
             result = doctor()
+        elif args.command == "pa1":
+            from . import pa1
+            from .model_provider import MiMo
+            from .credentials import CredentialStore
+            from .retrieval import retrieve, build_bundle
+            if args.action in {"init", "configure"}:
+                if args.enable and args.disable:
+                    raise ValueError("enable_disable_are_mutually_exclusive")
+                result = pa1.configure(home, args.model, True if args.enable else False if args.disable else None)
+            else:
+                data = pa1.settings(home)
+                config = load_config(home / "sources.yaml")
+                if args.action == "key":
+                    if not sys.stdin.isatty():
+                        raise ValueError("model_key_requires_local_interactive_terminal")
+                    secret = getpass.getpass("MiMo API Key（隐藏输入，不保存到配置）: ")
+                    if not secret or not secret.isascii() or any(ord(c)<33 or ord(c)>126 for c in secret):
+                        raise ValueError("invalid_mimo_credential")
+                    CredentialStore(config.node_id+":mimo", service="local.personal-asis.model").set(secret)
+                    result = {"credential_saved": True, "store": "system_credential_store"}
+                elif args.action == "models":
+                    result = {"models": MiMo(config.node_id, data["model"] or "unconfigured").models()}
+                elif args.action == "budget":
+                    ledger = pa1.budget(home, config.node_id, data)
+                    try:
+                        result = ledger.status()
+                    finally:
+                        ledger.close()
+                elif args.action == "self-test":
+                    result = pa1.self_test(home, args.live, args.request_id)
+                elif args.action == "analyze":
+                    if not args.query or not args.request_id:
+                        raise ValueError("analysis_requires_query_and_request_id")
+                    result = pa1.analyze(home, args.query, args.request_id)
+                elif args.action == "bundle":
+                    if not args.query:
+                        raise ValueError("bundle_requires_query")
+                    encoder, degradation = pa1.encoder_for(data)
+                    bundle = build_bundle(home, args.query, data["provider"], encoder)
+                    result = {"provider": bundle.provider, "retrieval_mode": bundle.retrieval_mode,
+                              "degradation": degradation, "cloud_input": bundle.cloud_input(),
+                              "local_evidence": bundle.evidence}
+                else:
+                    if not args.query:
+                        raise ValueError("retrieval_requires_query")
+                    encoder, degradation = pa1.encoder_for(data)
+                    with Index(home / "index.sqlite3", config) as index:
+                        result = {**retrieve(index, args.query, encoder=encoder), "degradation": degradation}
         elif args.command == "backup":
             from .backup import create as create_backup, restore as restore_backup, key_store
             if args.action == "create":

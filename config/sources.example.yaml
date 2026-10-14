@@ -10,6 +10,8 @@
       "remote_evidence": false,
       "formats": ["md"],
       "private_remote_metadata": false,
+      "model_providers": [],
+      "model_paths": [],
       "exclude": ["Health", "health", "健康", "**/Health", "**/health", "**/健康"]
     },
     {
@@ -21,6 +23,8 @@
       "remote_evidence": false,
       "formats": ["md"],
       "private_remote_metadata": false,
+      "model_providers": [],
+      "model_paths": [],
       "exclude": []
     }
   ]

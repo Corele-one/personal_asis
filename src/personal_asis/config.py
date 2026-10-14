@@ -28,6 +28,13 @@ class Source:
     remote_metadata_paths: tuple[str, ...] | None = None
     formats: tuple[str, ...] = ("md",)
     remote_evidence: bool = False
+    model_providers: tuple[str, ...] = ()
+    model_paths: tuple[str, ...] = ()
+
+    def allows_model(self, provider: str, private: bool, relative: str) -> bool:
+        return (self.index and self.policy != "private" and not private
+                and not self.excludes(relative) and provider in self.model_providers
+                and relative in self.model_paths)
 
     def shares_metadata(self, private: bool, relative: str = "") -> bool:
         return (self.remote_metadata and (not private or self.private_remote_metadata)
@@ -88,9 +95,17 @@ def load_config(path: Path) -> Config:
         excludes = item.get("exclude", [])
         if not isinstance(excludes, list) or not all(isinstance(x, str) for x in excludes):
             raise ValueError("exclude 必须是字符串数组")
-        for key in ("private_paths", "remote_metadata_paths"):
+        for key in ("private_paths", "remote_metadata_paths", "model_providers", "model_paths"):
             if key in item and (not isinstance(item[key], list) or not all(isinstance(x, str) for x in item[key])):
                 raise ValueError(f"{key} 必须是字符串数组")
+        if policy == "private" and item.get("model_providers"):
+            raise ValueError("private 来源不允许云模型处理")
+        if any(not p or not p.isascii() or not all(c.isalnum() or c in "_-" for c in p)
+               for p in item.get("model_providers", [])):
+            raise ValueError("model_providers 须为非空提供商标识")
+        if any(not p or Path(p).is_absolute() or ".." in Path(p).parts
+               or Path(p).as_posix() != p or "\\" in p for p in item.get("model_paths", [])):
+            raise ValueError("model_paths 须为逐文件的规范相对路径，不解释目录或 glob")
         formats = item.get("formats", ["md"])
         if (not isinstance(formats, list) or not formats or
                 any(not isinstance(f, str) or f not in FORMATS for f in formats)):
@@ -100,7 +115,8 @@ def load_config(path: Path) -> Config:
                               item.get("private_remote_metadata", False),
                               tuple(item.get("private_paths", [])),
                               tuple(item["remote_metadata_paths"]) if "remote_metadata_paths" in item else None,
-                              tuple(dict.fromkeys(formats)), item.get("remote_evidence", False)))
+                              tuple(dict.fromkeys(formats)), item.get("remote_evidence", False),
+                              tuple(item.get("model_providers", [])), tuple(item.get("model_paths", []))))
     if not sources:
         raise ValueError("至少配置一个来源")
     # Overlapping roots could bypass a private source's classification.
