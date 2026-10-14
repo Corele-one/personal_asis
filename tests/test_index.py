@@ -3,6 +3,7 @@ import json
 import os
 from pathlib import Path
 import tempfile
+import threading
 import unittest
 from unittest.mock import patch
 
@@ -36,6 +37,75 @@ class IndexTests(unittest.TestCase):
     def hits(self, query, channel="local"):
         result = self.index.search(query, channel)
         return [hit for group in result["results"] for hit in group["replicas"]]
+
+    def test_search_audit_survives_concurrent_daemon_commit(self):
+        self.write("first.md")
+        self.write("second.md")
+        self.index.reconcile()
+        original = self.index._current
+        committed = []
+        def concurrent(row):
+            if not committed:
+                with Index(self.dbpath, self.config) as daemon:
+                    daemon.reconcile()
+                committed.append(True)
+            return original(row)
+        with patch.object(self.index, "_current", side_effect=concurrent):
+            self.assertEqual(len(self.hits("inference")), 2)
+
+    def test_reconciliation_file_reads_allow_another_search_and_audit(self):
+        changed = self.write("first.md")
+        self.write("second.md")
+        self.index.reconcile()
+        changed.write_text("# Updated\ninference changed\n")
+        original = self.index._read
+        searches = []
+        def read_while_searching(*args):
+            with Index(self.dbpath, self.config) as reader:
+                searches.append(reader.search("inference"))
+            return original(*args)
+        with patch.object(self.index, "_read", side_effect=read_while_searching):
+            self.assertEqual(self.index.reconcile()["modified"], 1)
+        self.assertTrue(searches[0]["results"])
+
+    def test_concurrent_reconciliations_serialize_without_duplicate_identity(self):
+        self.write()
+        entered, release, second_started = threading.Event(), threading.Event(), threading.Event()
+        reports, errors = [], []
+        def run(first):
+            try:
+                with Index(self.dbpath, self.config) as index:
+                    original = index._scan
+                    def scan(source):
+                        if first:
+                            entered.set()
+                            if not release.wait(5):
+                                raise RuntimeError("test barrier timed out")
+                        return original(source)
+                    if not first:
+                        second_started.set()
+                    with patch.object(index, "_scan", side_effect=scan):
+                        reports.append(index.reconcile())
+            except Exception as error:
+                errors.append(error)
+        first = threading.Thread(target=run, args=(True,))
+        second = threading.Thread(target=run, args=(False,))
+        first.start()
+        try:
+            self.assertTrue(entered.wait(5))
+            second.start()
+            self.assertTrue(second_started.wait(5))
+            self.assertEqual(reports, [])
+        finally:
+            release.set()
+            first.join(10)
+            if second.ident is not None:
+                second.join(10)
+        self.assertFalse(first.is_alive() or second.is_alive())
+        self.assertEqual(errors, [])
+        self.assertEqual(sum(r["added"] for r in reports), 1)
+        self.assertEqual(len({r["index_version"] for r in reports}), 2)
+        self.assertEqual(len(self.hits("inference")), 1)
 
     def test_lifecycle_preserves_identity_and_versions(self):
         path = self.write()
@@ -84,6 +154,24 @@ class IndexTests(unittest.TestCase):
         self.assertEqual(report["unchanged"], 1)
         self.assertEqual(report["hashes_computed"], 0)
         self.assertEqual(self.index.reconcile(force=True)["hashes_computed"], 1)
+
+    def test_mixed_source_private_paths_and_remote_allowlist(self):
+        self.write("public/readme.md", "# Public\ninference example\n")
+        self.write("public/health.md", "# Sensitive\ninference private record\n")
+        self.write("unreviewed.md", "# Unreviewed\ninference unknown\n")
+        self.write("public/flagged.md", "---\npolicy: private\n---\n# Flagged\ninference\n")
+        self.index.config = replace(self.config, sources=(replace(self.config.sources[0],
+            private_paths=("public/health.md",), remote_metadata_paths=("public",)), self.config.sources[1]))
+        self.index.reconcile()
+        self.assertEqual({h["path_hint"] for h in self.hits("inference", "pwa")}, {"public/readme.md"})
+        local = {h["path_hint"]:h for h in self.hits("inference")}
+        self.assertEqual(local["public/health.md"]["policy"], "private")
+        self.assertEqual({h["path_hint"] for h in self.index.catalog()["documents"]}, {"public/readme.md"})
+        # Local permission edits take effect immediately, even before reconciliation.
+        self.index.config = replace(self.index.config, sources=(replace(self.index.config.sources[0],
+            remote_metadata_paths=()), self.index.config.sources[1]))
+        self.assertEqual(self.hits("inference", "feishu"), [])
+        self.assertEqual(self.index.catalog()["documents"], [])
 
     def test_rename_and_move_preserve_identity(self):
         path = self.write()

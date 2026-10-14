@@ -2,15 +2,18 @@
 
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
+from pathlib import Path
 import sqlite3
 
 from .coordinator import Coordinator, ProtocolError, exact
+from .evidence import Relay, control_server
 
 
 MAX_BODY = 512 * 1024
 
 
 def server(path, port=8765, nodes=("mac", "rog")):
+    relay = Relay()
     class Handler(BaseHTTPRequestHandler):
         protocol_version = "HTTP/1.1"
 
@@ -60,10 +63,18 @@ def server(path, port=8765, nodes=("mac", "rog")):
                         node = c.authenticate(authorization[7:])
                         if self.path == "/v1/poll":
                             exact(data, ("policy_hash",))
+                            previous = c.db.execute("SELECT policy_hash FROM nodes WHERE id=?", (node,)).fetchone()[0]
                             result = c.poll(node, data["policy_hash"])
+                            if previous != data["policy_hash"]:
+                                relay.invalidate(node)
                         elif self.path == "/v1/complete":
                             exact(data, ("task_id", "lease", "result"))
                             result = c.complete(node, data["task_id"], data["lease"], data["result"])
+                        elif self.path == "/v1/evidence/poll":
+                            exact(data, ())
+                            result = relay.poll(node)
+                        elif self.path == "/v1/evidence/complete":
+                            result = relay.complete(node, data)
                         else:
                             raise ProtocolError("not_found", 404)
                 self.send_json(result)
@@ -74,6 +85,22 @@ def server(path, port=8765, nodes=("mac", "rog")):
             except (OSError, sqlite3.Error):
                 self.send_json({"error": "temporarily_unavailable"}, 503)
 
-    result = ThreadingHTTPServer(("127.0.0.1", port), Handler)
+    class Server(ThreadingHTTPServer):
+        control = None
+        def server_close(self):
+            if self.control is not None:
+                control, path = self.control
+                self.control = None
+                control.shutdown()
+                control.server_close()
+                path.unlink(missing_ok=True)
+            super().server_close()
+    result = Server(("127.0.0.1", port), Handler)
+    try:
+        result.control = control_server(Path(path).parent, relay)
+    except Exception:
+        result.server_close()
+        raise
     result.daemon_threads = True
+    result.relay = relay
     return result

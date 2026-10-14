@@ -10,6 +10,7 @@ from urllib.parse import urlsplit
 
 from .coordinator import Coordinator, ProtocolError, exact
 from .web_auth import WebAuth
+from .evidence import control as evidence_control
 
 
 COOKIE = "__Host-asis"
@@ -161,6 +162,20 @@ def server(home, port=8766, origin=None, auth_method=None):
                             exact(data, ("query", "request_id"))
                             with Coordinator(home / "coordinator.sqlite3", nodes=("mac",)) as c:
                                 return self.write(c.submit(data["query"], "pwa", 20, data["request_id"]))
+                        if route == "/api/reader/request":
+                            exact(data, ("task_id", "document_id", "content_hash", "mode", "cursor", "client_nonce", "public_key"))
+                            with Coordinator(home / "coordinator.sqlite3", nodes=("mac",)) as c:
+                                view = c.view(data["task_id"])
+                                hit = next((h for group in view["results"] for h in group["replicas"]
+                                    if h["document_id"] == data["document_id"] and h["content_hash"] == data["content_hash"]), None)
+                                if not hit or not hit.get("reader_allowed"):
+                                    raise ProtocolError("reader_denied", 403)
+                                query = c.db.execute("SELECT query FROM tasks WHERE id=?", (data["task_id"],)).fetchone()[0]
+                            return self.write(evidence_control(home, {"op": "request", "node_id": hit["node_id"],
+                                "query": query, **{k:v for k,v in data.items() if k != "task_id"}}))
+                        if route == "/api/reader/result":
+                            exact(data, ("request_id",))
+                            return self.write(evidence_control(home, {"op": "get", "request_id": data["request_id"]}))
                         raise ProtocolError("not_found", 404)
                     secret = result.pop("token")
                     self.write(result, cookie=f"{COOKIE}={secret}; Secure; HttpOnly; SameSite=Strict; Path=/; Max-Age={result['expires_in']}")

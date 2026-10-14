@@ -19,6 +19,37 @@ def result(node="mac", channel="pwa", waiting=False, hits=True):
 
 
 class CoordinatorTests(unittest.TestCase):
+    def test_disabled_node_leaves_old_and_new_search_scope_and_can_resume(self):
+        code = self.c.pair("rog")["pairing_code"]
+        self.c.enroll("rog", code, "r" * 43)
+        token = self.c.session("rog", "r" * 43)["token"]
+        task = self.task()
+        mac, rog = self.claim("mac"), self.claim("rog")
+        self.c.complete("mac", task, mac["lease"], result("mac"))
+        self.c.complete("rog", task, rog["lease"], result("rog"))
+        self.c.set_enabled("rog", False)
+        with self.assertRaises(ProtocolError):
+            self.c.authenticate(token)
+        old = self.c.view(task)
+        self.assertFalse(old["partial"])
+        self.assertEqual([node["node_id"] for node in old["nodes"]], ["mac"])
+        self.assertEqual([hit["node_id"] for group in old["results"] for hit in group["replicas"]], ["mac"])
+        self.assertIsNone(self.c.db.execute("SELECT result FROM jobs WHERE task_id=? AND node_id='rog'", (task,)).fetchone()[0])
+        new = self.task("mac-only")
+        self.assertEqual([node["node_id"] for node in self.c.view(new)["nodes"]], ["mac"])
+        self.c.set_enabled("rog", True)
+        self.assertEqual(self.c.authenticate(self.c.session("rog", "r"*43)["token"]), "rog")
+
+    def test_skipped_text_files_are_visible_without_revealing_paths(self):
+        task = self.task()
+        job = self.claim()
+        payload = result()
+        payload["sources"][0]["skipped_documents"] = 7
+        self.c.complete("mac", task, job["lease"], payload)
+        view = self.c.view(task)
+        self.assertTrue(view["coverage_incomplete"])
+        self.assertEqual(view["coverage"], [{"node_id": "mac", "source_id": "note", "skipped_documents": 7}])
+
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.path = Path(self.tmp.name) / "coordinator.sqlite3"

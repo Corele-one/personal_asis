@@ -6,9 +6,9 @@
 
 构建基于个人资料、能够跨设备持续工作的个人助手，覆盖资料检索、研究生申请与职业选择、饮食、作息和心理状态复盘。以“记录 → 复盘 → 用户选择行动 → 反馈”形成持续改进。
 
-已部署 Mac 索引／CLI、launchd、VPS 协调、Keychain 配对、出站 SSH 轮询、AstrBot 飞书插件和 IP HTTPS PWA。真实飞书、Mac↔VPS 及用户 PWA 登录／搜索已验证。当前仅索引 Study 267 个、Life 179 个 Markdown；旧 Note／Daily 测试配置与索引已移除，原文件保留。Study 非私密元数据及 Life 私密元数据按本轮精确授权远程显示，正文／摘录／云模型处理仍禁止。ROG、完整证据传输及加密备份未完成，完整 PA0 未验收。以 [PWA](docs/pa0-pwa.md)、[协调](docs/pa0-coordinator.md)、[飞书](docs/pa0-feishu.md) 与 [Mac](docs/pa0-mac.md) 的现场记录为准；不把模拟或规划报告成上线能力。
+2026-10-14 用户明确选择只用 Mac 检索、停用 ROG。生产检索节点仅为 `mac`，索引 Study 267 个及 Life 179 个 Markdown；VPS 协调、飞书和 IP HTTPS PWA 继续使用。ROG 的后台索引、SSH 隧道及 Windows 开机任务停用，服务器停用其节点并撤出新旧搜索范围，保留原文件、3,309 个本机文档索引及 F 盘加密备份。非私密 PWA 摘录／正文按用户授权加密中转，VPS 不保存明文；私密正文和模型处理继续关闭。先前双设备副本、离线恢复和两端阅读验证保留为历史能力记录，不再把维护 ROG 作为当前 PA0 交付条件。Mac 本机备份恢复已验证，复制到 F 盘的操作未完成并已停止。详见 [Mac 单节点运行](docs/pa0-mac-only.md)、[文本与恢复](docs/pa0-text.md)及 [历史 ROG 记录](docs/pa0-rog.md)。
 
-索引与协调核心依赖 Python 3.11+ 及支持 FTS5 trigram 的 SQLite 3.34+，无第三方运行包；飞书插件依赖服务器既有 AstrBot 与飞书 SDK。真实命令：`scripts/asis doctor`、`scripts/asis status`、`scripts/asis search "芯片"`、`scripts/asis reconcile`；测试为 `PYTHONPATH=src python3 -m unittest discover -s tests -v`。详见 [README.md](README.md) 与 [Mac 实施说明](docs/pa0-mac.md)。本机数据位于 `~/Library/Application Support/PersonalAsis/`，不放入代码目录。
+索引与协调核心依赖 Python 3.11+ 及支持 FTS5 trigram 的 SQLite 3.34+；PDF、旧 Office、加密阅读与备份使用 [文本说明](docs/pa0-text.md) 中的可选依赖；飞书插件依赖服务器既有 AstrBot 与飞书 SDK。真实命令：`scripts/asis doctor`、`scripts/asis status`、`scripts/asis search "芯片"`、`scripts/asis reconcile`；测试为 `PYTHONPATH=src python3 -m unittest discover -s tests -v`。ROG 使用 `asis` 包装命令显式选择 Python 3.11。详见 [README.md](README.md)、[ROG](docs/pa0-rog.md) 与 [Mac 实施说明](docs/pa0-mac.md)。Mac 数据位于 `~/Library/Application Support/PersonalAsis/`，Linux／WSL 默认为 `~/.local/share/personal-asis/`，均不放入代码目录。
 
 ## 文档分工与阅读顺序
 
@@ -33,7 +33,7 @@
 
 | 阶段 | 核心能力与约束 |
 |---|---|
-| PA0 | Mac 与 ROG 的 Markdown 证据搜索；SQLite FTS5、稳定文档身份、版本、副本聚合、离线部分结果与索引核对；不调用模型、不做向量检索、文件监听或图像理解 |
+| PA0 | Mac 单节点纯文本证据搜索，ROG 为当前停用的可选扩展；SQLite FTS5、稳定文档身份、版本、副本聚合、离线部分结果与索引核对；不调用模型、不做向量检索、文件监听或图像理解 |
 | PA1 | 本机混合检索、最小上下文包与模型分析；按需外部研究，结论有证据和不确定性 |
 | PA2 | 提取候选任务；用户确认后才成为正式任务 |
 | PA3 | 将确认的时间安排投射至 Google Calendar；助手保有任务状态权威 |
@@ -60,6 +60,7 @@
 - 用户允许全量本机只读访问 Obsidian `daily`；实际根路径待配置。此许可不等于云端全文处理、个人模型形成或心理标签授权。复盘按相关性检索，默认保持原有私密政策。
 - 健康资料及派生结果默认私密，标题和路径也按敏感数据处理。普通资料夹中的健康条目不能因目录分类而默认进入云端。
 - 用户本轮明确允许 Life 中包括日记和健康条目在内的标题、来源和相对路径提示进入 VPS／飞书／PWA。此例外通过本机 `private_remote_metadata` 单独记录，仅作用于 Life，不改私密分类，不授权正文、摘录、云模型或其他来源。允许访问新目录不自动继承旧目录授权。
+- 用户另行授权非私密资料最小摘录及 PWA 按需正文，仅经端到端加密中转，VPS 不落明文；本机 `remote_evidence`、元数据路径许可和当前私密分类共同检查。私密元数据许可、阅读许可均不授权模型；详见 [文本与恢复记录](docs/pa0-text.md)。
 - 飞书是选定的餐食与作息采集入口，可回显本次提交的识别候选、修订与事件时间；不带入 journal 原文、心理解读或历史健康周报。普通资料搜索仍遵循原有飞书摘要限制。
 - 飞书平台会接触提交内容，事件处理可能短暂接触明文；VPS 不持久化明文照片、作息内容或相关日志。离线输入队列按节点加密，明确保留期和失败回执。
 - 云模型只接收来源政策和提供商授权允许的最小上下文；多模型分别检查权限并合计预算，不能因切换模型扩大资料范围。
@@ -81,5 +82,5 @@
 - 仅为难以逆转、缺少背景会令人困惑且存在真实取舍的决定新增 ADR；普通可逆修改不额外制造审批流程。
 - 修改文档时检查相对链接、代码围栏、阶段与权限的一致性；不为纯文字调整增加应用测试。
 - 实现后记录真实依赖、启动与测试命令。测试使用合成资料，重点验证索引新增/修改/删除、身份与副本、离线恢复、幂等、来源政策和敏感内容不泄露。
-- PA0 验收包含 Mac/ROG 实际协作、渠道披露限制及规格指定测试源的只读手工搜索；仅通过本机模拟测试不能宣布整个阶段完成。
+- 当前 PA0 按用户明确调整的 Mac 单节点范围验收，包含实际 Mac↔VPS 检索、渠道披露限制及规格指定测试源的只读手工搜索；多节点能力验证保留历史记录，ROG 不再是当前运行或交付前提。不能用模拟代替现场验证。
 - 向用户用中文说明完成内容、验证结果和仍未实现或未验证的部分；确认问题只用于确实缺失的信息或未获授权的具体动作。

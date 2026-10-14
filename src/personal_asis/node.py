@@ -38,7 +38,8 @@ def connection_config(home):
 
 def policy_hash(config):
     # Includes roots/exclusions and source enable flags so revocations invalidate caches.
-    data = [(s.id, str(s.root), s.policy, s.index, s.remote_metadata, s.private_remote_metadata, s.exclude) for s in config.sources]
+    data = [(s.id, str(s.root), s.policy, s.index, s.remote_metadata, s.private_remote_metadata,
+             s.exclude, s.private_paths, s.remote_metadata_paths, s.formats, s.remote_evidence) for s in config.sources]
     return hashlib.sha256(json.dumps(data, sort_keys=True).encode()).hexdigest()
 
 
@@ -49,7 +50,9 @@ def node_policy_hash(home, config):
         documents = [tuple(r) for r in index.db.execute("""SELECT document_id,source_id,
             content_hash,policy FROM documents WHERE active=1 ORDER BY document_id""")]
         sources = [tuple(r) for r in index.db.execute("SELECT id,available FROM sources ORDER BY id")]
-    return hashlib.sha256(json.dumps([policy_hash(config), documents, sources]).encode()).hexdigest()
+        failures = [tuple(r) for r in index.db.execute(
+            "SELECT source_id,path,signature,reason FROM extraction_failures ORDER BY source_id,path")]
+    return hashlib.sha256(json.dumps([policy_hash(config), documents, sources, failures]).encode()).hexdigest()
 
 
 class NoRedirect(HTTPRedirectHandler):
@@ -106,7 +109,8 @@ def search_result(home, job):
         result = index.search(job["query"], job["channel"], job["limit"])
     payload = {"node_id": config.node_id, "channel": job["channel"],
                "hits": [h for group in result["results"] for h in group["replicas"]],
-               "sources": [{"source_id": s["source_id"], "status": s["status"]} for s in result["sources"]],
+               "sources": [{"source_id": s["source_id"], "status": s["status"],
+                            "skipped_documents": s.get("skipped_documents", 0)} for s in result["sources"]],
                "stale_candidates_skipped": result["stale_candidates_skipped"]}
     metadata_result(payload, config.node_id, job["channel"])
     return payload
@@ -130,6 +134,29 @@ class Poller:
     def close(self):
         self.db.close()
 
+    def _reader_once(self, config):
+        if not any(s.remote_evidence for s in config.sources):
+            return False
+        from .evidence import encrypt
+        response = self.client.authenticated("/v1/evidence/poll", {})
+        job = response["job"]
+        if job is None:
+            return False
+        before = node_policy_hash(self.home, config)
+        with Index(self.home / "index.sqlite3", config) as index:
+            value = index.reader(job)
+        status, envelope = value["status"], None
+        if node_policy_hash(self.home, load_config(self.home / "sources.yaml")) != before:
+            status = "denied"
+        elif status == "ready":
+            try:
+                envelope = encrypt(value["value"], job)
+            except (ImportError, ValueError, TypeError):
+                status = "failed"
+        self.client.authenticated("/v1/evidence/complete", {"request_id": job["request_id"], "lease": job["lease"],
+            "status": status, "envelope": envelope})
+        return True
+
     def once(self):
         config = load_config(self.home / "sources.yaml")
         if config.node_id != self.node_id:
@@ -140,6 +167,7 @@ class Poller:
         with self.db:
             self.db.execute("DELETE FROM outbox WHERE policy_hash!=?", (stamp,))
         job = poll["job"]
+        self._reader_once(config)
         # Retry a persisted completion if a previous reply was lost.
         for task_id, lease, _, result, _ in self.db.execute("SELECT * FROM outbox").fetchall():
             payload = json.loads(result)

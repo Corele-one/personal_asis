@@ -3,10 +3,16 @@
 from dataclasses import dataclass
 import fnmatch
 import json
+import os
 from pathlib import Path
+import sys
+
+from .extractors import FORMATS
 
 
-DEFAULT_HOME = Path.home() / "Library" / "Application Support" / "PersonalAsis"
+DEFAULT_HOME = (Path.home() / "Library" / "Application Support" / "PersonalAsis"
+                if sys.platform == "darwin" else
+                Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local" / "share")) / "personal-asis")
 
 
 @dataclass(frozen=True)
@@ -18,16 +24,28 @@ class Source:
     remote_metadata: bool
     exclude: tuple[str, ...]
     private_remote_metadata: bool = False
+    private_paths: tuple[str, ...] = ()
+    remote_metadata_paths: tuple[str, ...] | None = None
+    formats: tuple[str, ...] = ("md",)
+    remote_evidence: bool = False
 
-    def shares_metadata(self, private: bool) -> bool:
-        return self.remote_metadata and (not private or self.private_remote_metadata)
+    def shares_metadata(self, private: bool, relative: str = "") -> bool:
+        return (self.remote_metadata and (not private or self.private_remote_metadata)
+                and (self.remote_metadata_paths is None or self._matches(relative, self.remote_metadata_paths)))
 
-    def excludes(self, relative: str) -> bool:
+    @staticmethod
+    def _matches(relative: str, patterns: tuple[str, ...]) -> bool:
         path = Path(relative)
         # A directory pattern also excludes every descendant.
         candidates = [path.as_posix(), *(p.as_posix() for p in path.parents if str(p) != ".")]
         return any(fnmatch.fnmatchcase(candidate, pattern)
-                   for candidate in candidates for pattern in self.exclude)
+                   for candidate in candidates for pattern in patterns)
+
+    def excludes(self, relative: str) -> bool:
+        return self._matches(relative, self.exclude)
+
+    def is_private_path(self, relative: str) -> bool:
+        return self._matches(relative, self.private_paths)
 
 
 @dataclass(frozen=True)
@@ -61,7 +79,7 @@ def load_config(path: Path) -> Config:
         policy = item["policy"]
         if policy not in {"normal", "private"}:
             raise ValueError("policy 仅支持 normal/private")
-        for key in ("index", "remote_metadata", "private_remote_metadata"):
+        for key in ("index", "remote_metadata", "private_remote_metadata", "remote_evidence"):
             if type(item.get(key, False)) is not bool:
                 raise ValueError(f"{key} 必须是布尔值")
         if (policy == "private" and item.get("remote_metadata", False)
@@ -70,9 +88,19 @@ def load_config(path: Path) -> Config:
         excludes = item.get("exclude", [])
         if not isinstance(excludes, list) or not all(isinstance(x, str) for x in excludes):
             raise ValueError("exclude 必须是字符串数组")
+        for key in ("private_paths", "remote_metadata_paths"):
+            if key in item and (not isinstance(item[key], list) or not all(isinstance(x, str) for x in item[key])):
+                raise ValueError(f"{key} 必须是字符串数组")
+        formats = item.get("formats", ["md"])
+        if (not isinstance(formats, list) or not formats or
+                any(not isinstance(f, str) or f not in FORMATS for f in formats)):
+            raise ValueError("formats 必须是受支持的文本格式数组")
         sources.append(Source(sid, root, policy, item.get("index", True),
                               item.get("remote_metadata", False), tuple(excludes),
-                              item.get("private_remote_metadata", False)))
+                              item.get("private_remote_metadata", False),
+                              tuple(item.get("private_paths", [])),
+                              tuple(item["remote_metadata_paths"]) if "remote_metadata_paths" in item else None,
+                              tuple(dict.fromkeys(formats)), item.get("remote_evidence", False)))
     if not sources:
         raise ValueError("至少配置一个来源")
     # Overlapping roots could bypass a private source's classification.

@@ -1,10 +1,12 @@
 import argparse
 import getpass
+import importlib.util
 import json
 import os
 from pathlib import Path
 import platform
 import sqlite3
+import shutil
 import subprocess
 import sys
 
@@ -17,6 +19,7 @@ from .transport import server
 from .feishu import FeishuBridge
 from .pwa import server as pwa_server, settings as pwa_settings
 from .web_auth import WebAuth
+from .extractors import FORMATS
 
 
 def emit(value):
@@ -34,7 +37,12 @@ def doctor():
         db.close()
     return {"python": platform.python_version(), "executable": sys.executable,
             "sqlite": sqlite3.sqlite_version, "fts5_trigram": fts5,
-            "platform": platform.system(), "network": "outbound polling when coordinator.json is configured"}
+            "platform": platform.system(), "network": "outbound polling when coordinator.json is configured",
+            "text_formats": list(FORMATS),
+            "pdf_text_backend": "pdftotext" if shutil.which("pdftotext") else "pypdf" if importlib.util.find_spec("pypdf") else None,
+            "legacy_office_converter": bool(shutil.which("libreoffice") and shutil.which("unshare") and Path("/usr/lib/python3/dist-packages/uno.py").exists()),
+            "encrypted_backup": bool(importlib.util.find_spec("cryptography")),
+            "encrypted_reader": bool(importlib.util.find_spec("cryptography"))}
 
 
 def init(home, root, node_id):
@@ -64,7 +72,7 @@ def init(home, root, node_id):
 def main(argv=None):
     # Also restrict SQLite WAL/SHM sidecars and temporary output.
     os.umask(0o077)
-    parser = argparse.ArgumentParser(description="PA0 Markdown 证据检索与节点协调")
+    parser = argparse.ArgumentParser(description="PA0 纯文本证据检索与节点协调")
     parser.add_argument("--home", type=Path, default=DEFAULT_HOME, help="本机私密运行数据目录")
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("doctor")
@@ -81,9 +89,15 @@ def main(argv=None):
     commands.add_parser("catalog")
     commands.add_parser("audit")
     commands.add_parser("daemon")
+    p = commands.add_parser("backup", help="加密备份／恢复本机状态；不含原文和系统凭据")
+    p.add_argument("action", choices=["create", "restore", "recovery-key"])
+    p.add_argument("--target", type=Path)
+    p.add_argument("--archive", type=Path)
+    p.add_argument("--node-id", help="使用本机凭据库中指定节点的备份密钥")
+    p.add_argument("--use-recovery-key", action="store_true", help="隐藏输入离线恢复密钥，不放在命令参数中")
     p = commands.add_parser("service")
     p.add_argument("action", choices=["install", "uninstall"])
-    p = commands.add_parser("tunnel", help="Mac 常驻 SSH 回环隧道")
+    p = commands.add_parser("tunnel", help="Mac／WSL 常驻 SSH 回环隧道")
     p.add_argument("action", choices=["install", "uninstall"])
     p.add_argument("--host")
     p.add_argument("--ssh-port", type=int, default=22)
@@ -92,8 +106,8 @@ def main(argv=None):
     p = commands.add_parser("node")
     p.add_argument("action", choices=["enroll", "poll"])
     p = commands.add_parser("coordinator", help="协调服务本机管理；不提供公网管理接口")
-    p.add_argument("action", choices=["serve", "pair", "submit", "task", "audit", "revoke"])
-    p.add_argument("--nodes", nargs="+", default=["mac", "rog"])
+    p.add_argument("action", choices=["serve", "pair", "submit", "task", "audit", "revoke", "enable", "disable"])
+    p.add_argument("--nodes", nargs="+", default=["mac"])
     p.add_argument("--node-id")
     p.add_argument("--port", type=int, default=8765)
     p.add_argument("--query")
@@ -113,6 +127,26 @@ def main(argv=None):
     try:
         if args.command == "doctor":
             result = doctor()
+        elif args.command == "backup":
+            from .backup import create as create_backup, restore as restore_backup, key_store
+            if args.action == "create":
+                if args.target is None:
+                    raise ValueError("需要 --target 指定用户控制的备份目录")
+                result = create_backup(home, args.target.expanduser().absolute())
+            else:
+                node_id = args.node_id
+                if not node_id and not args.use_recovery_key:
+                    node_id = load_config(home / "sources.yaml").node_id
+                if args.action == "recovery-key":
+                    if not sys.stdout.isatty():
+                        raise ValueError("恢复密钥只允许在本机交互终端查看，请离线妥善保存")
+                    result = {"recovery_key": key_store(node_id).get()}
+                else:
+                    if args.target is None or args.archive is None:
+                        raise ValueError("需要 --archive 和空目录 --target")
+                    result = restore_backup(args.archive.expanduser().absolute(), args.target.expanduser().absolute(),
+                        store=key_store(node_id) if node_id else None,
+                        recovery_key=getpass.getpass("离线恢复密钥（不回显）: ") if args.use_recovery_key else None)
         elif args.command == "init":
             result = init(home, args.test_root, args.node_id)
         elif args.command == "service":
@@ -175,11 +209,14 @@ def main(argv=None):
                         pass
                 return 0
             with Coordinator(path, tuple(args.nodes)) as coordinator:
-                if args.action in {"pair", "revoke"}:
+                if args.action in {"pair", "revoke", "enable", "disable"}:
                     if not args.node_id:
                         raise ValueError("需要 --node-id")
-                    result = (coordinator.pair(args.node_id) if args.action == "pair"
-                              else coordinator.revoke(args.node_id))
+                    if args.action in {"enable", "disable"}:
+                        result = coordinator.set_enabled(args.node_id, args.action == "enable")
+                    else:
+                        result = (coordinator.pair(args.node_id) if args.action == "pair"
+                                  else coordinator.revoke(args.node_id))
                 elif args.action == "submit":
                     if not args.query or not args.request_id:
                         raise ValueError("需要 --query 和持久化的 --request-id")

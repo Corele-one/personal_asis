@@ -165,6 +165,43 @@ class NodeTests(unittest.TestCase):
         for field in ("excerpt", "original_uri", "line_start", "PRIVATE_SENTINEL"):
             self.assertNotIn(field, text)
 
+    def test_remote_path_allowlist_revocation_clears_cached_metadata(self):
+        home, mac = self.node("mac")
+        path = home / "sources.yaml"
+        config = json.loads(path.read_text())
+        config["sources"][0]["remote_metadata_paths"] = ["same.md"]
+        path.write_text(json.dumps(config))
+        task = self.submit()
+        mac.once()
+        self.assertEqual(len(self.view(task)["results"]), 1)
+        before = policy_hash(load_config(path))
+        config["sources"][0]["remote_metadata_paths"] = []
+        path.write_text(json.dumps(config))
+        self.assertNotEqual(before, policy_hash(load_config(path)))
+        mac.once()
+        self.assertEqual(self.view(task)["results"], [])
+
+    def test_extraction_coverage_changes_invalidate_coordinator_snapshots(self):
+        home, mac = self.node("mac")
+        path = home / "sources.yaml"
+        config = json.loads(path.read_text())
+        config["sources"][0]["formats"] = ["md", "docx"]
+        path.write_text(json.dumps(config))
+        task = self.submit()
+        mac.once()
+        self.assertFalse(self.view(task)["coverage_incomplete"])
+        broken = home / "Note" / "broken.docx"
+        broken.write_bytes(b"not a valid document")
+        with Index(home / "index.sqlite3", load_config(path)) as index:
+            index.reconcile()
+        mac.once()
+        self.assertEqual(self.view(task)["coverage"][0]["skipped_documents"], 1)
+        broken.unlink()
+        with Index(home / "index.sqlite3", load_config(path)) as index:
+            index.reconcile()
+        mac.once()
+        self.assertFalse(self.view(task)["coverage_incomplete"])
+
     def test_endpoint_rejects_public_http_and_credential_urls(self):
         home = self.base / "validation"
         home.mkdir()

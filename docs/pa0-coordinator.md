@@ -1,6 +1,6 @@
 # PA0 协调服务与出站节点
 
-协调服务、节点配对／短期凭据、Mac 轮询、飞书和 [IP PWA](pa0-pwa.md) 已部署，真实用户登录与搜索均验证通过。当前仅显示授权元数据；正文证据传输、加密备份和真实 ROG 联调未完成，完整 PA0 未验收。
+当前仅启用 Mac 节点，ROG 已按用户选择停用。新搜索只派发 Mac，旧搜索也不等待或显示已停用 ROG 的缓存。停用保留节点长期凭据摘要及本机状态，撤销会话和远程结果；恢复需管理员显式启用。PWA／飞书正常使用，历史双节点验收见 [文本记录](pa0-text.md)，当前维护见 [Mac 单节点运行](pa0-mac-only.md)。
 
 ## 协调协议
 
@@ -12,8 +12,10 @@
 | `POST /v1/session` | 节点长期凭据换取 5 分钟会话；换发会话或重新配对使旧会话失效 |
 | `POST /v1/poll` | Bearer 会话；更新心跳、同步本机政策摘要、原子领取一项工作 |
 | `POST /v1/complete` | Bearer 会话；验证节点身份、任务租约及元数据字段后完成或等待来源恢复 |
+| `POST /v1/evidence/poll` | Bearer 会话；领取仅在内存中的限时阅读请求 |
+| `POST /v1/evidence/complete` | Bearer 会话；只接受严格密文封装或拒绝／过期状态，不持久化内容 |
 
-HTTP 服务固定监听 `127.0.0.1`，无跨源许可，不记录请求日志。正文上限 512 KiB；禁止 chunked 输入。节点不跟随重定向、不使用环境 HTTP 代理。HTTPS 使用系统证书验证；不提供跳过证书验证选项。没有公网节点管理端点、来源配置写入端点或完整原文传输端点。
+HTTP 服务固定监听 `127.0.0.1`，无跨源许可，不记录请求日志。正文上限 512 KiB；禁止 chunked 输入。节点不跟随重定向、不使用环境 HTTP 代理。HTTPS 使用系统证书验证；不提供跳过证书验证选项。没有公网节点管理或来源配置写入端点。另有受限加密阅读领取／完成接口，无法按任意文件路径读原文。
 
 每项工作有随机租约，默认 120 秒。同节点的有效租约只能由一次领取产生；过期结果不接受，下一次轮询重新领取。成功结果重传时仅接受同一租约、相同结果，避免丢失回执导致重复完成事件。本机完成 outbox 在发送前持久化；进程重启后重传，重传前重新检查来源政策及文档当前版本。过期租约 outbox 丢弃，由任务重新领取。
 
@@ -21,7 +23,7 @@ HTTP 服务固定监听 `127.0.0.1`，无跨源许可，不记录请求日志。
 
 来源配置变更、索引核对发现的版本／分类／可用性变化会改变节点政策摘要。下一次成功轮询清空该节点历史任务中的缓存元数据和旧租约，然后重新检索。离线时 VPS 不能立即获知本机政策变更。文档 frontmatter 分类变更需要显式／定期核对后同步；发送新的搜索和重传结果前仍检查原文，阻止未核对的新私密分类被发送。
 
-结果严格限定 UUID、版本、标题、节点、来源及相对路径等元数据；拒绝正文、摘录、文件 URI、绝对路径或未知字段。private 默认禁止远程，只有单独精确授权的源级 `private_remote_metadata` 许可可展示私密元数据，仍不改分类／正文权限。排除规则及 `remote_metadata: false` 始终生效。现有来源为 Study／Life，旧 Note／Daily 已移除。
+搜索结果严格限定 UUID、版本、标题、节点、来源、相对路径及可选阅读资格等元数据；拒绝正文、摘录、文件 URI、绝对路径或未知字段。private 默认禁止远程，只有单独精确授权的源级 `private_remote_metadata` 许可可展示私密元数据，仍不改分类／正文权限。排除规则及 `remote_metadata: false` 始终生效。现有来源为 Study／Life，旧 Note／Daily 已移除。
 
 ## 无域名的验证方式
 
@@ -35,7 +37,7 @@ ssh -N -o ExitOnForwardFailure=yes -o ServerAliveInterval=15 \
 
 在本机私密运行目录加入 `coordinator.json`，参见 [样例](../config/coordinator.example.json)。它只有服务地址及传输类型，没有密钥。仅允许显式标记 `ssh_tunnel` 的 `http://127.0.0.1:端口`；公网 HTTP 被拒绝。隧道需要单独维持，断开后节点保留工作并重试。它不提供手机 PWA、独立用户 Web 认证或公网 HTTPS；这些仍属于后续部署。
 
-服务器独立 systemd 单元见 [部署配置](../deploy/personal-asis-coordinator.service)，以 `mac` 运行，源码为 `/home/mac/personal-asis`，运行库为 `/home/mac/.local/share/personal-asis-coordinator`。当前仅配置生产 `mac`；接入 ROG 时在服务及管理命令中加入 `--nodes mac rog`。协调服务独立运行，飞书使用现有 AstrBot 的受限插件，不复用其模型管线。
+服务器独立 systemd 单元见 [部署配置](../deploy/personal-asis-coordinator.service)，以 `mac` 运行，源码为 `/home/mac/personal-asis`，运行库为 `/home/mac/.local/share/personal-asis-coordinator`。当前启用节点仅为 `mac`；ROG 注册保留但 `enabled=0`，服务声明使用 `--nodes mac`。原 `rog.conf` drop-in 已改为 Mac 单节点，Mac 配对保留。协调服务独立运行，飞书使用现有 AstrBot 的受限插件，不复用其模型管线。
 
 ```sh
 # 以下在 VPS 执行；首次配对的输出是敏感短效码，不进入日志或聊天
@@ -55,7 +57,7 @@ scripts/asis --home /home/mac/.local/share/personal-asis-coordinator \
   coordinator audit --nodes mac
 ```
 
-Mac 已有 launchd daemon 读取 `coordinator.json` 后每 30 秒轮询。删除该文件停止新的轮询；卸载服务保留本机状态。系统凭据库未解锁或不可用时明确失败，不退回明文凭据文件。Linux 节点支持 `secret-tool` 和 Secret Service；WSL 的实际凭据库及用户服务仍需现场配置验证。
+Mac 已有 launchd daemon 读取 `coordinator.json` 后每 30 秒轮询。删除该文件停止新的轮询；卸载服务保留本机状态。系统凭据库未解锁或不可用时明确失败，不退回明文凭据文件。普通 Linux 节点支持 `secret-tool` 和 Secret Service；WSL 使用 Windows 凭据管理器和 systemd 用户服务，已现场配置验证，见 [ROG 说明](pa0-rog.md)。
 
 Mac 常驻隧道已安装为 `local.personal-asis.tunnel`，随登录启动，断线后由 launchd 有界间隔重启。维护命令：
 

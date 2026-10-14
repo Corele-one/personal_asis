@@ -41,7 +41,7 @@ The VPS provides task coordination, node status, a private HTTPS PWA, Feishu eve
 
 ### Local Nodes
 
-PA0 runs on both the Mac and the ROG WSL environment. Each node:
+The current PA0 deployment runs on Mac only, following the user's explicit scope change on 2026-10-14. ROG WSL remains an optional, disabled node. Each enabled node:
 
 - reads only its local Source Configurations;
 - owns its SQLite index and transactional state;
@@ -55,7 +55,7 @@ The Mac runs as a user `launchd` service. The ROG node runs as a WSL user servic
 
 ### Source data
 
-Sources remain on their existing systems. PA0 indexes Markdown body, titles, links, tags, and frontmatter; it records image and attachment paths only.
+Sources remain on their existing systems. PA0 indexes Markdown body, titles, links, tags and frontmatter, plus explicitly enabled PDF/Office text with page, paragraph, slide or cell locations. Images, audio and video are not decoded; OCR is excluded. See [text implementation](docs/pa0-text.md).
 
 The initial test configuration is:
 
@@ -66,7 +66,7 @@ The initial test configuration is:
 
 Future wellbeing sources are private by default, including derived reviews and excerpts. Their titles, paths, and filenames can reveal sensitive information: neither the VPS catalog nor Feishu may expose those fields by default. Health material must not be treated as `normal` because it is stored inside `Note/`; explicit private-source exclusions and classification take precedence. Enabling a wellbeing source requires local configuration that specifies whether indexing, model use, and remote evidence display are allowed. Existing `Daily/` restrictions remain in force.
 
-The live Mac configuration now uses the user's Study and Life roots. Test Note/Daily configuration and index records were removed at the user's request; original test files remain on disk. Study allows nonprivate remote metadata. The user explicitly authorized Life's private diary/health titles, source and relative path hints for VPS, Feishu and PWA; a separate local `private_remote_metadata` grant applies only to Life. Classification remains private; this grant never authorizes source text, excerpts, model context or another root. Permission to read a new root alone does not imply remote disclosure or inherit an old root's grant.
+The live Mac configuration now uses the user's Study and Life roots. Test Note/Daily configuration and index records were removed at the user's request; original test files remain on disk. Study allows nonprivate remote metadata. The user explicitly authorized Life's private diary/health titles, source and relative path hints for VPS, Feishu and PWA; a separate local `private_remote_metadata` grant applies only to Life. Classification remains private; this grant never authorizes source text, excerpts, model context or another root. Permission to read a new root alone does not imply remote disclosure or inherit an old root's grant. The ROG user separately authorized four Windows roots for local read-only indexing and nonprivate title/source/relative-path metadata disclosure. Mixed-source `private_paths` classify relative paths as private; optional `remote_metadata_paths` restrict disclosure to a local allowlist (omission preserves existing behavior, an empty list denies all). Source and frontmatter private policies still take precedence, and policy changes invalidate cached remote results. Unknown ROG paths are not automatically added to its exact-path allowlist. No body-based health classifier is introduced.
 
 `sources.yaml` is local to its owning node. It may only be edited locally, never via PWA or Feishu.
 
@@ -84,7 +84,7 @@ Each Local Node uses SQLite for document metadata, index state, task state, conf
 
 ### VPS catalog
 
-PA0 synchronizes only policy-authorized metadata: node status, source ID, document ID, title/path hint, update time, and availability. No source text, excerpts, summaries, vectors, or derived cache are stored in PA0.
+PA0 search tasks synchronize policy-authorized metadata: node status, source ID, document ID, title/path hint, update time, availability and coverage counts. The user separately authorized nonprivate minimal excerpts and an on-demand PWA text reader. Local `remote_evidence`, metadata path permissions and fresh private/version checks jointly gate access. Nodes encrypt bounded text and locations for a temporary browser key; the VPS holds only ephemeral ciphertext in memory, never source plaintext or decryption keys. Feishu remains metadata-only. Local FTS holds extracted text; model calls, vectors and broader derived caches remain disabled.
 
 ## 5. Security and privacy requirements
 
@@ -95,19 +95,19 @@ PA0 synchronizes only policy-authorized metadata: node status, source ID, docume
 - PWA shows evidence cards with title, node, source, path, location, and minimal excerpt according to policy. Original files open only through an online owning Local Node on the user's device.
 - Source policy changes are local-only control-plane changes.
 - Node state backups are encrypted before leaving the node; decryption keys never enter the VPS.
-- The initial backup target is intentionally deployment-configurable, but must be user-controlled cloud storage or offline media.
+- The user explicitly selected `F:\Backup` on ROG as the current encrypted backup target. This local target is accepted without claiming offsite or offline redundancy. Keys stay in each owning node's OS credential store; independent recovery-key export is a separate user operation. See [backup and recovery](docs/pa0-text.md).
 
 ## 6. PA0 — source evidence search
 
 ### Implementation status
 
-The Mac index, launchd, VPS coordinator, outbound node protocol, Feishu plugin and IP HTTPS PWA are deployed. Real node enrollment/recovery, Feishu user pairing/search/API receipts and PWA owner login/search have been verified. Study and Life are the only live sources (446 Markdown documents); their explicitly granted metadata may be displayed, while body/excerpt/model permissions remain closed. The user removed the old test sources and opened a dedicated VM's TCP 443 rule in Cloud Shell. Trusted IP TLS, renewal dry-run, anonymous API rejection and 62 application/plugin checks passed. See [Mac](docs/pa0-mac.md), [coordinator](docs/pa0-coordinator.md), [Feishu](docs/pa0-feishu.md) and [PWA](docs/pa0-pwa.md) validation. ROG, original/excerpt evidence transport and encrypted backups remain incomplete; current cards are metadata-only. PA0 has not passed the full gate and no PA1 model capability is enabled.
+On 2026-10-14 the user explicitly chose Mac-only retrieval and disabled ROG to reduce maintenance. The active production node is `mac` (446 Study/Life Markdown documents); PWA, Feishu and encrypted nonprivate text reading remain enabled. ROG services, tunnel and Windows startup task are disabled, and its server registration is disabled without erasing enrollment, source files, local index or encrypted backups. New searches target only Mac; old views exclude disabled nodes and their cached results. Earlier real two-node replica/offline tests remain historical validation, not a current deployment prerequisite. Mac encrypted local backup/restore passed; its additional F-drive copy was not completed and the transfer attempt ended. See [Mac-only operation](docs/pa0-mac-only.md) and [text implementation](docs/pa0-text.md). No PA1 model capability is enabled.
 
 ### User flows
 
 1. The user submits a query through Feishu or PWA.
-2. The VPS creates a search task and assigns it to both Local Nodes.
-3. Each online node performs SQLite FTS5 retrieval against its configured Markdown sources.
+2. The VPS creates a search task and assigns it only to enabled Local Nodes (currently Mac).
+3. Each online node performs SQLite FTS5 retrieval against its configured text sources.
 4. The VPS aggregates allowed metadata and evidence locations into result cards.
 5. PWA renders a State-First view: query, evidence cards, node availability, active/waiting tasks, and audit entry point.
 6. Feishu sends a Feishu Search Summary and links to PWA for details.
@@ -127,10 +127,10 @@ If a node is sleeping or offline, the VPS marks the task as waiting for that nod
 
 PA0 is complete only when all of the following are demonstrated:
 
-1. Mac and ROG each index an isolated synthetic Markdown fixture.
-2. Searches return stable document identities and evidence locations from both nodes.
-3. Identical content on both nodes appears as one Replica Group with both evidence paths.
-4. With one node offline, PWA and Feishu show partial results and the waiting-node state; when it resumes, the task completes automatically.
+1. The active Mac node indexes an isolated synthetic Markdown fixture. ROG is optional under the user's revised scope.
+2. Searches return stable document identities and current evidence locations from the active node.
+3. Identical content groups by version and preserves separate document identities. Real Mac/ROG same-version aggregation was already verified; reactivating ROG is not a current acceptance condition.
+4. When an enabled node is offline, PWA and Feishu show waiting/partial state and resume the same task after recovery. Disabled ROG must never cause waiting or expose its old results. Real multi-node offline/recovery is retained as prior evidence.
 5. Automated fixture tests create, modify, and delete Markdown files and verify reconciliation behavior.
 6. A read-only manual search is performed against `/Users/corleone/Documents/test_for_asis`; it must not mutate that source.
 7. Feishu and PWA expose only the information each channel is permitted to show.
@@ -151,7 +151,7 @@ Cross-domain specialist requests are routed and consolidated by the supervisor. 
 
 Stopping a continuing delegation defaults to pausing it and its child work, retaining results and awaiting explicit resumption; stopping only the current run and cancelling the delegation are separate explicit actions. Active user requests receive an early acknowledgement/plan and state entry point, then preliminary evidence-aware results as available before background completion. They receive priority and reserved capacity over ordinary background work, subject to total budget limits and configured deadline exceptions.
 
-Reading inputs use separate Subscription Discovery and Personal Selection entry paths. WUCAI directly adapts its official read interfaces; Folo includes all existing subscriptions screened for delegation topics; WeChat initially uses existing clips, shared links, and available subscriptions. Zhihu uses its official CLI, with followed-content coverage still to be verified; Xiaohongshu uses the user-selected `xpzouying/xiaohongshu-mcp` behind a controlled read adapter for keyword searches, shared notes, visible favorites, and the home recommendation feed. Personal selections remain searchable, while subscription bodies are retrieved and cached when relevant rather than fully archived. Ordinary articles and nonsensitive user annotations may enter minimal MiMo Context Bundles; private/health restrictions remain in force and uncertain sensitivity must be resolved locally before disclosure. See [information-source investigation and design choices](docs/information-sources.md), [reading-retention ADR](docs/adr/0027-retain-personal-selections-and-cache-relevant-subscription-content.md), and [reading-disclosure ADR](docs/adr/0028-allow-minimal-mimo-context-for-nonsensitive-reading-content.md). Obsidian remains optional. Cache-expiry mechanics, account/history coverage, concrete policy classification, budgets, and connector implementation remain pending; none has been enabled, and the existing implementation still indexes only locally configured Markdown.
+Reading inputs use separate Subscription Discovery and Personal Selection entry paths. WUCAI directly adapts its official read interfaces; Folo includes all existing subscriptions screened for delegation topics; WeChat initially uses existing clips, shared links, and available subscriptions. Zhihu uses its official CLI, with followed-content coverage still to be verified; Xiaohongshu uses the user-selected `xpzouying/xiaohongshu-mcp` behind a controlled read adapter for keyword searches, shared notes, visible favorites, and the home recommendation feed. Personal selections remain searchable, while subscription bodies are retrieved and cached when relevant rather than fully archived. Ordinary articles and nonsensitive user annotations may enter minimal MiMo Context Bundles; private/health restrictions remain in force and uncertain sensitivity must be resolved locally before disclosure. See [information-source investigation and design choices](docs/information-sources.md), [reading-retention ADR](docs/adr/0027-retain-personal-selections-and-cache-relevant-subscription-content.md), and [reading-disclosure ADR](docs/adr/0028-allow-minimal-mimo-context-for-nonsensitive-reading-content.md). Obsidian remains optional. Cache-expiry mechanics, account/history coverage, concrete policy classification, budgets, and connector implementation remain pending; none has been enabled, and reading-platform connectors remain unimplemented; current indexing uses locally configured Markdown and explicitly enabled PDF/Office text.
 
 Personal selections use best-effort backfill of all accessible history with explicit coverage limits; subscription streams are mainly incremental from activation. Ordinary body caches expire after 30 days, while selected content follows its own retention rules and cited minimal evidence follows audit policy. The Agent may automatically promote bodies under user-approved rules, with explicit Agent Selection provenance, reasons, and revocation. Removing a local selection does not automatically exclude future rule-based selection; source deletion, permission revocation, and fresh policy checks still apply. Exact rules, expiry calculation, and evidence-retention mechanics remain to be implemented. Local promotion does not write favorites back to platforms or imply user endorsement. See [selection-rule ADR](docs/adr/0030-promote-reading-cache-under-approved-selection-rules.md).
 
@@ -238,7 +238,7 @@ Code, specifications, reusable rules, and sanitized fixtures are versioned in a 
 
 The following are intentionally not decided until deployment, and must not be silently assumed:
 
-- backup storage target;
+- future independent/offsite backup placement beyond the user-selected local F drive;
 - MiMo endpoint, model ID, plan, and current quotas;
 - future PWA passkey/provider migration, if requested; the current static-password method was explicitly selected;
 - calendar OAuth account configuration;

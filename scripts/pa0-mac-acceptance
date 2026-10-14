@@ -1,0 +1,103 @@
+#!/usr/bin/env python3
+"""Run locally on the Mac. Temporarily index synthetic fixtures, then clean up."""
+
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+import plistlib
+import signal
+import subprocess
+import sys
+import time
+
+
+SHARED = b"# PA0 shared text fixture\n\npa0replica20261014 synthetic federation proof.\n"
+SOURCE_ID = "pa0-acceptance"
+
+
+def write_config(path, data):
+    temporary = path.with_name("sources.acceptance.tmp")
+    with temporary.open("w", encoding="utf-8") as handle:
+        os.chmod(temporary, 0o600)
+        json.dump(data, handle, ensure_ascii=False, indent=2)
+        handle.write("\n")
+    os.replace(temporary, path)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--minutes", type=int, default=20)
+    parser.add_argument("--print-fixture-hash", action="store_true")
+    args = parser.parse_args()
+    if args.print_fixture_hash:
+        print(hashlib.sha256(SHARED).hexdigest())
+        return 0
+    if sys.platform != "darwin" or not 1 <= args.minutes <= 60:
+        raise ValueError("This fixture setup must run locally on the Mac, for 1-60 minutes")
+    os.umask(0o077)
+    home = Path.home() / "Library/Application Support/PersonalAsis"
+    config_path = home / "sources.yaml"
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    if config["node_id"] != "mac" or any(s["id"] == SOURCE_ID for s in config["sources"]):
+        raise ValueError("Expected the existing Mac node without an acceptance source")
+    plist = Path.home() / "Library/LaunchAgents/local.personal-asis.mac.plist"
+    with plist.open("rb") as handle:
+        service = plistlib.load(handle)
+    python = service["ProgramArguments"][0]
+    env = os.environ.copy()
+    env.update(service.get("EnvironmentVariables", {}))
+    argv = [python, "-m", "personal_asis", "--home", str(home)]
+    fixture = home / "acceptance-fixture"
+    fixture.mkdir(mode=0o700, exist_ok=True)
+    contents = {"shared.md": SHARED,
+        "mac.md": b"# PA0 mac fixture\n\npa0replica20261014 node-specific mac evidence.\n",
+        "private.md": b"---\nsensitivity: private\n---\n# PRIVATE_FIXTURE_CANARY\n\npa0replica20261014 PRIVATE_BODY_CANARY.\n"}
+    if any((fixture / name).exists() for name in contents):
+        raise ValueError("Acceptance fixture files already exist; refusing to overwrite")
+    for name, raw in contents.items():
+        (fixture / name).write_bytes(raw)
+    config["sources"].append({"id": SOURCE_ID, "root": str(fixture), "policy": "normal",
+        "index": True, "remote_metadata": True, "remote_evidence": True, "exclude": []})
+    write_config(config_path, config)
+    def interrupted(*_):
+        raise KeyboardInterrupt()
+    signal.signal(signal.SIGTERM, interrupted)
+    try:
+        result = subprocess.run(argv + ["reconcile"], env=env, capture_output=True, timeout=120)
+        if result.returncode:
+            raise ValueError("Mac reconciliation failed; original configuration will be restored")
+        print(json.dumps({"acceptance_fixture_ready": True, "node_id": "mac",
+                          "shared_hash": hashlib.sha256(SHARED).hexdigest(), "minutes": args.minutes}), flush=True)
+        print("Keep this terminal open. Ctrl+C removes only the synthetic test source.", flush=True)
+        deadline = time.monotonic() + args.minutes * 60
+        while time.monotonic() < deadline:
+            result = subprocess.run(argv + ["node", "poll"], env=env, capture_output=True, timeout=60)
+            if result.returncode:
+                print(json.dumps({"poll_retry": True}), flush=True)
+            time.sleep(2)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        current = json.loads(config_path.read_text(encoding="utf-8"))
+        # Preserve any unrelated source changes made while the fixture was active.
+        current["sources"] = [s for s in current["sources"]
+            if not (s.get("id") == SOURCE_ID and s.get("root") == str(fixture))]
+        write_config(config_path, current)
+        for name, raw in contents.items():
+            path = fixture / name
+            if path.is_file() and not path.is_symlink() and path.read_bytes() == raw:
+                path.unlink()
+        result = subprocess.run(argv + ["reconcile"], env=env, capture_output=True, timeout=120)
+        subprocess.run(argv + ["node", "poll"], env=env, capture_output=True, timeout=60)
+        print(json.dumps({"acceptance_fixture_removed": True, "reconciled": result.returncode == 0}), flush=True)
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        raise SystemExit(main())
+    except (OSError, ValueError, KeyError, subprocess.SubprocessError):
+        print("Acceptance setup failed. No source originals were edited.", file=sys.stderr)
+        raise SystemExit(1)

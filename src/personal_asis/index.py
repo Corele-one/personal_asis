@@ -1,6 +1,7 @@
 """Transactional local FTS index. Sources are always opened read-only."""
 
 from collections import Counter, defaultdict
+from contextlib import contextmanager
 from datetime import datetime, timezone
 import json
 import os
@@ -12,6 +13,7 @@ import uuid
 
 from .config import Config
 from .markdown import digest, excerpt, parse
+from .extractors import extract, ExtractionError, MAX_SOURCE_BYTES, EXTRACTOR_VERSION
 
 
 def now() -> str:
@@ -44,7 +46,15 @@ CREATE TABLE IF NOT EXISTS operations (
  id TEXT PRIMARY KEY, kind TEXT NOT NULL, at TEXT NOT NULL, details TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS state (key TEXT PRIMARY KEY, value TEXT NOT NULL);
-PRAGMA user_version=1;
+CREATE TABLE IF NOT EXISTS extractions (
+ document_id TEXT PRIMARY KEY, format TEXT NOT NULL, locations TEXT NOT NULL,
+ extractor_version TEXT NOT NULL, units INTEGER NOT NULL, text_units INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS extraction_failures (
+ source_id TEXT NOT NULL, path TEXT NOT NULL, signature TEXT NOT NULL,
+ reason TEXT NOT NULL, checked_at TEXT NOT NULL, PRIMARY KEY(source_id,path)
+);
+PRAGMA user_version=2;
 """
 
 
@@ -59,12 +69,16 @@ class Index:
         self.db.execute("PRAGMA foreign_keys=ON")
         self.db.execute("PRAGMA journal_mode=WAL")
         version = self.db.execute("PRAGMA user_version").fetchone()[0]
-        if version not in {0, 1}:
+        if version not in {0, 1, 2}:
             raise ValueError("不支持此数据库版本")
         try:
-            self.db.executescript(SCHEMA)
+            if version != 2:
+                self.db.executescript(SCHEMA)
         except sqlite3.OperationalError as exc:
-            raise ValueError("需要带 FTS5 trigram 的 SQLite 3.34+；运行 doctor 核查") from exc
+            self.db.close()
+            if "fts5" in str(exc).lower() or "trigram" in str(exc).lower():
+                raise ValueError("需要带 FTS5 trigram 的 SQLite 3.34+；运行 doctor 核查") from exc
+            raise
         with self.db:
             self._sync_config()
 
@@ -80,22 +94,32 @@ class Index:
 
     def _sync_config(self):
         current = {s.id: s for s in self.config.sources}
-        for stored in self.db.execute("SELECT * FROM sources").fetchall():
+        stored_sources = {r["id"]: r for r in self.db.execute("SELECT * FROM sources").fetchall()}
+        for stored in stored_sources.values():
             source = current.get(stored["id"])
             if source is None or not source.index or str(source.root) != stored["root"]:
+                if self.db.execute("SELECT 1 FROM extraction_failures WHERE source_id=? LIMIT 1", (stored["id"],)).fetchone():
+                    self.db.execute("DELETE FROM extraction_failures WHERE source_id=?", (stored["id"],))
                 for row in self.db.execute("SELECT * FROM documents WHERE source_id=? AND active=1",
                                            (stored["id"],)).fetchall():
                     self._remove(row)
-                self.db.execute("UPDATE sources SET enabled=0, available=0 WHERE id=?", (stored["id"],))
+                if stored["enabled"] or stored["available"]:
+                    self.db.execute("UPDATE sources SET enabled=0, available=0 WHERE id=?", (stored["id"],))
         for source in current.values():
-            self.db.execute("""INSERT INTO sources(id,root,policy,enabled,remote_metadata)
-                VALUES(?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET root=excluded.root,
-                policy=excluded.policy,enabled=excluded.enabled,remote_metadata=excluded.remote_metadata""",
-                            (source.id, str(source.root), source.policy, source.index, source.remote_metadata))
+            stored = stored_sources.get(source.id)
+            values = (str(source.root), source.policy, source.index, source.remote_metadata)
+            if stored is None or tuple(stored[k] for k in ("root", "policy", "enabled", "remote_metadata")) != values:
+                self.db.execute("""INSERT INTO sources(id,root,policy,enabled,remote_metadata)
+                    VALUES(?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET root=excluded.root,
+                    policy=excluded.policy,enabled=excluded.enabled,remote_metadata=excluded.remote_metadata""",
+                                (source.id, *values))
             for row in self.db.execute("SELECT * FROM documents WHERE source_id=? AND active=1",
                                        (source.id,)).fetchall():
-                if source.excludes(row["path"]):
+                if source.excludes(row["path"]) or Path(row["path"]).suffix.lower().lstrip(".") not in source.formats:
                     self._remove(row)
+            for row in self.db.execute("SELECT path FROM extraction_failures WHERE source_id=?", (source.id,)).fetchall():
+                if source.excludes(row["path"]) or Path(row["path"]).suffix.lower().lstrip(".") not in source.formats:
+                    self.db.execute("DELETE FROM extraction_failures WHERE source_id=? AND path=?", (source.id, row["path"]))
 
     def _record(self, kind, details):
         self.db.execute("INSERT INTO operations VALUES(?,?,?,?)",
@@ -103,6 +127,18 @@ class Index:
         # Audit does not retain query plaintext or source titles/excerpts.
         cutoff = datetime.fromtimestamp(time.time() - 180 * 86400, timezone.utc).isoformat()
         self.db.execute("DELETE FROM operations WHERE at < ?", (cutoff,))
+
+    @contextmanager
+    def _reconcile_lock(self):
+        # Serialize scanners without holding SQLite's write lock while doing I/O.
+        import fcntl
+        with self.path.with_name(self.path.name + ".reconcile.lock").open("a+b") as handle:
+            os.chmod(handle.name, 0o600)
+            fcntl.flock(handle, fcntl.LOCK_EX)
+            try:
+                yield
+            finally:
+                fcntl.flock(handle, fcntl.LOCK_UN)
 
     @staticmethod
     def _scan(source):
@@ -118,7 +154,7 @@ class Index:
             for name in sorted(files):
                 path = base / name
                 rel = path.relative_to(source.root).as_posix()
-                if path.suffix.lower() != ".md" or path.is_symlink() or source.excludes(rel):
+                if path.suffix.lower().lstrip(".") not in source.formats or path.is_symlink() or source.excludes(rel):
                     continue
                 stat = path.stat()
                 found[rel] = (path, stat)
@@ -146,22 +182,26 @@ class Index:
                 os.close(directory)
         with os.fdopen(fd, "rb") as handle:
             before = os.fstat(handle.fileno())
-            raw = handle.read()
+            raw = handle.read(MAX_SOURCE_BYTES + 1)
             after = os.fstat(handle.fileno())
         attrs = ("st_dev", "st_ino", "st_size", "st_mtime_ns", "st_ctime_ns")
         stamp = lambda s: tuple(getattr(s, attr) for attr in attrs)
         if stamp(before) != stamp(after) or (expected and stamp(before) != stamp(expected)):
             raise OSError("source_changed_during_read")
+        if len(raw) > MAX_SOURCE_BYTES:
+            raise ExtractionError("source_too_large")
         return raw, after
 
-    def reconcile(self, force=False):
+    def reconcile(self, force=False, progress=None):
         report = {"node_id": self.config.node_id, "sources": [],
                   "added": 0, "modified": 0, "moved": 0, "deleted": 0, "unchanged": 0,
                   "hashes_computed": 0}
-        with self.db:
-            self._sync_config()
-            previous = self.db.execute("SELECT value FROM state WHERE key='index_version'").fetchone()
-            generation = int(previous[0]) + 1 if previous else 1
+        with self._reconcile_lock():
+            with self.db:
+                self._sync_config()
+                previous = self.db.execute("SELECT value FROM state WHERE key='index_version'").fetchone()
+                generation = int(previous[0]) + 1 if previous else 1
+                self.db.execute("INSERT OR REPLACE INTO state VALUES('index_version',?)", (str(generation),))
             for source in self.config.sources:
                 if not source.index:
                     continue
@@ -176,10 +216,15 @@ class Index:
                         old_inodes[(row["device"], row["inode"])].append(row)
                     # Read all candidate files before changing this source's index.
                     updates = []
+                    failures = []
+                    prior_failures = {r["path"]: r for r in self.db.execute(
+                        "SELECT * FROM extraction_failures WHERE source_id=?", (source.id,))}
                     unchanged = 0
                     hashes = 0
                     retained = set()
-                    for rel, (path, stat) in found.items():
+                    for ordinal, (rel, (path, stat)) in enumerate(found.items(), 1):
+                        if progress and (ordinal == 1 or ordinal % 25 == 0):
+                            progress({"source_id": source.id, "processed": ordinal - 1, "files_seen": len(found)})
                         row = old.get(rel)
                         if (row and (row["device"], row["inode"]) != (stat.st_dev, stat.st_ino)
                                 and inode_paths.get((row["device"], row["inode"]), rel) != rel):
@@ -187,13 +232,24 @@ class Index:
                             # path must not consume the moved file's document identity.
                             row = None
                         signature = (stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns)
+                        failed = prior_failures.get(rel)
+                        if not force and failed and failed["signature"] == json.dumps(signature):
+                            failures.append((rel, json.dumps(signature), failed["reason"]))
+                            continue
                         if row and not force and signature == tuple(row[k] for k in
                               ("device", "inode", "size", "mtime_ns", "ctime_ns")):
                             unchanged += 1
                             retained.add(row["rowid"])
                             continue
-                        raw, stat = self._read(path, stat, source.root)
-                        text = raw.decode("utf-8-sig")
+                        try:
+                            if stat.st_size > MAX_SOURCE_BYTES:
+                                raise ExtractionError("source_too_large")
+                            raw, stat = self._read(path, stat, source.root)
+                            extraction = extract(raw, path)
+                            text = extraction["text"]
+                        except ExtractionError as exc:
+                            failures.append((rel, json.dumps(signature), exc.reason))
+                            continue
                         content_hash = digest(raw)
                         hashes += 1
                         moved = False
@@ -212,53 +268,64 @@ class Index:
                                 moved = False
                             else:
                                 retained.add(row["rowid"])
-                        updates.append((rel, stat, row, moved, text, content_hash, parse(text, path.stem)))
+                        updates.append((rel, stat, row, moved, text, content_hash, extraction["metadata"], extraction))
                 except (OSError, UnicodeError):
-                    self.db.execute("UPDATE sources SET available=0,checked_at=? WHERE id=?", (now(), source.id))
+                    with self.db:
+                        self.db.execute("UPDATE sources SET available=0,checked_at=? WHERE id=?", (now(), source.id))
                     report["sources"].append({"source_id": source.id, "status": "unavailable_or_unreadable"})
                     continue
-                for row in old.values():
-                    if row["rowid"] not in retained:
-                        self._remove(row)
-                        report["deleted"] += 1
-                # Release unique current paths before applying moves, including path swaps.
-                for _, _, row, _, _, _, _ in updates:
-                    if row:
-                        self.db.execute("UPDATE documents SET active=0 WHERE rowid=?", (row["rowid"],))
-                for rel, stat, row, moved, text, content_hash, metadata in updates:
-                    doc_id = row["document_id"] if row else str(uuid.uuid4())
-                    policy = "private" if source.policy == "private" or metadata["private"] else "normal"
-                    indexed_at = now()
-                    fields = (doc_id, source.id, rel, stat.st_dev, stat.st_ino, stat.st_size,
-                              stat.st_mtime_ns, stat.st_ctime_ns, content_hash, metadata["title"],
-                              policy, json.dumps(metadata["links"], ensure_ascii=False), indexed_at, generation)
-                    if row:
-                        self.db.execute("""UPDATE documents SET document_id=?,source_id=?,path=?,device=?,inode=?,
-                          size=?,mtime_ns=?,ctime_ns=?,content_hash=?,title=?,policy=?,links=?,indexed_at=?,
-                          index_version=?,active=1 WHERE rowid=?""", (*fields, row["rowid"]))
-                        rowid = row["rowid"]
-                        self.db.execute("DELETE FROM search_index WHERE rowid=?", (rowid,))
-                    else:
-                        rowid = self.db.execute("""INSERT INTO documents(document_id,source_id,path,device,inode,
-                          size,mtime_ns,ctime_ns,content_hash,title,policy,links,indexed_at,index_version)
-                          VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", fields).lastrowid
-                    self.db.execute("INSERT INTO search_index(rowid,title,text) VALUES(?,?,?)",
-                                    (rowid, metadata["title"], text))
-                    self.db.execute("INSERT OR IGNORE INTO versions VALUES(?,?,?,?,?)",
-                                    (doc_id, content_hash, indexed_at, generation, rel))
-                    report["moved" if moved else "modified" if row else "added"] += 1
-                report["unchanged"] += unchanged
-                report["hashes_computed"] += hashes
-                self.db.execute("UPDATE sources SET available=1,checked_at=? WHERE id=?", (now(), source.id))
-                report["sources"].append({"source_id": source.id, "status": "ready", "documents": len(found)})
-            self.db.execute("INSERT OR REPLACE INTO state VALUES('index_version',?)", (str(generation),))
-            self._record("reconcile", report)
+                with self.db:
+                    for row in old.values():
+                        if row["rowid"] not in retained:
+                            self._remove(row)
+                            report["deleted"] += 1
+                    # Release unique current paths before applying moves, including path swaps.
+                    self.db.execute("DELETE FROM extraction_failures WHERE source_id=?", (source.id,))
+                    self.db.executemany("INSERT INTO extraction_failures VALUES(?,?,?,?,?)",
+                                        [(source.id, rel, signature, reason, now()) for rel, signature, reason in failures])
+                    for _, _, row, _, _, _, _, _ in updates:
+                        if row:
+                            self.db.execute("UPDATE documents SET active=0 WHERE rowid=?", (row["rowid"],))
+                    for rel, stat, row, moved, text, content_hash, metadata, extraction in updates:
+                        doc_id = row["document_id"] if row else str(uuid.uuid4())
+                        policy = "private" if source.policy == "private" or source.is_private_path(rel) or metadata["private"] else "normal"
+                        indexed_at = now()
+                        fields = (doc_id, source.id, rel, stat.st_dev, stat.st_ino, stat.st_size,
+                                  stat.st_mtime_ns, stat.st_ctime_ns, content_hash, metadata["title"],
+                                  policy, json.dumps(metadata["links"], ensure_ascii=False), indexed_at, generation)
+                        if row:
+                            self.db.execute("""UPDATE documents SET document_id=?,source_id=?,path=?,device=?,inode=?,
+                              size=?,mtime_ns=?,ctime_ns=?,content_hash=?,title=?,policy=?,links=?,indexed_at=?,
+                              index_version=?,active=1 WHERE rowid=?""", (*fields, row["rowid"]))
+                            rowid = row["rowid"]
+                            self.db.execute("DELETE FROM search_index WHERE rowid=?", (rowid,))
+                        else:
+                            rowid = self.db.execute("""INSERT INTO documents(document_id,source_id,path,device,inode,
+                              size,mtime_ns,ctime_ns,content_hash,title,policy,links,indexed_at,index_version)
+                              VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", fields).lastrowid
+                        self.db.execute("INSERT INTO search_index(rowid,title,text) VALUES(?,?,?)",
+                                        (rowid, metadata["title"], text))
+                        self.db.execute("INSERT OR REPLACE INTO extractions VALUES(?,?,?,?,?,?)",
+                            (doc_id, extraction["format"], json.dumps(extraction["locations"], ensure_ascii=False),
+                             EXTRACTOR_VERSION, extraction["units"], extraction["text_units"]))
+                        self.db.execute("INSERT OR IGNORE INTO versions VALUES(?,?,?,?,?)",
+                                        (doc_id, content_hash, indexed_at, generation, rel))
+                        report["moved" if moved else "modified" if row else "added"] += 1
+                    report["unchanged"] += unchanged
+                    report["hashes_computed"] += hashes
+                    self.db.execute("UPDATE sources SET available=1,checked_at=? WHERE id=?", (now(), source.id))
+                    report["sources"].append({"source_id": source.id, "status": "ready",
+                        "documents": len(found) - len(failures), "files_seen": len(found),
+                        "skipped_documents": len(failures), "skipped_reasons": dict(Counter(f[2] for f in failures))})
+            with self.db:
+                self._record("reconcile", report)
         report["index_version"] = generation
         return report
 
     def _current(self, row):
         source = next((s for s in self.config.sources if s.id == row["source_id"]), None)
-        if not source or not source.index or source.excludes(row["path"]):
+        if (not source or not source.index or source.excludes(row["path"])
+                or Path(row["path"]).suffix.lower().lstrip(".") not in source.formats):
             return None
         path = source.root / row["path"]
         try:
@@ -270,10 +337,18 @@ class Index:
             raw, _ = self._read(path, root=source.root)
             if digest(raw) != row["content_hash"]:
                 return None
-            text = raw.decode("utf-8-sig")
-            private = source.policy == "private" or parse(text, path.stem)["private"]
+            if path.suffix.lower() == ".md":
+                text = raw.decode("utf-8-sig")
+                marked_private = parse(text, path.stem)["private"]
+            else:
+                stored = self.db.execute("SELECT text FROM search_index WHERE rowid=?", (row["rowid"],)).fetchone()
+                extraction = self.db.execute("SELECT * FROM extractions WHERE document_id=?", (row["document_id"],)).fetchone()
+                if stored is None or extraction is None:
+                    return None
+                text, marked_private = stored[0], False
+            private = source.policy == "private" or source.is_private_path(row["path"]) or marked_private
             return source, path, text, private
-        except (OSError, UnicodeError):
+        except (OSError, UnicodeError, ExtractionError):
             return None
 
     def search(self, query, channel="local", limit=20):
@@ -300,13 +375,20 @@ class Index:
           WHERE {' AND '.join(conditions)} ORDER BY rank, d.document_id"""
         hits = []
         stale = 0
-        for row in self.db.execute(sql, params):
+        # Release the FTS read snapshot before verifying files and writing audit.
+        # A concurrent daemon commit otherwise makes SQLite's read-to-write
+        # upgrade fail with SQLITE_BUSY_SNAPSHOT, regardless of busy_timeout.
+        candidates = self.db.execute(sql, params).fetchall()
+        for row in candidates:
+            source = next(s for s in self.config.sources if s.id == row["source_id"])
+            if channel != "local" and not source.shares_metadata(False, row["path"]):
+                continue
             current = self._current(row)
             if current is None:
                 stale += 1
                 continue
             source, path, text, private = current
-            if channel != "local" and not source.shares_metadata(private):
+            if channel != "local" and not source.shares_metadata(private, row["path"]):
                 continue
             hit = {"document_id": row["document_id"], "content_hash": row["content_hash"],
                    "title": row["title"], "node_id": self.config.node_id, "source_id": source.id,
@@ -318,6 +400,14 @@ class Index:
                 hit["original_uri"] = path.as_uri()
                 hit["policy"] = "private" if private else "normal"
                 hit["read_at"] = now()
+                extraction = self.db.execute("SELECT * FROM extractions WHERE document_id=?", (row["document_id"],)).fetchone()
+                if extraction and extraction["format"] != "md":
+                    hit["format"] = extraction["format"]
+                    hit["location"] = next(({k:v for k,v in unit.items() if k not in {"line_start", "line_end"}}
+                        for unit in json.loads(extraction["locations"])
+                        if unit["line_start"] <= location["line_start"] <= unit["line_end"]), {})
+            elif source.remote_evidence and not private:
+                hit["reader_allowed"] = True
             # PA0 remote payloads are metadata only; private evidence transport is deferred.
             hits.append(hit)
             if len(hits) >= limit:
@@ -335,15 +425,53 @@ class Index:
         result = []
         for row in self.db.execute("""SELECT d.* FROM documents d JOIN sources s ON s.id=d.source_id
                                   WHERE d.active=1 AND s.enabled=1 AND s.available=1"""):
+            source = next(s for s in self.config.sources if s.id == row["source_id"])
+            if not source.shares_metadata(False, row["path"]):
+                continue
             current = self._current(row)
             if current:
                 source, _, _, private = current
-                if source.shares_metadata(private):
+                if source.shares_metadata(private, row["path"]):
                     result.append({"node_id": self.config.node_id, "source_id": source.id,
                                    "document_id": row["document_id"], "content_hash": row["content_hash"],
                                    "title": row["title"], "path_hint": row["path"],
                                    "indexed_at": row["indexed_at"], "available": True})
         return {"node_id": self.config.node_id, "documents": result}
+
+    def reader(self, job):
+        row = self.db.execute("SELECT d.* FROM documents d JOIN sources s ON s.id=d.source_id WHERE d.document_id=? AND d.active=1 AND s.enabled=1 AND s.available=1", (job["document_id"],)).fetchone()
+        if row is None:
+            return {"status": "missing"}
+        if row["content_hash"] != job["content_hash"]:
+            return {"status": "stale"}
+        current = self._current(row)
+        if current is None:
+            return {"status": "stale"}
+        source, path, text, private = current
+        if private or not source.remote_evidence or not source.shares_metadata(False, row["path"]):
+            return {"status": "denied"}
+        extraction = self.db.execute("SELECT * FROM extractions WHERE document_id=?", (row["document_id"],)).fetchone()
+        fmt = path.suffix.lower().lstrip(".")
+        if job["mode"] == "excerpt":
+            selection = excerpt(text, job["query"].split())
+            selected_text = selection["excerpt"]
+            line, cursor, following = selection["line_start"], None, None
+        else:
+            cursor = job["cursor"]
+            if cursor > len(text):
+                return {"status": "stale"}
+            selected_text = text[cursor:cursor + 6000]
+            following = cursor + len(selected_text) if cursor + len(selected_text) < len(text) else None
+            line = text.count("\n", 0, cursor) + 1
+        locator = {"kind": "line", "line": line}
+        if extraction and extraction["format"] != "md":
+            locator = next(({k:v for k,v in unit.items() if k not in {"line_start", "line_end"}}
+                for unit in json.loads(extraction["locations"])
+                if unit["line_start"] <= line <= unit["line_end"]), locator)
+        self._record("reader", {"channel": "pwa", "mode": job["mode"], "characters": len(selected_text)})
+        self.db.commit()
+        return {"status": "ready", "value": {"text": selected_text, "locator": locator, "format": fmt,
+                "cursor": cursor, "next_cursor": following, "total_characters": len(text), "mode": job["mode"]}}
 
     def status(self):
         sources = []
@@ -353,7 +481,10 @@ class Index:
             sources.append({"source_id": source.id, "status": "disabled" if not source.index
                             else "ready" if row["available"] and source.root.is_dir() and not source.root.is_symlink()
                             else "waiting_for_source",
-                            "documents": count, "checked_at": row["checked_at"]})
+                            "documents": count, "checked_at": row["checked_at"],
+                            "skipped_documents": self.db.execute("SELECT count(*) FROM extraction_failures WHERE source_id=?", (source.id,)).fetchone()[0],
+                            "skipped_reasons": {r["reason"]:r["n"] for r in self.db.execute(
+                                "SELECT reason,count(*) n FROM extraction_failures WHERE source_id=? GROUP BY reason", (source.id,))}})
         return {"node_id": self.config.node_id, "sources": sources}
 
 

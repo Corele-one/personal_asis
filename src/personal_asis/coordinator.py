@@ -44,8 +44,11 @@ def metadata_result(value, node_id, channel):
     if not isinstance(hits, list) or len(hits) > 100 or not isinstance(sources, list) or len(sources) > 100:
         raise ProtocolError("invalid_result_size")
     for hit in hits:
-        exact(hit, ("document_id", "content_hash", "title", "node_id", "source_id",
-                    "path_hint", "indexed_at", "index_version"))
+        keys = {"document_id", "content_hash", "title", "node_id", "source_id", "path_hint", "indexed_at", "index_version"}
+        if not isinstance(hit, dict) or set(hit) not in (keys, keys | {"reader_allowed"}):
+            raise ProtocolError("invalid_fields")
+        if "reader_allowed" in hit and type(hit["reader_allowed"]) is not bool:
+            raise ProtocolError("invalid_reader_permission")
         try:
             if str(uuid.UUID(hit["document_id"])) != hit["document_id"]:
                 raise ValueError()
@@ -66,7 +69,11 @@ def metadata_result(value, node_id, channel):
             raise ProtocolError("invalid_index_version")
     seen = set()
     for source in sources:
-        exact(source, ("source_id", "status"))
+        if not isinstance(source, dict) or set(source) not in ({"source_id", "status"}, {"source_id", "status", "skipped_documents"}):
+            raise ProtocolError("invalid_fields")
+        skipped = source.get("skipped_documents", 0)
+        if type(skipped) is not int or not 0 <= skipped <= 10_000_000:
+            raise ProtocolError("invalid_skipped_count")
         identifier(source["source_id"])
         if source["source_id"] in seen or source["status"] not in {"ready", "disabled", "waiting_for_source"}:
             raise ProtocolError("invalid_source_status")
@@ -217,6 +224,22 @@ class Coordinator:
             self.event("revoked", node_id=node_id)
         return {"revoked": node_id}
 
+    def set_enabled(self, node_id, enabled):
+        """Pause a node without deleting its saved enrollment or local state."""
+        identifier(node_id)
+        if type(enabled) is not bool:
+            raise ProtocolError("invalid_node_state")
+        with self.transaction():
+            if self.db.execute("SELECT 1 FROM nodes WHERE id=?", (node_id,)).fetchone() is None:
+                raise ProtocolError("unknown_node", 404)
+            self.db.execute("UPDATE nodes SET enabled=?,last_seen=NULL,policy_hash=NULL WHERE id=?", (enabled, node_id))
+            self.db.execute("DELETE FROM sessions WHERE node_id=?", (node_id,))
+            self.db.execute("DELETE FROM pairings WHERE node_id=?", (node_id,))
+            self.db.execute("""UPDATE jobs SET state='queued',result=NULL,result_hash=NULL,
+                lease=NULL,lease_until=NULL,retry_at=0,policy_hash=NULL WHERE node_id=?""", (node_id,))
+            self.event("node_enabled" if enabled else "node_disabled", node_id=node_id)
+        return {"node_id": node_id, "enabled": enabled}
+
     def submit(self, query, channel, limit, request_id):
         if not isinstance(query, str) or not query.strip() or len(query) > 512 or "\x00" in query:
             raise ProtocolError("invalid_query")
@@ -299,8 +322,8 @@ class Coordinator:
             if task is None:
                 raise ProtocolError("unknown_task", 404)
             jobs = self.db.execute("""SELECT j.*,n.last_seen,n.enabled FROM jobs j JOIN nodes n ON n.id=j.node_id
-                WHERE j.task_id=? ORDER BY j.node_id""", (task_id,)).fetchall()
-            hits, nodes, waiting = [], [], []
+                WHERE j.task_id=? AND n.enabled=1 ORDER BY j.node_id""", (task_id,)).fetchall()
+            hits, nodes, waiting, coverage = [], [], [], []
             for job in jobs:
                 online = bool(job["enabled"] and job["last_seen"] is not None
                               and self.clock() - job["last_seen"] < self.offline_after)
@@ -311,10 +334,15 @@ class Coordinator:
                 if job["state"] != "done":
                     waiting.append(job["node_id"])
                 if job["result"]:
-                    hits.extend(json.loads(job["result"])["hits"])
+                    result = json.loads(job["result"])
+                    hits.extend(result["hits"])
+                    coverage.extend({"node_id": job["node_id"], "source_id": s["source_id"],
+                                     "skipped_documents": s.get("skipped_documents", 0)}
+                                    for s in result["sources"] if s.get("skipped_documents", 0))
             return {"task_id": task_id, "channel": task["channel"], "state": "waiting" if waiting else "completed",
                     "partial": bool(waiting), "waiting_nodes": waiting, "nodes": nodes,
-                    "results": group_replicas(hits), "metadata_only": True}
+                    "results": group_replicas(hits), "metadata_only": True,
+                    "coverage_incomplete": bool(coverage), "coverage": coverage}
         finally:
             self.db.execute("ROLLBACK")
 

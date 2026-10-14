@@ -6,10 +6,46 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from personal_asis.service import daemon, install
+from personal_asis.service import daemon, install, uninstall, install_tunnel, _unit_quote
 
 
 class ServiceTests(unittest.TestCase):
+    def test_linux_user_service_install_and_uninstall_retains_runtime(self):
+        with tempfile.TemporaryDirectory() as name:
+            base = Path(name)
+            home = base / "runtime space"
+            home.mkdir()
+            (home / "sources.yaml").write_text(json.dumps({"node_id": "rog", "sources": [
+                {"id": "test", "root": str(base / "source"), "policy": "private"}]}))
+            with patch("personal_asis.service.sys.platform", "linux"), \
+                 patch("personal_asis.service.Path.home", return_value=base), \
+                 patch("personal_asis.service.subprocess.run") as run:
+                result = install(home)
+                unit = Path(result["unit"])
+                spec = unit.read_text()
+                self.assertIn("UMask=0077", spec)
+                self.assertIn('"' + str(home) + '"', spec)
+                self.assertEqual(run.call_args.args[0], ["systemctl", "--user", "restart", result["label"]])
+                uninstall()
+                self.assertFalse(unit.exists())
+                self.assertTrue((home / "sources.yaml").exists())
+
+    def test_linux_tunnel_only_binds_loopback_and_requires_host_verification(self):
+        with tempfile.TemporaryDirectory() as name:
+            with patch("personal_asis.service.sys.platform", "linux"), \
+                 patch("personal_asis.service.Path.home", return_value=Path(name)), \
+                 patch("personal_asis.service.subprocess.run"):
+                result = install_tunnel(Path(name), "user@example.test")
+            spec = Path(result["unit"]).read_text()
+            self.assertIn("127.0.0.1:18765:127.0.0.1:8765", spec)
+            self.assertIn("StrictHostKeyChecking=yes", spec)
+            self.assertNotIn("0.0.0.0", spec)
+
+    def test_systemd_arguments_escape_specifiers_and_reject_newlines(self):
+        self.assertEqual(_unit_quote('a%h$b"c'), '"a%%h$$b\\"c"')
+        with self.assertRaises(ValueError):
+            _unit_quote("a\nExecStart=bad")
+
     def test_install_recovers_from_transient_bootstrap_failure(self):
         with tempfile.TemporaryDirectory() as name:
             base = Path(name)

@@ -1,4 +1,4 @@
-"""Mac user launchd integration: reconciliation and optional outbound polling."""
+"""User launchd/systemd integration: reconciliation and outbound polling."""
 
 import os
 from pathlib import Path
@@ -16,6 +16,39 @@ from .node import Poller
 
 LABEL = "local.personal-asis.mac"
 TUNNEL_LABEL = "local.personal-asis.tunnel"
+LINUX_LABEL = "personal-asis.service"
+LINUX_TUNNEL_LABEL = "personal-asis-tunnel.service"
+
+
+def _unit_quote(value):
+    value = str(value)
+    if any(c in value for c in "\n\r\x00"):
+        raise ValueError("服务配置不能包含换行或空字符")
+    return '"' + value.replace("\\", "\\\\").replace('"', '\\"').replace("%", "%%").replace("$", "$$") + '"'
+
+
+def _linux_install(label, argv, environment=()):
+    directory = Path.home() / ".config" / "systemd" / "user"
+    directory.mkdir(parents=True, exist_ok=True)
+    path = directory / label
+    spec = ("[Unit]\nDescription=Personal Asis PA0 user service\nStartLimitIntervalSec=0\n\n"
+            "[Service]\nType=simple\nUMask=0077\nRestart=always\nRestartSec=30\n"
+            + "".join("Environment=" + _unit_quote(e) + "\n" for e in environment)
+            + "ExecStart=" + " ".join(_unit_quote(a) for a in argv) + "\n\n"
+            "[Install]\nWantedBy=default.target\n")
+    path.write_text(spec, encoding="utf-8")
+    path.chmod(0o600)
+    subprocess.run(["systemctl", "--user", "daemon-reload"], capture_output=True, check=True)
+    subprocess.run(["systemctl", "--user", "enable", label], capture_output=True, check=True)
+    subprocess.run(["systemctl", "--user", "restart", label], capture_output=True, check=True)
+    return {"label": label, "unit": str(path)}
+
+
+def _linux_uninstall(label):
+    subprocess.run(["systemctl", "--user", "disable", "--now", label], capture_output=True, check=True)
+    (Path.home() / ".config" / "systemd" / "user" / label).unlink(missing_ok=True)
+    subprocess.run(["systemctl", "--user", "daemon-reload"], capture_output=True, check=True)
+    return {"label": label, "uninstalled": True, "local_data_retained": True}
 
 
 def daemon(home: Path, emit, interval=21600, tick=30):
@@ -79,6 +112,13 @@ def daemon(home: Path, emit, interval=21600, tick=30):
 
 
 def install(home: Path):
+    if sys.platform == "linux":
+        load_config(home / "sources.yaml")
+        home.chmod(0o700)
+        result = _linux_install(LINUX_LABEL,
+            [sys.executable, "-m", "personal_asis", "--home", str(home), "daemon"],
+            [f"PYTHONPATH={Path(__file__).resolve().parents[1]}", "PYTHONUNBUFFERED=1"])
+        return {**result, "home": str(home)}
     if sys.platform != "darwin":
         raise ValueError("launchd 安装仅适用于 macOS")
     load_config(home / "sources.yaml")
@@ -122,6 +162,8 @@ def install(home: Path):
 
 
 def uninstall():
+    if sys.platform == "linux":
+        return _linux_uninstall(LINUX_LABEL)
     path = Path.home() / "Library" / "LaunchAgents" / f"{LABEL}.plist"
     subprocess.run(["launchctl", "bootout", f"gui/{os.getuid()}/{LABEL}"], capture_output=True)
     path.unlink(missing_ok=True)
@@ -130,12 +172,19 @@ def uninstall():
 
 def install_tunnel(home: Path, host: str, ssh_port=22, local_port=18765, remote_port=8765):
     import re
-    if sys.platform != "darwin":
-        raise ValueError("隧道 launchd 安装仅适用于 macOS")
     if not re.fullmatch(r"[a-zA-Z0-9_.-]+@[a-zA-Z0-9.-]+", host):
         raise ValueError("host 必须为 user@hostname 或 user@IPv4")
     if any(type(p) is not int or not 1024 <= p <= 65535 for p in (local_port, remote_port)) or not 1 <= ssh_port <= 65535:
         raise ValueError("隧道端口无效")
+    if sys.platform == "linux":
+        return {**_linux_install(LINUX_TUNNEL_LABEL,
+            ["/usr/bin/ssh", "-N", "-T", "-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=yes",
+             "-o", "ExitOnForwardFailure=yes", "-o", "ConnectTimeout=10",
+             "-o", "ServerAliveInterval=15", "-o", "ServerAliveCountMax=3",
+             "-L", f"127.0.0.1:{local_port}:127.0.0.1:{remote_port}", "-p", str(ssh_port), host]),
+             "local_endpoint": f"http://127.0.0.1:{local_port}"}
+    if sys.platform != "darwin":
+        raise ValueError("常驻隧道仅支持 macOS／Linux 用户服务")
     home.mkdir(parents=True, exist_ok=True, mode=0o700)
     os.chmod(home, 0o700)
     directory = Path.home() / "Library" / "LaunchAgents"
@@ -172,6 +221,8 @@ def install_tunnel(home: Path, host: str, ssh_port=22, local_port=18765, remote_
 
 
 def uninstall_tunnel():
+    if sys.platform == "linux":
+        return _linux_uninstall(LINUX_TUNNEL_LABEL)
     subprocess.run(["launchctl", "bootout", f"gui/{os.getuid()}/{TUNNEL_LABEL}"], capture_output=True)
     (Path.home() / "Library" / "LaunchAgents" / f"{TUNNEL_LABEL}.plist").unlink(missing_ok=True)
     return {"label": TUNNEL_LABEL, "uninstalled": True}

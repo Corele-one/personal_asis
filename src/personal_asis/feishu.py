@@ -23,6 +23,8 @@ def summary(view, pwa_origin=None):
         state = {"completed": "已搜索", "waiting_for_node": "离线等待", "queued": "排队",
                  "running": "检索中", "waiting_for_source": "来源暂不可用"}.get(node["state"], "状态待核")
         lines.append(f"{node['node_id']}：{state}")
+    for source in view.get("coverage", []):
+        lines.append(f"文本覆盖不完整：{source['node_id']}/{source['source_id']} 有 {source['skipped_documents']} 个文件未能索引。")
     replicas = [r for g in view["results"] for r in g["replicas"]]
     if not replicas:
         lines.append("目前没有获准远程显示的命中；仅搜索已在本机授权的来源。")
@@ -41,6 +43,7 @@ def view_digest(view):
     # notify on initial receipt, actual results, source waiting and completion.
     value = {key: view[key] for key in ("task_id", "partial", "waiting_nodes", "results")}
     value["waiting_sources"] = [n["node_id"] for n in view["nodes"] if n["state"] == "waiting_for_source"]
+    value["coverage"] = view.get("coverage", [])
     return hashlib.sha256(json.dumps(value, sort_keys=True).encode()).hexdigest()
 
 
