@@ -240,7 +240,7 @@ Code, specifications, reusable rules, and sanitized fixtures are versioned in a 
 
 The following are intentionally not decided until deployment, and must not be silently assumed:
 
-- future independent/offsite backup placement beyond the user-selected local F drive;
+- independent backup placement and recovery-key preparation, explicitly deferred by the user on 2026-10-14; the old ROG F-drive target is historical;
 - MiMo endpoint, model ID, plan, and current quotas;
 - future PWA passkey/provider migration, if requested; the current static-password method was explicitly selected;
 - calendar OAuth account configuration;

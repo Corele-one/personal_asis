@@ -1,54 +1,58 @@
 # PA0 Mac 单节点运行
 
-2026-10-14，用户明确选择“只用 Mac 检索，停用 ROG 节点”，并说明 ROG 没有优质内容、自己不会维护。本决定覆盖此前要求两个节点持续运行的部署假设；保留多节点代码和历史验收能力，不继续要求用户整理或维护 ROG。
+PA0 已于 2026-10-14 完成当前范围验收，见 [最终记录](pa0-acceptance.md)。日常只维护 Mac 资料；VPS 负责协调，飞书与 [PWA](https://35.209.202.207/) 提供入口。
 
-## 当前状态
+## 当前范围
 
-- 日常搜索只使用 Mac：Study 267 个、Life 181 个 Markdown（合计 448 个），沿用既有权限。PWA／飞书和非私密按需加密阅读继续使用。
-- ROG 的 `personal-asis.service`、`personal-asis-tunnel.service` 已停止并禁用；Windows 任务 `PersonalAsis-ROG` 已禁用。来源配置和索引保留，不重新核对或删除 Windows 原资料。
-- VPS 的 `rog` 注册设为停用，清除短期会话、配对码和远程缓存结果，保留长期凭据摘要。新任务只创建 Mac 工作，历史任务视图跳过停用节点，不产生永久等待。
-- ROG 的 3,309 个本机文档索引、整理／验收报告及 `F:\Backup\PersonalAsis\ROG` 加密备份保留。运行状态的停用记录放在仓库外。
-- Mac 本机加密备份已恢复验证；向 ROG F 盘复制的等待操作未完成，临时密文管道已清理。此项额外副本不作为当前单节点检索范围的前提，不能报告为已有异机备份。
+| 项目 | 状态 |
+|---|---|
+| 检索节点 | 仅 `mac`；ROG 停用，新旧任务均排除其结果和等待 |
+| 来源快照 | Study 267、Life 181，共 448 个 Markdown（2026-10-14） |
+| 正文阅读 | 非私密条目按 `remote_evidence` 等本机政策经加密中转显示；Life 私密正文关闭 |
+| 离线恢复 | 服务重启及真实休眠后，同一任务自动继续完成，已验证 |
+| 备份 | 已有本机加密状态归档；独立副本／恢复密钥按用户选择暂缓 |
+| 后续能力 | PA1、模型、Agent 执行框架与持续委托尚未上线 |
 
-Mac 关机或休眠时，新搜索等待恢复；正文必须由在线 Mac 读取和加密返回。VPS 保存获准元数据，不保存来源明文或备份密钥。停用 ROG 不扩大 Mac 的读取范围、私密正文或模型权限。
+Mac 休眠／关机时新搜索等待恢复，正文需要 Mac 在线。来源保持原位置，权限只能在 Mac 本机修改；PWA／飞书不提供来源权限修改入口。
 
-## 维护与可选恢复
+## 日常维护
 
-日常只需在 Mac 的既有来源中保存资料。节点会定期核对索引；更改来源权限仍只在 Mac 本机进行。无需维护另一份 ROG 资料库。
+在原来源目录保存资料即可；节点启动／唤醒后核对索引，在线每六小时核对。主动核对可运行 `scripts/asis reconcile`，本机查询返回原文 URI 与位置。配置字段见 [Mac 本地节点](pa0-mac.md)。
 
-节点启停是 VPS 本机管理员操作，没有 PWA 权限切换按钮：
+生产数据目录为 `~/Library/Application Support/PersonalAsis/`。生产 Python 在其 `pa0-text-env/bin/python`，代码在 `code-releases/`，实际发布由 launchd 的 `PYTHONPATH` 指定；当前验收发布编号见最终记录。
+
+仓库入口默认 Python 不一定安装了加密依赖。核查生产能力或从 checkout 维护时显式选择既有环境：
 
 ```sh
-# VPS：停用节点；保留本机资料和已有 enrollment
-scripts/asis --home /home/mac/.local/share/personal-asis-coordinator coordinator disable --node-id rog
-# 只有用户以后明确决定恢复 ROG 时才执行
-scripts/asis --home /home/mac/.local/share/personal-asis-coordinator coordinator enable --node-id rog
+ASIS_PYTHON="$HOME/Library/Application Support/PersonalAsis/pa0-text-env/bin/python" scripts/asis doctor
+ASIS_PYTHON="$HOME/Library/Application Support/PersonalAsis/pa0-text-env/bin/python" scripts/asis status
 ```
 
-恢复 ROG 后还需在 ROG 本机重新启用索引／隧道服务及 Windows 开机任务。`disable` 保留 enrollment，`revoke` 则撤销长期凭据并要求重新配对；二者用途不同。
+重新执行 `service install` 会将服务切换至执行命令时的 Python／代码路径；仅在维护或发布时使用，并在安装后验证 running 与心跳。卸载保留配置、索引和凭据。
 
-## 验证
+## 排障顺序
 
-合成测试验证停用后的短期会话失效、旧任务不再等待或暴露该节点结果、新任务只分派启用节点，以及显式恢复后原 enrollment 可继续使用。现场验证记录包括 ROG 服务／开机任务状态、生产启用节点列表、新旧任务节点范围及保留索引／备份计数。历史跨设备验收仍见 [ROG](pa0-rog.md) 和 [文本记录](pa0-text.md)，不冒充当前仍运行两个节点。
+```sh
+launchctl print gui/$(id -u)/local.personal-asis.mac
+launchctl print gui/$(id -u)/local.personal-asis.tunnel
+```
 
-本次运行 98 项合成测试，ROG 环境 95 项通过、3 项 AstrBot 专用检查跳过；专用 3 项已在 VPS 的实际 SDK 解释器通过。生产检查确认仅 `mac` 启用，ROG 会话数为零，13 项旧搜索视图均排除 ROG，新建 PWA／飞书渠道任务均只派发 Mac；本次没有发送飞书测试消息。切换验收时 Mac 离线，因此两项新任务仅等待 `mac`，尚未现场确认它们恢复后的完成结果。ROG 的 3,309 个索引文档和两份加密归档保留，后台服务及开机任务均禁用。
+1. 本机无结果：检查来源可用性、排除规则、分类与索引状态，再显式核对。
+2. PWA 持续等待 Mac：检查索引进程及 SSH 隧道；服务正常后应恢复心跳，原任务无需重新提交。
+3. 只有元数据而没有正文按钮：检查当前非私密分类、元数据许可与 `remote_evidence`；私密元数据许可不会开放正文。
+4. PWA 登录或 HTTPS 故障：检查 [PWA 管理](pa0-pwa.md) 与 VPS 服务／续期状态。
 
-### Mac 本机复核（2026-10-14）
+必要时可显式重新启动既有服务：
 
-- VPS 现场启用节点仅 `mac`；`rog` 停用且无有效会话。协调、PWA、AstrBot、nginx 与证书续期定时器均 active。ROG 本机停用状态沿用昨晚记录，本轮未重新访问或维护 ROG。
-- Mac 索引进程 running，生产 Python 使用仓库外 `pa0-text-env`，加密阅读／备份依赖可用。核对后 Study 267 个、Life 181 个 Markdown，合计 448 个；测试来源不在当前配置和活动索引中。读取与远程权限保持原状。
-- 核查时 SSH 隧道已断开，Mac 心跳约 15 小时未更新。重新启动既有隧道后心跳恢复，15 项当前 Mac 搜索均为 done，包括切换时遗留的两项等待任务；无活动等待工作。索引版本变化使旧缓存重新检索，未向飞书发送新的测试消息。
-- PWA 公网 HTTPS 正常验证，首页及登录状态 API 返回 200，匿名 `/api/state` 返回 401。用户此前的真实 PWA 摘录／正文显示验证保留，本轮未代用户登录或重新执行浏览器阅读验收。
-- 内部协调库及 HTTP 服务的默认注册范围改为仅 `mac`，多节点合成测试显式声明测试节点；新建库不会自动加入 ROG。99 项测试中 93 项通过，6 项因 AstrBot SDK、reportlab 或 Linux LibreOffice／UNO 环境缺失跳过。相对链接及差异格式检查通过。这些默认值与文档修订仍在当前工作区，未提交／推送或替换生产发布包；生产本来已显式声明 `--nodes mac`。
+```sh
+launchctl kickstart -k gui/$(id -u)/local.personal-asis.tunnel
+launchctl kickstart -k gui/$(id -u)/local.personal-asis.mac
+```
 
-当前 PA0 核心检索、加密阅读与本机状态备份链路已有实现和现场记录；尚未完成真正硬件重启／长时间休眠唤醒验收。已有备份仅含助手状态、不含来源原文件；Mac 尚无已确认的异机备份副本，独立恢复密钥导出及凭据同时丢失的恢复也未验收。ROG 不再作为这些工作的前提，PA1 模型、Agent 执行框架与持续委托仍未启用。
+节点协议和配对见 [协调文档](pa0-coordinator.md)，飞书命令见 [飞书文档](pa0-feishu.md)。ROG 的原文件、索引和旧备份保留，恢复只在用户明确要求时进行，见 [ROG 历史](pa0-rog.md)；当前无需维护 ROG，也不继续 F 盘备份传输。
 
-### 本轮范围调整
+## 验证记录
 
-用户随后明确要求继续完成 PA0，并因来源数据已有云端备份，暂缓独立备份副本和恢复密钥准备。这两项退出本轮验收门槛，保留已有加密归档及凭据，不继续复制或导出密钥。用户说明的来源云备份不冒充助手状态／凭据的灾难恢复演练。
+七项功能验收、93 项 Mac 应用检查、实际 SDK 的 3 项检查及真实休眠／自动恢复见 [最终验收](pa0-acceptance.md)。99 项应用套件在不同环境有不同可选依赖跳过数，不能把跳过计入通过。
 
-本轮七项功能核验、生产代码更新及实际服务离线／恢复已汇总到 [PA0 单节点验收](pa0-acceptance.md)。用户同意在就绪后手动休眠约两分钟；硬件检查完成前，记录为待验证，不以服务重启替代。
-
-上述默认值修订已部署至 VPS，Mac 切换到最终发布包并确认 running、心跳恢复；安装器同时修复了 bootstrap 后后台任务仍等待调度的启动问题。当时独立休眠观察器已准备好，等待用户操作；完整硬件验收以最终记录为准。
-
-用户随后完成真实休眠和唤醒，VPS 在离线后创建的两项原任务均自动完成；Mac 服务与隧道保持原进程，无手动重启。PA0 已按当前范围完成验收，时间线及未测／暂缓项见 [最终验收](pa0-acceptance.md)。
+整机重启未执行；独立备份／恢复密钥暂缓。先前切换与故障过程见 [部署历史](archive/pa0-rollout-2026-10.md)，不作为当前未完成待办。

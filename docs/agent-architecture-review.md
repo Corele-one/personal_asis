@@ -1,6 +1,6 @@
 # Personal Agent 架构审阅稿
 
-状态：用户已确认整体共识；Mac 检索、协调／轮询、飞书及 IP HTTPS PWA 已部署，非私密正文按需加密阅读及本机加密备份恢复已有实现和验证，见 [文本记录](pa0-text.md)。2026-10-14 用户移除 ROG，当前仅维护 Mac／VPS／PWA／飞书，ROG 不再是 PA0 验收前提，见 [单节点运行](pa0-mac-only.md)。Agent 执行框架、MiMo 与持续委托尚未上线。依据：[详细架构](agent-architecture.md)、[信息来源](information-sources.md)、[总规格](../SPECIFICATION.md)。实施顺序见 [实施计划](implementation-plan.md)。
+状态：整体架构共识已确认；PA0 已按 Mac 单节点范围完成验收，见 [最终结果](pa0-acceptance.md)。ROG 停用，独立备份／恢复密钥暂缓。MiMo、Agent 执行框架与持续委托尚未上线；后续路线见 [实施计划](implementation-plan.md)。详细依据见 [架构](agent-architecture.md)、[来源](information-sources.md)与[总规格](../SPECIFICATION.md)。
 
 ## 整体责任
 

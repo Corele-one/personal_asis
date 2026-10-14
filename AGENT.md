@@ -6,11 +6,11 @@
 
 构建基于个人资料、能够跨设备持续工作的个人助手，覆盖资料检索、研究生申请与职业选择、饮食、作息和心理状态复盘。以“记录 → 复盘 → 用户选择行动 → 反馈”形成持续改进。
 
-2026-10-14 用户明确选择只用 Mac 检索、停用 ROG。生产检索节点仅为 `mac`，索引 Study 267 个及 Life 181 个 Markdown；VPS 协调、飞书和 IP HTTPS PWA 继续使用。ROG 的后台索引、SSH 隧道及 Windows 开机任务停用，服务器停用其节点并撤出新旧搜索范围，保留原文件、3,309 个本机文档索引及 F 盘加密备份。非私密 PWA 摘录／正文按用户授权加密中转，VPS 不保存明文；私密正文和模型处理继续关闭。先前双设备副本、离线恢复和两端阅读验证保留为历史能力记录，不再把维护 ROG 作为当前 PA0 交付条件。Mac 本机备份恢复已验证，复制到 F 盘的操作未完成并已停止。详见 [Mac 单节点运行](docs/pa0-mac-only.md)、[文本与恢复](docs/pa0-text.md)及 [历史 ROG 记录](docs/pa0-rog.md)。
+PA0 已于 2026-10-14 按 Mac 单节点范围完成七项功能验收及真实休眠／自动恢复验证，见 [最终验收](docs/pa0-acceptance.md)。当前为 Mac 本机索引、VPS 协调、飞书及 IP HTTPS PWA；验收快照为 Study 267、Life 181，共 448 个 Markdown。非私密正文按单独许可加密中转，Life 仅有私密元数据许可，私密正文／模型仍关闭。ROG 已退出运行及维护范围，旧索引、原文件与备份保留。
 
-索引与协调核心依赖 Python 3.11+ 及支持 FTS5 trigram 的 SQLite 3.34+；PDF、旧 Office、加密阅读与备份使用 [文本说明](docs/pa0-text.md) 中的可选依赖；飞书插件依赖服务器既有 AstrBot 与飞书 SDK。真实命令：`scripts/asis doctor`、`scripts/asis status`、`scripts/asis search "芯片"`、`scripts/asis reconcile`；测试为 `PYTHONPATH=src python3 -m unittest discover -s tests -v`。ROG 使用 `asis` 包装命令显式选择 Python 3.11。详见 [README.md](README.md)、[ROG](docs/pa0-rog.md) 与 [Mac 实施说明](docs/pa0-mac.md)。Mac 数据位于 `~/Library/Application Support/PersonalAsis/`，Linux／WSL 默认为 `~/.local/share/personal-asis/`，均不放入代码目录。
+独立备份和恢复密钥按用户选择暂缓，整机重启未测试；不将暂缓项或未测项报告为已验证能力。PA1 尚未上线。当前维护看 [单节点运行](docs/pa0-mac-only.md)，文档分类看 [文档索引](docs/README.md)，旧记录看 [部署归档](docs/archive/pa0-rollout-2026-10.md)。
 
-2026-10-14，PA0 已按当前 Mac 单节点范围完成七项功能验收及真实休眠／自动恢复验证，详见 [最终验收](docs/pa0-acceptance.md)。独立备份与恢复密钥按用户选择暂缓，整机重启未测；不把暂缓项报告为已通过。当前仍未启用 PA1、模型调用或 Agent 执行框架。
+核心要求 Python 3.11+、SQLite 3.34+ 与 FTS5 trigram；加密阅读、可选格式及备份依赖见 [文本说明](docs/pa0-text.md)。命令为 `scripts/asis doctor|status|search|reconcile`，测试为 `PYTHONPATH=src python3 -m unittest discover -s tests -v`。Mac 生产 Python、发布包与运行数据位于仓库外私密目录，维护时遵循运行说明，不把基础解释器的能力报告当作生产环境。
 
 ## 文档分工与阅读顺序
 
@@ -18,6 +18,7 @@
 
 | 文件 | 用途 |
 |---|---|
+| [docs/README.md](docs/README.md) | 当前运行、验收、规划与历史文档导航 |
 | [SPECIFICATION.md](SPECIFICATION.md) | 功能、架构、阶段边界、数据政策与验收标准 |
 | [CONTEXT.md](CONTEXT.md) | 领域术语；仅维护定义，不放实现细节或待办 |
 | [docs/agent-architecture-review.md](docs/agent-architecture-review.md) | 用户已确认的 Agent 架构基线；详细决定与候选验证计划由其回指 |
@@ -61,7 +62,7 @@
 
 - 真实笔记、daily、餐食照片、健康记录、索引、上下文包、个人记忆、审计数据与密钥不进入 Git；只版本管理代码、规格、规则及脱敏或合成样例。
 - 来源配置只在所属本机修改；飞书或 PWA 不能改变读取、缓存、云模型使用或出境范围。
-- 用户允许全量本机只读访问 Obsidian `daily`；实际根路径待配置。此许可不等于云端全文处理、个人模型形成或心理标签授权。复盘按相关性检索，默认保持原有私密政策。
+- Life 来源已按本机配置只读索引；旧 Note／Daily 测试来源已撤除。日记读取许可不等于云端全文处理、个人模型形成或心理标签授权，新根目录须单独配置和授权。复盘按相关性检索，保持现有私密政策。
 - 健康资料及派生结果默认私密，标题和路径也按敏感数据处理。普通资料夹中的健康条目不能因目录分类而默认进入云端。
 - 用户本轮明确允许 Life 中包括日记和健康条目在内的标题、来源和相对路径提示进入 VPS／飞书／PWA。此例外通过本机 `private_remote_metadata` 单独记录，仅作用于 Life，不改私密分类，不授权正文、摘录、云模型或其他来源。允许访问新目录不自动继承旧目录授权。
 - 用户另行授权非私密资料最小摘录及 PWA 按需正文，仅经端到端加密中转，VPS 不落明文；本机 `remote_evidence`、元数据路径许可和当前私密分类共同检查。私密元数据许可、阅读许可均不授权模型；详见 [文本与恢复记录](docs/pa0-text.md)。
