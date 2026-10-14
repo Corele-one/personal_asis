@@ -116,7 +116,7 @@ CREATE TABLE IF NOT EXISTS events (
 
 
 class Coordinator:
-    def __init__(self, path, nodes=("mac", "rog"), clock=time.time,
+    def __init__(self, path, nodes=("mac",), clock=time.time,
                  session_ttl=300, lease_ttl=120, offline_after=90, retention=180 * 86400):
         self.clock, self.session_ttl, self.lease_ttl = clock, session_ttl, lease_ttl
         self.offline_after, self.retention = offline_after, retention

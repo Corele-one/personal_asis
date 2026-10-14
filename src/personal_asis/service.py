@@ -158,6 +158,9 @@ def install(home: Path):
         if process.returncode != 5 or attempt == 4:
             process.check_returncode()
         time.sleep(1)
+    # Background launch agents can remain in "pended nondemand spawn" after a
+    # successful bootstrap. Installation must actually start the node now.
+    subprocess.run(["launchctl", "kickstart", f"{domain}/{LABEL}"], capture_output=True, check=True)
     return {"label": LABEL, "plist": str(path), "home": str(home)}
 
 

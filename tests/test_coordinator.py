@@ -19,6 +19,14 @@ def result(node="mac", channel="pwa", waiting=False, hits=True):
 
 
 class CoordinatorTests(unittest.TestCase):
+    def test_default_registration_and_search_use_only_mac(self):
+        with Coordinator(self.path.with_name("mac-only.sqlite3")) as coordinator:
+            self.assertEqual([row[0] for row in coordinator.db.execute("SELECT id FROM nodes")], ["mac"])
+            with self.assertRaises(ProtocolError):
+                coordinator.pair("rog")
+            task = coordinator.submit("synthetic query", "pwa", 20, "mac-only-default")["task_id"]
+            self.assertEqual([node["node_id"] for node in coordinator.view(task)["nodes"]], ["mac"])
+
     def test_disabled_node_leaves_old_and_new_search_scope_and_can_resume(self):
         code = self.c.pair("rog")["pairing_code"]
         self.c.enroll("rog", code, "r" * 43)
@@ -54,7 +62,7 @@ class CoordinatorTests(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.path = Path(self.tmp.name) / "coordinator.sqlite3"
         self.time = 1000
-        self.c = Coordinator(self.path, clock=lambda: self.time)
+        self.c = Coordinator(self.path, nodes=("mac", "rog"), clock=lambda: self.time)
         self.addCleanup(self.tmp.cleanup)
         self.addCleanup(self.c.db.close)
 

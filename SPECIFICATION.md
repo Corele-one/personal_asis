@@ -32,7 +32,7 @@ The system's durable assets are source configurations, personal indexes, evidenc
 ```text
 Feishu bot ──┐
              ├── VPS Coordination Node ── outbound polling ── Mac Local Node
-Private PWA ─┘                                      └─────── ROG Local Node (WSL)
+Private PWA ─┘
 ```
 
 ### Coordination Node (VPS)
@@ -49,7 +49,7 @@ The current PA0 deployment runs on Mac only, following the user's explicit scope
 - executes assigned local searches and returns allowed metadata/evidence results;
 - is allowed to sleep or be offline without being treated as failed forever.
 
-The Mac runs as a user `launchd` service. The ROG node runs as a WSL user service. Later trusted devices may use the same protocol.
+The Mac runs as a user `launchd` service. ROG's WSL service is disabled and outside the current maintenance scope. Later explicitly enabled trusted devices may use the same protocol.
 
 ## 4. Data classification and storage
 
@@ -95,13 +95,15 @@ PA0 search tasks synchronize policy-authorized metadata: node status, source ID,
 - PWA shows evidence cards with title, node, source, path, location, and minimal excerpt according to policy. Original files open only through an online owning Local Node on the user's device.
 - Source policy changes are local-only control-plane changes.
 - Node state backups are encrypted before leaving the node; decryption keys never enter the VPS.
-- The user explicitly selected `F:\Backup` on ROG as the current encrypted backup target. This local target is accepted without claiming offsite or offline redundancy. Keys stay in each owning node's OS credential store; independent recovery-key export is a separate user operation. See [backup and recovery](docs/pa0-text.md).
+- The earlier `F:\Backup` target is historical after ROG was disabled. On 2026-10-14 the user explicitly deferred independent backup placement and recovery-key preparation because source data already has user-managed cloud backups. These operations are outside the current PA0 acceptance scope. Existing encrypted state backups and OS credentials are retained; source cloud backups do not establish verified assistant-state or credential recovery. See [backup and recovery](docs/pa0-text.md).
 
 ## 6. PA0 — source evidence search
 
 ### Implementation status
 
-On 2026-10-14 the user explicitly chose Mac-only retrieval and disabled ROG to reduce maintenance. The active production node is `mac` (446 Study/Life Markdown documents); PWA, Feishu and encrypted nonprivate text reading remain enabled. ROG services, tunnel and Windows startup task are disabled, and its server registration is disabled without erasing enrollment, source files, local index or encrypted backups. New searches target only Mac; old views exclude disabled nodes and their cached results. Earlier real two-node replica/offline tests remain historical validation, not a current deployment prerequisite. Mac encrypted local backup/restore passed; its additional F-drive copy was not completed and the transfer attempt ended. See [Mac-only operation](docs/pa0-mac-only.md) and [text implementation](docs/pa0-text.md). No PA1 model capability is enabled.
+PA0 passed all seven acceptance criteria under the revised Mac-only scope on 2026-10-14, including a real user-operated hardware sleep followed by automatic heartbeat and same-task recovery. Production code is updated; independent backup placement and recovery-key preparation are explicitly deferred by the user. A full hardware reboot remains untested; no PA1/model capability is enabled. See the [final acceptance record](docs/pa0-acceptance.md).
+
+On 2026-10-14 the user explicitly chose Mac-only retrieval and disabled ROG to reduce maintenance. The active production node is `mac` (448 Study/Life Markdown documents as verified on 2026-10-14); PWA, Feishu and encrypted nonprivate text reading remain enabled. ROG services, tunnel and Windows startup task are disabled, and its server registration is disabled without erasing enrollment, source files, local index or encrypted backups. New searches target only Mac; old views exclude disabled nodes and their cached results. Earlier real two-node replica/offline tests remain historical validation, not a current deployment prerequisite. Mac encrypted local backup/restore passed; its additional F-drive copy was not completed and the transfer attempt ended. See [Mac-only operation](docs/pa0-mac-only.md) and [text implementation](docs/pa0-text.md). No PA1 model capability is enabled.
 
 ### User flows
 
@@ -163,7 +165,7 @@ Successful temporary scripts and workflows may generate Capability Proposals con
 - One online Local Node is selected for each PA1 analysis. It builds the minimal Context Bundle and calls the model provider directly.
 - The VPS does not aggregate source text. Cross-node model synthesis is deliberately deferred.
 - The first provider is Xiaomi MiMo through a documented OpenAI-compatible API adapter. API endpoint, model ID, and pricing plan are deployment configuration, not business rules.
-- Mac and ROG use the same MiMo API key, stored only in each node's system credential store. Rotating it requires updating both nodes.
+- The current Mac-only PA1 plan stores MiMo credentials only in Mac's system credential store. ROG receives no credential or model work. The earlier shared-key decision applies only if another inference node is explicitly restored; rotation then updates all holders.
 - Each node enforces configurable daily/monthly Token or cost limits, warns near the threshold, and stops new model jobs at the threshold. Local search remains available.
 
 ### External research

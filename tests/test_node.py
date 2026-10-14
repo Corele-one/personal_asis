@@ -30,7 +30,7 @@ class NodeTests(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.base = Path(self.tmp.name)
         self.dbpath = self.base / "coordinator.sqlite3"
-        self.http = server(self.dbpath, port=0)
+        self.http = server(self.dbpath, port=0, nodes=("mac", "rog"))
         self.thread = threading.Thread(target=self.http.serve_forever, daemon=True)
         self.thread.start()
         self.addCleanup(self.tmp.cleanup)

@@ -12,7 +12,7 @@ from .evidence import Relay, control_server
 MAX_BODY = 512 * 1024
 
 
-def server(path, port=8765, nodes=("mac", "rog")):
+def server(path, port=8765, nodes=("mac",)):
     relay = Relay()
     class Handler(BaseHTTPRequestHandler):
         protocol_version = "HTTP/1.1"

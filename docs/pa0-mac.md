@@ -59,7 +59,7 @@ launchd 已实际安装并处于 `running`；服务启动核对识别 178 个未
 
 用户提供 VPS：`ssh mac@35.209.202.207 -p 22`。只读登录确认 Linux、`/usr/bin/python3`、未安装 Docker；现有 `astrbot.service` 处于 `active/running`，进程归属 `mac`，目录为 `/home/mac/astrbot`。期间一次 SSH 连接中断，重试已成功；未读取密钥或修改服务器部署。
 
-用户已确认飞书机器人由 AstrBot 承载，已复用其认证 socket 传输并验证用户绑定与实际收发。IP PWA 已部署并验证真实登录及搜索。旧 Note／Daily 已移除；当前仅 Study 267 个、Life 179 个 Markdown，本轮所有 1803 个新来源文件的大小、mtime、ctime 在索引前后不变。Life 私密元数据许可单独记录，分类仍 private。
+用户已确认飞书机器人由 AstrBot 承载，已复用其认证 socket 传输并验证用户绑定与实际收发。IP PWA 已部署并验证真实登录及搜索。旧 Note／Daily 已移除；当时仅 Study 267 个、Life 179 个 Markdown，该次所有 1803 个新来源文件的大小、mtime、ctime 在索引前后不变。Life 私密元数据许可单独记录，分类仍 private。2026-10-14 的最新计数和恢复核验见 [单节点运行](pa0-mac-only.md)。
 
 2026-10-14 用户通过 UU Mac 终端运行修正版更新／验收脚本并确认成功；真实两设备同版本副本、Mac 加密文本中转及用户 PWA 阅读均已验证。原始测试源的只读手工搜索仍以此前现场记录为准。备份复制、最终离线恢复与临时源清理的最终状态见 [文本与恢复](pa0-text.md)，不启用 PA1 模型。
 

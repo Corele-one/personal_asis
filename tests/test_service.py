@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 import signal
 import subprocess
@@ -54,6 +55,7 @@ class ServiceTests(unittest.TestCase):
             (home / "sources.yaml").write_text(json.dumps({"node_id": "mac", "sources": [
                 {"id": "test", "root": str(base / "source"), "policy": "private"}]}))
             responses = [subprocess.CompletedProcess([], 0), subprocess.CompletedProcess([], 5),
+                         subprocess.CompletedProcess([], 0),
                          subprocess.CompletedProcess([], 0)]
             with patch("personal_asis.service.sys.platform", "darwin"), \
                  patch("personal_asis.service.Path.home", return_value=base), \
@@ -61,7 +63,9 @@ class ServiceTests(unittest.TestCase):
                  patch("personal_asis.service.time.sleep"):
                 result = install(home)
             self.assertTrue(Path(result["plist"]).exists())
-            self.assertEqual(run.call_count, 3)
+            self.assertEqual(run.call_count, 4)
+            self.assertEqual(run.call_args.args[0], ["launchctl", "kickstart",
+                f"gui/{os.getuid()}/local.personal-asis.mac"])
 
     def run_loop(self, interval=21600, sleep_jump=0, reports=None):
         with tempfile.TemporaryDirectory() as name:
