@@ -38,7 +38,7 @@
 | 项目规范 | 已同步 AGENT.md、SPECIFICATION.md、CONTEXT.md、ADR 0033 与受影响的运行说明；历史验收快照保留日期 |
 | 持续来源许可 | 已将 Study／Life 迁移为绑定现有根目录的源级 MiMo 许可，包含后续新增路径；凭据／显式排除项在索引和使用时检查。当前适配器仍仅 MiMo，新提供商接入能力需分别实现并批准登记 |
 | Codex 补充审批政策 | 已将[政策正文](../config/auto-review.personal-asis.md)作为 `extra_policy` 写入可信项目 `.codex/config.toml`，与[配置示例](../config/codex-auto-review.example.toml)保持一致；Codex CLI 解析通过，当前无审批宿主会话未验证 reviewer 实际装载 |
-| 飞书模型分析／摘录与远程权限管理 | 本人私聊 PA1 分析／摘录已交付并做 SDK 适配测试；远程权限管理尚未实现。渠道实际验收及限制见 [PA1](pa1-acceptance.md) |
+| 飞书模型分析／摘录与远程权限管理 | 本人私聊 PA1 分析／摘录已交付，SDK 适配及首次真实本人请求、Mac 分析和飞书发送成功回执已验证；远程权限管理尚未实现。渠道实际验收及限制见 [PA1](pa1-acceptance.md) |
 | 自动记忆与复核 | 当前尚未实现；按上述许可和期限后续交付 |
 | 现有 PA1 到期与撤权清理 | 已实现 30 天回答过期、防重标记保留、跨向量作用域清理、关联联调原响应清理；模型撤权立即执行，Mac 每次核对后也执行 |
 | 私密 PWA 阅读 | 已实现独立 `private_remote_evidence` 检查并启用 Study／Life；真实链路验证结果见下文 |
