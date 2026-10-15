@@ -156,14 +156,19 @@ class PA1Tests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'invalid_evidence'):
             validate_answer(response,bundle)
 
-    def test_citation_groups_still_require_exact_existing_reference_set(self):
+    def test_citation_groups_require_existing_ids_and_derive_actual_reference_index(self):
         from personal_asis.model_provider import validate_answer
         bundle=build_bundle(self.home,'cache')
         response={'finish_reason':'stop','tool_calls':None,'content':json.dumps({
             'status':'supported','answer':'Synthetic evidence [E1, E2]。',
             'citations':['E1','E2'],'uncertainty':''})}
         self.assertEqual(validate_answer(response,bundle)['citations'],['E1','E2'])
-        for group in ('E1, E999','E1-E2','E1, OTHER','E1'):
+        response['content']=json.dumps({'status':'supported','answer':'Synthetic [E1]',
+                                        'citations':['E1','E2'],'uncertainty':''})
+        normalized=validate_answer(response,bundle)
+        self.assertEqual(normalized['citations'],['E1'])
+        self.assertTrue(normalized['citation_index_normalized'])
+        for group in ('E1, E999','E1-E2','E1, OTHER'):
             response['content']=json.dumps({'status':'supported','answer':f'Synthetic [{group}]',
                                             'citations':['E1','E2'],'uncertainty':''})
             with self.subTest(group=group),self.assertRaisesRegex(ValueError,'invalid_evidence'):

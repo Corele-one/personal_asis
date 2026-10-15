@@ -18,7 +18,7 @@ def context(job):
     return "\n".join(str(job[k]) for k in ("document_id", "content_hash", "mode", "cursor", "client_nonce")).encode()
 
 
-def encrypt(value, job):
+def encrypt(value, job, associated_data=None):
     from cryptography.hazmat.primitives import hashes, serialization
     from cryptography.hazmat.primitives.asymmetric import padding, rsa
     from cryptography.hazmat.primitives.ciphers.aead import AESGCM
@@ -26,7 +26,7 @@ def encrypt(value, job):
     if not isinstance(public, rsa.RSAPublicKey) or public.key_size != 2048:
         raise ValueError("invalid_reader_key")
     key, nonce = AESGCM.generate_key(bit_length=256), secrets.token_bytes(12)
-    ciphertext = AESGCM(key).encrypt(nonce, json.dumps(value, ensure_ascii=False).encode(), context(job))
+    ciphertext = AESGCM(key).encrypt(nonce, json.dumps(value, ensure_ascii=False).encode(), context(job) if associated_data is None else associated_data)
     wrapped = public.encrypt(key, padding.OAEP(mgf=padding.MGF1(hashes.SHA256()), algorithm=hashes.SHA256(), label=None))
     encode = lambda raw: base64.b64encode(raw).decode()
     return {"wrapped_key": encode(wrapped), "nonce": encode(nonce), "ciphertext": encode(ciphertext)}
@@ -116,8 +116,8 @@ class Relay:
                 del self.jobs[key]
 
 
-def control_server(home, relay):
-    path = Path(home) / "evidence.sock"
+def control_server(home, relay, filename="evidence.sock"):
+    path = Path(home) / filename
     path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     if path.is_symlink():
         raise ValueError("evidence_socket_path_in_use")
@@ -165,10 +165,10 @@ def control_server(home, relay):
     return server, path
 
 
-def control(home, data):
+def control(home, data, filename="evidence.sock"):
     with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as connection:
         connection.settimeout(10)
-        connection.connect(str(Path(home) / "evidence.sock"))
+        connection.connect(str(Path(home) / filename))
         connection.sendall(json.dumps(data).encode() + b"\n")
         with connection.makefile("rb") as source:
             result = json.loads(source.readline(120_000))

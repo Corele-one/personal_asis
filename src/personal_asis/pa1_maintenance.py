@@ -27,10 +27,17 @@ def clean(home, clock=time.time):
                     (provider is None or value[1].allows_model(provider,value[2],value[3])))
 
     def usable(result):
+        def evidence_allowed(e):
+            if e.get('kind')=='external':
+                from datetime import datetime
+                try:
+                    return clock()-datetime.fromisoformat(e['retrieved_at']).timestamp()<3600
+                except (KeyError,TypeError,ValueError):
+                    return False
+            return allowed(e.get('document_id'),e.get('content_hash'),result['provider'])
         return (isinstance(result,dict) and isinstance(result.get('evidence'),list)
                 and bool(result['evidence']) and isinstance(result.get('provider'),str)
-                and all(isinstance(e,dict) and allowed(e.get('document_id'),e.get('content_hash'),
-                    result['provider']) for e in result['evidence']))
+                and all(isinstance(e,dict) and evidence_allowed(e) for e in result['evidence']))
 
     report={'vectors_removed':0,'model_results_cleared':0,'validation_files_removed':0}
     path=home/'semantic.sqlite3'

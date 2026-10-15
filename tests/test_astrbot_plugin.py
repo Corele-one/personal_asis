@@ -6,6 +6,7 @@ from pathlib import Path
 import tempfile
 from types import SimpleNamespace
 import unittest
+from unittest.mock import Mock
 
 from personal_asis.feishu import FeishuBridge
 
@@ -84,6 +85,26 @@ class AstrBotPluginTests(unittest.TestCase):
         asyncio.run(self.plugin.on_message(event))
         self.assertEqual(len(self.sent), 1)
         self.assertEqual(self.plugin.bridge.db.execute("SELECT count(*) FROM routes").fetchone()[0], 1)
+
+    def test_analysis_and_research_use_bound_owner_adapter_without_astrbot_model(self):
+        self.bind()
+        self.plugin.bridge.submit_analysis=Mock(return_value='synthetic-id')
+        for command in ('/asis analyze 个人问题','/asis research 个人问题 | public chip query | https://example.com/article'):
+            event=Event(command)
+            asyncio.run(self.plugin.on_message(event))
+            self.assertFalse(event.call_llm)
+            self.assertTrue(event.stopped)
+        args=self.plugin.bridge.submit_analysis.call_args.args
+        self.assertEqual(args[3],'个人问题')
+        self.assertEqual(args[4],{'public_query':'public chip query','urls':['https://example.com/article']})
+
+    def test_analysis_status_keeps_delivered_state_after_relay_expires(self):
+        self.bind()
+        with self.plugin.bridge.db:
+            self.plugin.bridge.db.execute('INSERT INTO analysis_routes VALUES(?,?,?,?,?)',('synthetic-id','lark-fixture','ou_owner','m',0))
+            self.plugin.bridge.db.execute('INSERT INTO deliveries VALUES(?,?,?,?,?)',('delivery','synthetic-id','sent',0,0))
+        asyncio.run(self.plugin.on_message(Event('/asis status synthetic-id')))
+        self.assertIn('结果已回复此私聊',self.sent[0][2])
 
 
 if __name__ == "__main__":

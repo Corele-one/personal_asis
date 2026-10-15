@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import plistlib
 import signal
+import shutil
 import sqlite3
 import subprocess
 import sys
@@ -18,6 +19,53 @@ LABEL = "local.personal-asis.mac"
 TUNNEL_LABEL = "local.personal-asis.tunnel"
 LINUX_LABEL = "personal-asis.service"
 LINUX_TUNNEL_LABEL = "personal-asis-tunnel.service"
+ANALYSIS_LABEL = 'local.personal-asis.pa1'
+
+
+def install_analysis(home):
+    """Separate semantic interpreter/process so long inference cannot block PA0."""
+    if sys.platform!='darwin':
+        raise ValueError('analysis_service_requires_current_mac_deployment')
+    from .pa1 import settings
+    settings(home)
+    load_config(home/'sources.yaml')
+    import cryptography
+    source=str(Path(__file__).resolve().parents[1])
+    node=shutil.which('node')
+    node_bin=str(Path(node).resolve().parent) if node else '/usr/bin'
+    directory=Path.home()/'Library/LaunchAgents'
+    directory.mkdir(parents=True,exist_ok=True)
+    path=directory/(ANALYSIS_LABEL+'.plist')
+    for name in ('pa1.stdout.log','pa1.stderr.log'):
+        (home/name).touch(mode=0o600,exist_ok=True)
+        (home/name).chmod(0o600)
+    spec={'Label':ANALYSIS_LABEL,'ProgramArguments':[sys.executable,'-m','personal_asis','--home',str(home),'pa1','channel-worker'],
+        'EnvironmentVariables':{'PYTHONPATH':source,'PYTHONUNBUFFERED':'1','HF_HUB_OFFLINE':'1',
+            'TRANSFORMERS_OFFLINE':'1','HF_HUB_DISABLE_TELEMETRY':'1','TOKENIZERS_PARALLELISM':'false',
+            'PATH':node_bin+':/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin'},
+        'RunAtLoad':True,'KeepAlive':True,'ThrottleInterval':30,'ProcessType':'Background','Umask':0o077,
+        'StandardOutPath':str(home/'pa1.stdout.log'),'StandardErrorPath':str(home/'pa1.stderr.log')}
+    domain=f'gui/{os.getuid()}'
+    subprocess.run(['launchctl','bootout',domain+'/'+ANALYSIS_LABEL],capture_output=True)
+    with path.open('wb') as handle:
+        plistlib.dump(spec,handle)
+    path.chmod(0o600)
+    for attempt in range(5):
+        result=subprocess.run(['launchctl','bootstrap',domain,str(path)],capture_output=True)
+        if result.returncode==0:
+            break
+        if result.returncode!=5 or attempt==4:
+            result.check_returncode()
+        time.sleep(1)
+    subprocess.run(['launchctl','kickstart',domain+'/'+ANALYSIS_LABEL],capture_output=True,check=True)
+    for _ in range(25):
+        state=subprocess.run(['launchctl','print',domain+'/'+ANALYSIS_LABEL],capture_output=True,text=True,check=True)
+        if 'state = running' in state.stdout:
+            break
+        time.sleep(.2)
+    else:
+        raise ValueError('analysis_service_did_not_start')
+    return {'label':ANALYSIS_LABEL,'installed':True,'pa0_interpreter_changed':False}
 
 
 def _unit_quote(value):

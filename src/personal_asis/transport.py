@@ -7,6 +7,7 @@ import sqlite3
 
 from .coordinator import Coordinator, ProtocolError, exact
 from .evidence import Relay, control_server
+from .analysis_channel import AnalysisRelay
 
 
 MAX_BODY = 512 * 1024
@@ -14,6 +15,7 @@ MAX_BODY = 512 * 1024
 
 def server(path, port=8765, nodes=("mac",)):
     relay = Relay()
+    analysis = AnalysisRelay()
     class Handler(BaseHTTPRequestHandler):
         protocol_version = "HTTP/1.1"
 
@@ -75,6 +77,13 @@ def server(path, port=8765, nodes=("mac",)):
                             result = relay.poll(node)
                         elif self.path == "/v1/evidence/complete":
                             result = relay.complete(node, data)
+                        elif self.path == "/v1/analysis/poll":
+                            exact(data, ('policy_hash',))
+                            if not isinstance(data['policy_hash'],str) or len(data['policy_hash'])!=64:
+                                raise ProtocolError('invalid_policy_hash')
+                            result = analysis.poll(node,data['policy_hash'])
+                        elif self.path == "/v1/analysis/complete":
+                            result = analysis.complete(node,data)
                         else:
                             raise ProtocolError("not_found", 404)
                 self.send_json(result)
@@ -87,7 +96,14 @@ def server(path, port=8765, nodes=("mac",)):
 
     class Server(ThreadingHTTPServer):
         control = None
+        analysis_control = None
         def server_close(self):
+            if self.analysis_control is not None:
+                control, path = self.analysis_control
+                self.analysis_control = None
+                control.shutdown()
+                control.server_close()
+                path.unlink(missing_ok=True)
             if self.control is not None:
                 control, path = self.control
                 self.control = None
@@ -98,9 +114,11 @@ def server(path, port=8765, nodes=("mac",)):
     result = Server(("127.0.0.1", port), Handler)
     try:
         result.control = control_server(Path(path).parent, relay)
+        result.analysis_control = control_server(Path(path).parent, analysis, 'analysis.sock')
     except Exception:
         result.server_close()
         raise
     result.daemon_threads = True
     result.relay = relay
+    result.analysis = analysis
     return result

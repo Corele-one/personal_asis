@@ -123,7 +123,9 @@ def main(argv=None):
     p.add_argument("--port", type=int, default=8766)
     p.add_argument("--reset", action="store_true", help="重设 Web 用户并撤销全部 Web 会话")
     p = commands.add_parser("pa1", help="本机最小上下文、MiMo 与预算；默认仅合成联调")
-    p.add_argument("action", choices=["init", "configure", "authorize", "revoke", "clean", "key", "models", "retrieve", "bundle", "analyze", "budget", "self-test", "semantic-test"])
+    p.add_argument("action", choices=["init", "configure", "authorize", "revoke", "clean", "key", "models", "retrieve", "bundle", "analyze", "research", "channel-worker", "channel-install", "budget", "self-test", "semantic-test"])
+    p.add_argument('--public-query',help='明确公开的检索词，仅此外发给搜索服务')
+    p.add_argument('--url',action='append',default=[],help='公开HTTPS原始证据链接，最多三条')
     p.add_argument("--query")
     p.add_argument("--model")
     p.add_argument("--enable", action="store_true")
@@ -198,10 +200,20 @@ def main(argv=None):
                     result=run(encoder)
                     emit(result)
                     return 0 if result['passed'] else 1
-                elif args.action == "analyze":
+                elif args.action=='channel-install':
+                    from .service import install_analysis
+                    result=install_analysis(home)
+                elif args.action == 'channel-worker':
+                    from .analysis_channel import serve_worker
+                    serve_worker(home,emit)
+                    return 0
+                elif args.action in ('analyze','research'):
                     if not args.query or not args.request_id:
                         raise ValueError("analysis_requires_query_and_request_id")
-                    result = pa1.analyze(home, args.query, args.request_id, source_ids=args.source)
+                    if args.action=='research' and not args.public_query:
+                        raise ValueError('research_requires_explicit_public_query')
+                    research={'public_query':args.public_query,'urls':args.url} if args.action=='research' else None
+                    result = pa1.analyze(home, args.query, args.request_id, source_ids=args.source,research=research)
                 elif args.action == "bundle":
                     if not args.query:
                         raise ValueError("bundle_requires_query")

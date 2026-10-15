@@ -16,6 +16,8 @@ from .coordinator import Coordinator, ProtocolError
 
 def summary(view, pwa_origin=None):
     """Render a fixed whitelist, even if a future evidence result contains text."""
+    if view.get('kind')=='analysis':
+        return analysis_summary(view)
     lines = [f"PA0 搜索 {view['task_id']}", "部分结果，等待补全" if view["partial"] else "搜索完成"]
     if view["waiting_nodes"]:
         lines.append("等待节点：" + "、".join(view["waiting_nodes"]))
@@ -38,6 +40,32 @@ def summary(view, pwa_origin=None):
     return "\n".join(lines)
 
 
+def analysis_summary(view):
+    result=view['result']
+    lines=[f"PA1 分析 {view['task_id']}"]
+    if result.get('error'):
+        from .analysis_channel import error_message
+        return '\n'.join(lines+[error_message(result['error']),'不会自动重复模型调用。可到私有 PWA 查看或发起新的明确请求。'])
+    lines += [result['answer'],'不确定性：'+result['uncertainty']]
+    report=result.get('report')
+    if report:
+        for key,label in [('existing_knowledge','已有资料'),('external_findings','公开证据'),('knowledge_gaps','知识缺口'),('disagreements','分歧与限制')]:
+            lines.append(label+'：'+report[key])
+        for i,d in enumerate(report['directions'],1):
+            lines.append(f"方向假设{i}："+d['hypothesis'])
+            for k,label in [('connection','资料关联'),('gap','能力缺口'),('opportunity','机会'),('risk','风险'),('next_step','下一步验证')]:
+                lines.append(label+'：'+d[k])
+    for e in result['evidence']:
+        if e['id'] not in result['citations']:
+            continue
+        if e.get('kind')=='external':
+            lines.append(f"[{e['id']}] {e['title']}｜{e['url']}｜页面日期（未核实）：{e['published_at'] or '未知'}｜获取：{e['retrieved_at']}")
+        else:
+            lines.append(f"[{e['id']}] {e['title']}｜{e['source_id']}｜{e['path_hint']}｜第{e['line_start']}行\n摘录：{e['excerpt']}")
+    lines.append('以上为基于检索证据的分析；未创建任务或日历。')
+    return '\n'.join(lines)[:20000]
+
+
 def view_digest(view):
     # Ignore routine heartbeat/online changes and queued -> running transitions:
     # notify on initial receipt, actual results, source waiting and completion.
@@ -55,6 +83,7 @@ class FeishuBridge:
         self.db = sqlite3.connect(path, timeout=30)
         os.chmod(path, 0o600)
         self.db.row_factory = sqlite3.Row
+        self.analysis_keys = {}
         self.db.executescript("""
             CREATE TABLE IF NOT EXISTS binding (
                 singleton INTEGER PRIMARY KEY CHECK(singleton=1),
@@ -70,11 +99,16 @@ class FeishuBridge:
                 id TEXT PRIMARY KEY, task_id TEXT, state TEXT NOT NULL,
                 created REAL NOT NULL, updated REAL NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS analysis_routes (
+                task_id TEXT PRIMARY KEY, platform_id TEXT NOT NULL,
+                open_id TEXT NOT NULL, message_id TEXT NOT NULL, created REAL NOT NULL
+            );
         """)
         cutoff = self.clock() - 180 * 86400
         with self.db:
             self.db.execute("DELETE FROM routes WHERE created < ?", (cutoff,))
             self.db.execute("DELETE FROM deliveries WHERE created < ?", (cutoff,))
+            self.db.execute("DELETE FROM analysis_routes WHERE created < ?", (cutoff,))
 
     def close(self):
         self.db.close()
@@ -120,6 +154,58 @@ class FeishuBridge:
             self.db.execute("INSERT OR IGNORE INTO routes VALUES(?,?,?,?,NULL,?)",
                             (task, platform_id, open_id, message_id, self.clock()))
         return task
+
+    def submit_analysis(self,platform_id,open_id,message_id,query,research=None):
+        if not self.authorized(platform_id,open_id):
+            raise ProtocolError('unauthorized',403)
+        from cryptography.hazmat.primitives.asymmetric import rsa
+        from cryptography.hazmat.primitives import serialization
+        import base64
+        from .analysis_channel import relay_control
+        task=str(uuid.uuid5(uuid.NAMESPACE_URL,f'asis-analysis:{platform_id}:{message_id}'))
+        if task not in self.analysis_keys:
+            key=rsa.generate_private_key(public_exponent=65537,key_size=2048)
+            public=key.public_key().public_bytes(serialization.Encoding.DER,serialization.PublicFormat.SubjectPublicKeyInfo)
+            self.analysis_keys[task]=(key,base64.b64encode(secrets.token_bytes(16)).decode(),base64.b64encode(public).decode(),self.clock())
+        key,nonce,public,_=self.analysis_keys[task]
+        relay_control(self.home,{'op':'request','request_id':task,'query':query,'channel':'feishu',
+            'source_ids':None,'research':research,'public_key':public,'client_nonce':nonce})
+        with self.db:
+            self.db.execute('INSERT OR IGNORE INTO analysis_routes VALUES(?,?,?,?,?)',
+                (task,platform_id,open_id,message_id,self.clock()))
+        return task
+
+    def pending_analyses(self):
+        from .analysis_channel import relay_control,aad
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric import padding
+        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+        import base64
+        output=[]
+        for task,(_,_,_,created) in list(self.analysis_keys.items()):
+            if self.clock()-created>900:
+                self.analysis_keys.pop(task,None)
+        for row in self.db.execute('SELECT * FROM analysis_routes ORDER BY created').fetchall():
+            if row['task_id'] not in self.analysis_keys or not self.authorized(row['platform_id'],row['open_id']):
+                continue
+            key,nonce,_,_=self.analysis_keys[row['task_id']]
+            try:
+                status=relay_control(self.home,{'op':'get','request_id':row['task_id']})
+            except ProtocolError:
+                continue
+            if status['status'] in ('waiting','running'):
+                continue
+            if status['status']!='ready':
+                self.analysis_keys.pop(row['task_id'],None)
+                continue
+            envelope=status['envelope']
+            rawkey=key.decrypt(base64.b64decode(envelope['wrapped_key']),padding.OAEP(mgf=padding.MGF1(hashes.SHA256()),algorithm=hashes.SHA256(),label=None))
+            plain=AESGCM(rawkey).decrypt(base64.b64decode(envelope['nonce']),base64.b64decode(envelope['ciphertext']),
+                aad({'request_id':row['task_id'],'client_nonce':nonce,'channel':'feishu'}))
+            view={'kind':'analysis','task_id':row['task_id'],'result':json.loads(plain)}
+            digest=hashlib.sha256(plain).hexdigest()
+            output.append((dict(row),view,digest))
+        return output
 
     def view(self, platform_id, open_id, task_id):
         if not self.authorized(platform_id, open_id):

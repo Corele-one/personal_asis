@@ -2,7 +2,7 @@
 
 状态：已完成真实私聊绑定、搜索收发及实际 SDK 接口验证，PA0 已验收。本文维护使用命令和渠道边界；结果见 [最终验收](pa0-acceptance.md)。
 
-用户后续确认的[持续授权](private-data-authority.md)允许本人私聊接收私密分析／相关摘录，以及已启用工作的私密主动通知；当前插件仍只有下述元数据搜索能力，分析与远程权限管理入口尚未交付。
+用户后续确认的[持续授权](private-data-authority.md)允许本人私聊接收私密分析／相关摘录，以及已启用工作的私密主动通知；PA0 搜索维持下述元数据能力；本人 PA1 分析／研究命令已另行交付，见本文末尾和 [验收](pa1-acceptance.md)。远程权限管理入口尚未交付。
 
 用户已确认 VPS 上的飞书机器人由 AstrBot 承载。本切片复用现有飞书传输，助手的任务权威、索引、来源政策及状态仍属于 Personal Asis；AstrBot 不负责 PA0 推理或资料存储。它不增加 QQ 入口，也不接入 AstrBot 的模型、对话记忆或其他业务插件。
 
@@ -75,3 +75,7 @@ scripts/asis --home /home/mac/.local/share/personal-asis-coordinator feishu audi
 真实飞书绑定和用户搜索已通过；本轮专用 3 项检查也在实际 SDK 解释器中通过。自动化发送器使用合成替身；实际收发证据与整体 PA0 结论见最终验收，不把接口模拟当作平台收发。
 
 历史过程见 [PA0 部署历史](archive/pa0-rollout-2026-10.md)，当前结果以 [最终验收](pa0-acceptance.md) 为准。
+
+## 后续 PA1 命令
+
+现有 PA0 搜索仍为元数据固定输出；本人私聊另提供 `/asis analyze`、`/asis research` 和分析状态，参数、权限与实际验收见 [PA1](pa1-acceptance.md)。分析不经过 AstrBot 默认模型流；模型和来源检查在 Mac 执行，VPS 不持久化回答或摘录。

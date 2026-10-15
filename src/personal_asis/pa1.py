@@ -177,7 +177,7 @@ def budget(home, node_id, data):
     return ModelBudget(Path(home)/'pa1.sqlite3',node_id,data['daily_tokens'],data['monthly_tokens'],data['timezone'])
 
 
-def analyze(home, query, request_id, provider=None, synthetic_home=None, source_ids=None):
+def analyze(home, query, request_id, provider=None, synthetic_home=None, source_ids=None, research=None, encoder_override=None, request_identity=None, before_model=None, channel=None):
     home=Path(home)
     data=settings(home)
     if not data['enabled']:
@@ -186,23 +186,38 @@ def analyze(home, query, request_id, provider=None, synthetic_home=None, source_
         raise ValueError('pa1_synthetic_only_real_sources_disabled')
     source_home=Path(synthetic_home) if synthetic_home is not None else home
     config=load_pa1_config(source_home)
-    encoder,degradation=encoder_for(data)
+    encoder,degradation=encoder_for(data) if encoder_override is None else (encoder_override,None)
     bundle=build_bundle(source_home,query,data['provider'],encoder,source_ids)
+    if channel is not None:
+        from .analysis_channel import validate_result
+        validate_result(source_home,{'provider':bundle.provider,'evidence':bundle.evidence,
+            'retrieval_mode':bundle.retrieval_mode},channel)
+    if research is not None:
+        if data['synthetic_only']:
+            raise ValueError('research_requires_real_source_mode')
+        from .research import augment, collect
+        bundle=augment(bundle,collect(research))
     if data['synthetic_only']:
         verify_synthetic_bundle(bundle)
     client=provider or MiMo(config.node_id,data['model'])
     # Fail before reserving money/tokens if the credential is absent.
     secret=client.credential()
-    payload=client.payload(bundle,data['max_completion_tokens'])
+    completion_limit=3072 if research is not None else data['max_completion_tokens']
+    payload=client.payload(bundle,completion_limit)
+    if research is not None:
+        from .research import RESEARCH_SYSTEM
+        payload['messages'][0]['content']+=RESEARCH_SYSTEM
     prompt_bytes=len(json.dumps(payload['messages'],ensure_ascii=False).encode())
-    if prompt_bytes>data['max_prompt_bytes']:
+    if prompt_bytes>(16384 if research is not None else data['max_prompt_bytes']):
         raise ValueError('context_bundle_exceeds_prompt_limit')
     # Byte count bounds ordinary text tokenization; include a conservative
     # framing margin, then reconcile to authoritative provider usage.
-    reservation=prompt_bytes+1024+data['max_completion_tokens']
+    reservation=prompt_bytes+1024+completion_limit
     fingerprint=hashlib.sha256((bundle.fingerprint()+json.dumps(payload,sort_keys=True)+
                               json.dumps(data,sort_keys=True)).encode()).hexdigest()
     bundle.revalidate(source_home)
+    if before_model:
+        before_model()
     ledger=budget(home,config.node_id,data)
     try:
         booked=ledger.reserve(request_id,fingerprint,reservation)
@@ -214,6 +229,8 @@ def analyze(home, query, request_id, provider=None, synthetic_home=None, source_
                     'retrieval_mode':bundle.retrieval_mode,'degradation':degradation or bundle.degradation}
         try:
             bundle.revalidate(source_home)
+            if before_model:
+                before_model()
         except (OSError,ValueError):
             ledger.finish(request_id,'rejected',0)
             raise
@@ -227,18 +244,23 @@ def analyze(home, query, request_id, provider=None, synthetic_home=None, source_
             raise ValueError('model_call_unknown_reserved_budget_no_retry') from None
         total=response['usage']['total_tokens']
         try:
-            if total>reservation or response['usage']['completion_tokens']>data['max_completion_tokens']:
+            if total>reservation or response['usage']['completion_tokens']>completion_limit:
                 raise ValueError('provider_usage_exceeded_reservation')
             answer=validate_answer(response,bundle)
             bundle.revalidate(source_home)
-        except (OSError,ValueError):
-            ledger.finish(request_id,'invalid_output',total)
+        except (OSError,ValueError) as exc:
+            diagnostic=str(exc) if str(exc).startswith(('model_','research_','context_','provider_')) else type(exc).__name__
+            ledger.finish(request_id,'invalid_output',total,{'validation_error':diagnostic})
             raise
         result={**answer,'evidence':[{"id":f'E{i+1}',**e} for i,e in enumerate(bundle.evidence)],
                 'sensitivity':'private' if any(e['sensitivity']=='private' for e in bundle.evidence) else 'normal',
                 'usage':response['usage'],'retrieval_mode':bundle.retrieval_mode,
                 'degradation':degradation or bundle.degradation,'request_id':request_id,'provider':'mimo',
                 'model':data['model'],'cached':False}
+        if research is not None:
+            result['research_strategy']=bundle.strategy
+        if request_identity is not None:
+            result['channel_request_fingerprint']=request_identity
         ledger.finish(request_id,'succeeded',total,result)
         return result
     finally:

@@ -11,6 +11,7 @@ from urllib.parse import urlsplit
 from .coordinator import Coordinator, ProtocolError, exact
 from .web_auth import WebAuth
 from .evidence import control as evidence_control
+from .analysis_channel import relay_control
 
 
 COOKIE = "__Host-asis"
@@ -162,6 +163,12 @@ def server(home, port=8766, origin=None, auth_method=None):
                             exact(data, ("query", "request_id"))
                             with Coordinator(home / "coordinator.sqlite3", nodes=("mac",)) as c:
                                 return self.write(c.submit(data["query"], "pwa", 20, data["request_id"]))
+                        if route == '/api/analysis/request':
+                            exact(data,('request_id','query','source_ids','research','client_nonce','public_key'))
+                            return self.write(relay_control(home,{'op':'request',**data,'channel':'pwa'}))
+                        if route == '/api/analysis/result':
+                            exact(data,('request_id',))
+                            return self.write(relay_control(home,{'op':'get',**data}))
                         if route == "/api/reader/request":
                             exact(data, ("task_id", "document_id", "content_hash", "mode", "cursor", "client_nonce", "public_key"))
                             with Coordinator(home / "coordinator.sqlite3", nodes=("mac",)) as c:

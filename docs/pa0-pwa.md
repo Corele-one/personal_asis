@@ -37,3 +37,7 @@ sudo /opt/personal-asis-certbot/bin/certbot renew --dry-run
 ```
 
 历史过程见 [PA0 部署历史](archive/pa0-rollout-2026-10.md)，当前结果以 [最终验收](pa0-acceptance.md) 为准。
+
+## 后续 PA1 分析入口
+
+本人控制台已增加「结合资料分析」及可选「按需公开研究」，不改变 PA0 搜索与正文阅读的独立权限。临时解密密钥仅在当前页面，关闭不取消已开始的模型调用；使用与验证见 [PA1](pa1-acceptance.md)。

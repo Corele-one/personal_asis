@@ -18,7 +18,7 @@ from personal_asis.coordinator import ProtocolError
 from personal_asis.pwa import settings
 
 
-@register("personal_asis", "Personal Asis", "PA0 飞书元数据搜索", "0.1.0")
+@register("personal_asis", "Personal Asis", "资料搜索与 PA1 证据分析", "0.2.0")
 class PersonalAsis(Star):
     def __init__(self, context: Context):
         super().__init__(context)
@@ -78,7 +78,34 @@ class PersonalAsis(Star):
                     for route, view, digest in self.bridge.pending():
                         if route["task_id"] == task_id:
                             await self.bridge.deliver(route, view, digest, self.send)
+            elif action in {'analyze','分析','research','研究'}:
+                research=None
+                if action in {'research','研究'}:
+                    sections=[s.strip() for s in argument.split('|')]
+                    if len(sections)<2:
+                        await self.reply(event,'用法：/asis research 私人问题 | 公开检索词 | 公开HTTPS链接（可选，最多3条）')
+                        return
+                    argument=sections[0]
+                    research={'public_query':sections[1],'urls':sections[2:]}
+                task_id=self.bridge.submit_analysis(platform,sender,event.message_obj.message_id,argument,research)
+                await self.reply(event,f'PA1 已接收：{task_id}。由 Mac 检索获准资料、核对证据并在共享预算内分析，完成后回复此私聊；不会创建任务或日历。')
             elif action in {"status", "状态"}:
+                route=self.bridge.db.execute('SELECT * FROM analysis_routes WHERE task_id=? AND platform_id=? AND open_id=?',
+                    (argument,platform,sender)).fetchone()
+                if route:
+                    from personal_asis.analysis_channel import relay_control
+                    delivery=self.bridge.db.execute('SELECT state FROM deliveries WHERE task_id=? ORDER BY updated DESC LIMIT 1',(argument,)).fetchone()
+                    if delivery:
+                        state='delivered' if delivery['state']=='sent' else 'delivery_unknown'
+                    else:
+                        try:
+                            state=relay_control(self.home,{'op':'get','request_id':argument})['status']
+                        except ProtocolError:
+                            state='expired'
+                    labels={'waiting':'等待 Mac 在线','running':'Mac 分析中','ready':'结果已生成，等待此私聊投递','expired':'中转已过期；不会自动重复付费','revoked':'权限已改变，停止展示结果',
+                            'delivered':'结果已回复此私聊','delivery_unknown':'通知失败或送达结果未知；不会自动重复发送'}
+                    await self.reply(event,f'PA1 {argument}：{labels.get(state,state)}。本机保留计费和防重记录。')
+                    return
                 view = self.bridge.view(platform, sender, argument)
                 uncertain = self.bridge.db.execute("SELECT 1 FROM deliveries WHERE task_id=? AND state IN ('unknown','sending','failed')",
                                                    (argument,)).fetchone()
@@ -86,7 +113,7 @@ class PersonalAsis(Star):
                 origin = settings(self.home)["origin"] if (self.home / "pwa.json").exists() else None
                 await self.reply(event, prefix + summary(view, origin))
             else:
-                await self.reply(event, "PA0：/asis search 关键词；/asis status 任务编号。仅支持此私聊的获准元数据搜索。")
+                await self.reply(event, "搜索：/asis search 关键词；/asis status 搜索编号。分析：/asis analyze 问题。公开研究：/asis research 私人问题 | 公开检索词 | 公开HTTPS链接（可选）。")
         except ProtocolError:
             await self.reply(event, "请求无效或任务不属于此账号。使用 /asis search 关键词 或 /asis status 任务编号。")
         except Exception as exc:
@@ -102,8 +129,10 @@ class PersonalAsis(Star):
         while True:
             try:
                 async with self.lock:
-                    for route, view, digest in self.bridge.pending():
+                    for route, view, digest in self.bridge.pending()+self.bridge.pending_analyses():
                         state = await self.bridge.deliver(route, view, digest, self.send)
+                        if view.get('kind')=='analysis':
+                            self.bridge.analysis_keys.pop(route['task_id'],None)
                         if state in {"failed", "unknown", "sending"}:
                             logger.warning(f"PA0 delivery state={state}")
             except Exception as exc:
