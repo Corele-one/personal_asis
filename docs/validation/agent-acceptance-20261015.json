@@ -1,0 +1,133 @@
+{
+  "date": "2026-10-15",
+  "recorded_at": "2026-10-15T03:55:55.988636+00:00",
+  "live_synthetic_tool_loop_accepted": true,
+  "synthetic": {
+    "cached": true,
+    "status": "completed",
+    "answer_status": "supported",
+    "evidence_count": 2,
+    "citation_count": 2,
+    "model_turns": 2,
+    "searches": 1,
+    "usage": {
+      "completion_tokens": 160,
+      "prompt_tokens": 716,
+      "total_tokens": 876
+    },
+    "retrieval_mode": "lexical",
+    "sensitivity": "normal"
+  },
+  "real_study": {
+    "cached": true,
+    "status": "completed",
+    "answer_status": "insufficient_evidence",
+    "evidence_count": 3,
+    "citation_count": 0,
+    "model_turns": 2,
+    "searches": 1,
+    "usage": {
+      "completion_tokens": 92,
+      "prompt_tokens": 845,
+      "total_tokens": 937
+    },
+    "retrieval_mode": "hybrid_semantic",
+    "sensitivity": "normal"
+  },
+  "cached_repeat": {
+    "extra_calls": 0,
+    "extra_tokens": 0
+  },
+  "earlier_broad_study_trial": {
+    "accepted": false,
+    "searches": 3,
+    "denied_extra_searches": 1,
+    "model_calls": [
+      {
+        "state": "succeeded",
+        "tokens": 332
+      },
+      {
+        "state": "succeeded",
+        "tokens": 514
+      },
+      {
+        "state": "succeeded",
+        "tokens": 754
+      },
+      {
+        "state": "succeeded",
+        "tokens": 864
+      },
+      {
+        "state": "invalid_output",
+        "tokens": 1330
+      }
+    ],
+    "known_total_tokens": 3794,
+    "final_rejection": "agent_model_output_incomplete"
+  },
+  "regression": {
+    "total": 225,
+    "passed": 217,
+    "skipped": 8,
+    "release_package_tested": true
+  },
+  "provider_diagnostics": {
+    "sanitized_error_categories_tested": true,
+    "cooldown_minimum_seconds": 300,
+    "automatic_retry": false,
+    "historical_429_specific_cause": "unavailable",
+    "live_cooldown_trigger_in_this_run": false
+  },
+  "deployment": {
+    "release": "agent-local-51e8faaa94990dbb",
+    "services": [
+      {
+        "label": "local.personal-asis.mac",
+        "running": true,
+        "release": "agent-local-51e8faaa94990dbb"
+      },
+      {
+        "label": "local.personal-asis.pa1",
+        "running": true,
+        "release": "agent-local-51e8faaa94990dbb"
+      },
+      {
+        "label": "local.personal-asis.tunnel",
+        "running": true,
+        "release": ""
+      }
+    ],
+    "coordinator_get_status": 404,
+    "get_404_matches_coordinator_protocol": true,
+    "rollback_preserved": true,
+    "node_startup_check": {
+      "node_log_updated_after_install": true,
+      "reconcile_observed": true,
+      "cleanup_error_after_last_reconcile": false
+    }
+  },
+  "budget_snapshot": {
+    "day": "2026-10-15",
+    "month": "2026-10",
+    "daily_tokens": 23123,
+    "monthly_tokens": 33541,
+    "daily_limit": 100000,
+    "monthly_limit": 1000000,
+    "daily_remaining": 76877,
+    "monthly_remaining": 966459,
+    "approaching_limit": false,
+    "unresolved_calls": 2,
+    "includes_reservations": true,
+    "provider_cooldown": null
+  },
+  "current_run_known_tokens": 5607,
+  "prior_unknown_calls_preserved": 2,
+  "prior_unknown_reserved_tokens": 5688,
+  "limitations": [
+    "The Study result is insufficient_evidence, not a research conclusion.",
+    "No new owner-channel Agent command, continuous delegation, role system or OS sandbox.",
+    "No unattended sleep/reboot acceptance for the updated services."
+  ]
+}

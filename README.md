@@ -6,6 +6,8 @@ Mac 在验收时索引 Study 267 篇、Life 181 篇，共 448 篇 Markdown。ROG
 
 ## 使用入口
 
+2026-10-15 新增[委托状态与 Pi 合成适配](docs/agent-runtime-local.md)，并实现[本机按需 Agent 与恢复](docs/agent-on-demand.md)：复用 PA1 权限与预算，持久重建已完成步骤。实际 MiMo 合成闭环／跨进程恢复已通过，真实 Study 在证据不足时明确拒答。共享冷却、诊断和清理已发布至既有 Mac 服务；历史两笔未知预留保留。本人渠道仍沿用 PA1，尚无渠道 Agent 命令或后台委托。
+
 - 飞书私聊：`/asis search 关键词`，完成摘要附 PWA 任务链接。
 - 飞书分析：`/asis analyze 问题`；进度使用 `/asis status 分析编号`。公开研究使用 `/asis research 私人问题 | 公开检索词 | 公开HTTPS链接（可选）`。
 - PWA：使用既有静态密码登录，搜索后查看结果；有阅读资格的条目可打开摘录／正文，也可使用「结合资料分析」及「按需公开研究」。
@@ -38,6 +40,8 @@ scripts/asis reconcile
 scripts/asis audit
 scripts/asis-pa1 retrieve --source study --query "共享内存副本如何保持一致"
 scripts/asis-pa1 budget
+scripts/asis work list
+scripts/asis agent validate  # 可选 Pi 依赖安装后，仅使用合成资料
 ```
 
 仓库入口默认使用 `python3`。生产 Mac 使用私密运行目录中的 Python 环境及发布包；可选依赖和维护方法见 [运行说明](docs/pa0-mac-only.md)，不要用缺少加密依赖的基础解释器覆盖生产服务。

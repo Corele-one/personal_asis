@@ -6,6 +6,7 @@ from urllib.error import HTTPError
 from urllib.request import Request, build_opener, ProxyHandler, HTTPRedirectHandler
 
 from .credentials import CredentialStore
+from .provider_diagnostics import http_diagnostic
 
 
 ENDPOINT = "https://api.xiaomimimo.com/v1"
@@ -30,7 +31,9 @@ class ProviderRejected(ValueError):
 
 
 class ProviderUnknown(ValueError):
-    pass
+    def __init__(self,message,diagnostic=None):
+        super().__init__(message)
+        self.diagnostic=diagnostic
 
 
 class MiMo:
@@ -60,10 +63,13 @@ class MiMo:
                 return json.loads(raw)
         except HTTPError as error:
             code=error.code
-            error.close()
+            try:
+                diagnostic=http_diagnostic(error)
+            finally:
+                error.close()
             if code in {401,403}:
                 raise ProviderRejected("mimo_authentication_rejected") from None
-            raise ProviderUnknown("mimo_result_unknown") from None
+            raise ProviderUnknown("mimo_result_unknown",diagnostic) from None
         except (OSError,ValueError,UnicodeError):
             raise ProviderUnknown("mimo_result_unknown") from None
 

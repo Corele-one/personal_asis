@@ -1,0 +1,10 @@
+#!/bin/sh
+# Owner-local on-demand agent, using the existing isolated PA1 interpreter.
+ASIS_REPO_ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+ASIS_AGENT_PYTHON=${ASIS_PYTHON:-"$HOME/Library/Application Support/PersonalAsis/pa1-env/bin/python"}
+export HF_HUB_OFFLINE=1
+export TRANSFORMERS_OFFLINE=1
+export HF_HUB_DISABLE_TELEMETRY=1
+export TOKENIZERS_PARALLELISM=false
+export ASIS_PYTHON="$ASIS_AGENT_PYTHON"
+exec "$ASIS_REPO_ROOT/scripts/asis" agent "$@"

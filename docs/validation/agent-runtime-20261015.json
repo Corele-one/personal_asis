@@ -1,0 +1,25 @@
+{
+  "passed": true,
+  "synthetic_only": true,
+  "runtime": "@earendil-works/pi-agent-core",
+  "version": "1.2.0",
+  "model": "fake_host_provider",
+  "real_model_calls": 0,
+  "model_turns": 3,
+  "tool_calls": [
+    "lookup",
+    "artifact"
+  ],
+  "checks": {
+    "private_metadata_and_body_filtered": true,
+    "confined_artifact_created": true,
+    "supervisor_and_specialist_completed": true,
+    "tool_loop_observed": true,
+    "shared_fake_budget_settled": true
+  },
+  "limitations": [
+    "No real MiMo tool-call compatibility claim",
+    "No production scheduler or account/source integration",
+    "No general script/browser isolation claim"
+  ]
+}

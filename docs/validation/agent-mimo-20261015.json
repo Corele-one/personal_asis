@@ -1,0 +1,69 @@
+{
+  "date": "2026-10-15",
+  "synthetic_only": true,
+  "model": "mimo-v2.6-flash",
+  "pi_version": "1.2.0",
+  "live_tool_loop_accepted": false,
+  "trials": [
+    {
+      "trial": 1,
+      "calls": [
+        {
+          "state": "succeeded",
+          "tokens": 323
+        }
+      ],
+      "run_state": "waiting_node",
+      "diagnostics": [],
+      "actual_tool_executions": 0
+    },
+    {
+      "trial": 2,
+      "calls": [
+        {
+          "state": "unknown",
+          "tokens": 2844
+        }
+      ],
+      "run_state": "waiting_node",
+      "diagnostics": [],
+      "actual_tool_executions": 0
+    },
+    {
+      "trial": 3,
+      "calls": [
+        {
+          "state": "unknown",
+          "tokens": 2844
+        }
+      ],
+      "run_state": "waiting_node",
+      "diagnostics": [
+        "agent_unknown_http_429"
+      ],
+      "actual_tool_executions": 0
+    }
+  ],
+  "known_usage_tokens": 323,
+  "unknown_reserved_tokens": 5688,
+  "initial_known_refusal_resume_additional_calls": 0,
+  "shared_budget_snapshot": {
+    "day": "2026-10-15",
+    "month": "2026-10",
+    "daily_tokens": 17516,
+    "monthly_tokens": 27934,
+    "daily_limit": 100000,
+    "monthly_limit": 1000000,
+    "daily_remaining": 82484,
+    "monthly_remaining": 972066,
+    "approaching_limit": false,
+    "unresolved_calls": 2,
+    "includes_reservations": true
+  },
+  "limitations": [
+    "Trial 1 returned an abstention without a tool; final validation rejected it.",
+    "Trial 2 result unknown; original error classification unavailable.",
+    "Trial 3 returned HTTP 429; reservation retained conservatively.",
+    "No real source text, provider retry, channel deployment or completed live tool loop."
+  ]
+}

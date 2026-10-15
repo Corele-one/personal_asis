@@ -142,11 +142,88 @@ def main(argv=None):
     p.add_argument("--synthetic-only", action="store_true", help="恢复仅合成资料限制")
     p.add_argument("--live", action="store_true", help="合成资料真实 API 联调；需显式请求编号")
     p.add_argument("--request-id")
+    p = commands.add_parser('agent', help='本机按需 Pi/MiMo、持久恢复与合成验证；不启用后台委托')
+    p.add_argument('action', choices=['validate','run','resume','status','self-test','provider-status'])
+    p.add_argument('--probe',action='store_true',help='仅读取 /models 验证连接和模型列表，不调用生成接口')
+    p.add_argument('--query')
+    p.add_argument('--source', action='append')
+    p.add_argument('--request-id')
+    p.add_argument('--steps',type=int,help='本次最多新完成的步骤数；便于分步检查和恢复')
+    p = commands.add_parser('work', help='仅本机委托状态管理；不自动调度或授予来源权限')
+    p.add_argument('action', choices=['create', 'list', 'show', 'enqueue', 'pause', 'resume', 'cancel',
+                                     'stop-run', 'executions', 'resolve', 'clear-results'])
+    p.add_argument('--delegation-id')
+    p.add_argument('--run-id')
+    p.add_argument('--request-id')
+    p.add_argument('--goal')
+    p.add_argument('--source', action='append')
+    p.add_argument('--role', choices=['supervisor', 'research', 'career', 'life'], default='supervisor')
+    p.add_argument('--parent-run')
+    p.add_argument('--priority', choices=['foreground', 'background'], default='foreground')
+    p.add_argument('--execution-key')
+    p.add_argument('--outcome', choices=['done', 'rejected'])
     args = parser.parse_args(argv)
     home = args.home.expanduser().absolute()
     try:
         if args.command == "doctor":
             result = doctor()
+        elif args.command == 'agent':
+            if args.action=='validate':
+                from .runtime_validation import validate
+                result = validate()
+                emit(result)
+                return 0 if result['passed'] and all(result['checks'].values()) else 1
+            from .agent import execute, inspect, live_self_test, provider_status
+            if args.action=='provider-status':
+                result=provider_status(home,args.probe)
+                emit(result)
+                return 0
+            if not args.request_id:
+                raise ValueError('agent_request_id_required_max_96')
+            if args.action=='status':
+                result=inspect(home,args.request_id)
+            elif args.action=='self-test':
+                result=live_self_test(home,args.request_id,args.steps)
+            else:
+                result=execute(home,args.query,args.request_id,args.source,
+                               resume=args.action=='resume',step_limit=args.steps)
+        elif args.command == 'work':
+            from .work import WorkStore
+            if args.action == 'create':
+                if not args.goal or not args.request_id or not args.source:
+                    raise ValueError('work_create_requires_goal_sources_and_request_id')
+                config = load_config(home/'sources.yaml')
+                if set(args.source) - {source.id for source in config.sources}:
+                    raise ValueError('work_source_not_configured')
+            elif args.action not in ('list', 'stop-run', 'executions', 'resolve') and not args.delegation_id:
+                raise ValueError('work_delegation_id_required')
+            if args.action in ('stop-run', 'executions', 'resolve') and not args.run_id:
+                raise ValueError('work_run_id_required')
+            with WorkStore(home/'work.sqlite3') as work:
+                if args.action == 'create':
+                    did = work.create(args.request_id, config.node_id, args.goal, args.source)
+                    result = {'delegation_id': did, 'automatic_execution': False}
+                elif args.action == 'list':
+                    result = {'delegations': work.list(), 'automatic_execution': False}
+                elif args.action == 'show':
+                    from .agent import clean_sessions
+                    clean_sessions(home)
+                    result = work.view(args.delegation_id)
+                elif args.action == 'enqueue':
+                    result = {'run_id': work.enqueue(args.delegation_id, args.request_id, args.role,
+                                                    args.parent_run, args.priority), 'automatic_execution': False}
+                elif args.action == 'executions':
+                    result = {'executions': work.executions(args.run_id)}
+                else:
+                    if args.action == 'stop-run':
+                        work.stop_run(args.run_id)
+                    elif args.action == 'resolve':
+                        work.resolve(args.run_id, args.execution_key, args.outcome)
+                    elif args.action == 'clear-results':
+                        work.clean(args.delegation_id)
+                    else:
+                        work.control(args.delegation_id, args.action)
+                    result = {'updated': True, 'action': args.action, 'automatic_execution': False}
         elif args.command == "pa1":
             from . import pa1
             from .config import load_pa1_config

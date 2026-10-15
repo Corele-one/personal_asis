@@ -30,6 +30,8 @@ ASIS_PYTHON="$HOME/Library/Application Support/PersonalAsis/pa0-text-env/bin/pyt
 
 重新执行 `service install` 会将服务切换至执行命令时的 Python／代码路径；仅在维护或发布时使用，并在安装后验证 running 与心跳。卸载保留配置、索引和凭据。
 
+2026-10-15 维护发布：Mac 索引与 PA1 服务现使用 `agent-local-51e8faaa94990dbb`，原 pa0-text-env／pa1-env 解释器保留；代码和旧 plist 的回退材料留在私密运行目录。更新包含共享模型冷却、诊断及现有核对周期中的会话清理，没有启用新的后台委托。实际闭环与发布证据见 [按需 Agent 验收](agent-on-demand.md)。
+
 ## 排障顺序
 
 ```sh

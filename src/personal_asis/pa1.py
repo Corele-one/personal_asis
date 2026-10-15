@@ -239,8 +239,9 @@ def analyze(home, query, request_id, provider=None, synthetic_home=None, source_
         except ProviderRejected:
             ledger.finish(request_id,'rejected',0)
             raise
-        except (ProviderUnknown,OSError,ValueError):
-            ledger.finish(request_id,'unknown')
+        except (ProviderUnknown,OSError,ValueError) as error:
+            from .provider_diagnostics import diagnostic_for
+            ledger.finish(request_id,'unknown',diagnostic=diagnostic_for(error))
             raise ValueError('model_call_unknown_reserved_budget_no_retry') from None
         total=response['usage']['total_tokens']
         try:

@@ -7,7 +7,9 @@ import os
 from pathlib import Path
 import sqlite3
 import time
+import math
 from zoneinfo import ZoneInfo
+from .provider_diagnostics import validate_diagnostic
 
 
 class ModelBudget:
@@ -31,6 +33,14 @@ class ModelBudget:
             PRIMARY KEY(node,request_id))""")
         self.db.execute('UPDATE model_calls SET response=NULL WHERE response IS NOT NULL AND at<?',
                         (self.clock()-30*86400,))
+        self.db.executescript('''
+          CREATE TABLE IF NOT EXISTS provider_cooldowns (
+            node TEXT PRIMARY KEY, until_at REAL NOT NULL, reason TEXT NOT NULL);
+          CREATE TABLE IF NOT EXISTS provider_failures (
+            node TEXT NOT NULL, request_id TEXT NOT NULL, diagnostic TEXT NOT NULL, at REAL NOT NULL,
+            PRIMARY KEY(node,request_id));
+        ''')
+        self.db.execute('DELETE FROM provider_failures WHERE at<?',(self.clock()-180*86400,))
 
     def close(self):
         self.db.close()
@@ -60,7 +70,21 @@ class ModelBudget:
                 "daily_limit":self.daily,"monthly_limit":self.monthly,
                 "daily_remaining":max(0,self.daily-used[0]),"monthly_remaining":max(0,self.monthly-used[1]),
                 "approaching_limit":used[0]>=self.daily*0.8 or used[1]>=self.monthly*0.8,
-                "unresolved_calls":unresolved,"includes_reservations":True}
+                "unresolved_calls":unresolved,"includes_reservations":True,
+                'provider_cooldown':self.provider_status()['cooldown']}
+
+    def provider_status(self):
+        row=self.db.execute('SELECT until_at,reason FROM provider_cooldowns WHERE node=?',(self.node,)).fetchone()
+        cooldown=({'until_at':row['until_at'],'remaining_seconds':math.ceil(row['until_at']-self.clock()),
+                   'reason':row['reason']} if row and row['until_at']>self.clock() else None)
+        last=self.db.execute('SELECT diagnostic,at FROM provider_failures WHERE node=? ORDER BY at DESC LIMIT 1',
+                             (self.node,)).fetchone()
+        return {'cooldown':cooldown,'last_failure':{'at':last['at'],**json.loads(last['diagnostic'])} if last else None,
+                'automatic_retry':False}
+
+    def check_provider(self):
+        if self.provider_status()['cooldown'] is not None:
+            raise ValueError('model_provider_cooldown_no_automatic_retry')
 
     def reserve(self, request_id, fingerprint, tokens):
         if not isinstance(request_id,str) or not 1 <= len(request_id) <= 128 or type(tokens) is not int or tokens <= 0:
@@ -75,6 +99,7 @@ class ModelBudget:
                         raise ValueError('model_result_expired_or_revoked_no_retry')
                     return {"cached":json.loads(old['response'])}
                 raise ValueError("model_request_not_retryable_"+old['state'])
+            self.check_provider()
             status = self.status()
             if status['daily_tokens']+tokens > self.daily or status['monthly_tokens']+tokens > self.monthly:
                 raise ValueError("model_budget_exhausted")
@@ -82,11 +107,13 @@ class ModelBudget:
                             (self.node,request_id,fingerprint,status['day'],status['month'],tokens,self.clock()))
         return {"reserved_tokens":tokens}
 
-    def finish(self, request_id, state, tokens=None, response=None):
+    def finish(self, request_id, state, tokens=None, response=None, diagnostic=None):
         if state not in {'succeeded','unknown','rejected','invalid_output'}:
             raise ValueError("invalid_model_call_state")
         if tokens is not None and (type(tokens) is not int or tokens < 0):
             raise ValueError("invalid_model_usage")
+        if diagnostic is not None:
+            validate_diagnostic(diagnostic)
         with self.transaction():
             row = self.db.execute("SELECT state FROM model_calls WHERE node=? AND request_id=?",(self.node,request_id)).fetchone()
             if row is None or row[0] != 'reserved':
@@ -94,3 +121,12 @@ class ModelBudget:
             self.db.execute("""UPDATE model_calls SET state=?,tokens=COALESCE(?,tokens),response=?
                 WHERE node=? AND request_id=?""",(state,tokens,
                 json.dumps(response,ensure_ascii=False) if response is not None else None,self.node,request_id))
+            if diagnostic is not None:
+                self.db.execute('INSERT INTO provider_failures VALUES(?,?,?,?)',
+                                (self.node,request_id,json.dumps(diagnostic),self.clock()))
+                if diagnostic['http_status'] in (429,503):
+                    until_at=self.clock()+max(300,diagnostic['retry_after_seconds'] or 0)
+                    self.db.execute('''INSERT INTO provider_cooldowns VALUES(?,?,?)
+                        ON CONFLICT(node) DO UPDATE SET reason=CASE WHEN excluded.until_at>=until_at
+                        THEN excluded.reason ELSE reason END,until_at=MAX(until_at,excluded.until_at)''',
+                        (self.node,until_at,'http_'+str(diagnostic['http_status'])))

@@ -1,0 +1,3 @@
+# Preserve provider-visible serialization when replaying committed paid steps
+
+Tool results become JSON text inside the model transcript, so sorting stored object keys can change a paid request's fingerprint even when its data is equivalent; the real Study recovery exposed this failure. Preserve the existing tool protocol's field order when reconstructing committed steps, and persist final-only request mode for new steps, instead of silently recalculating old fingerprints or repeating paid calls. A future wire-format change must preserve or explicitly version this representation; fresh source-policy checks, payload expiry and unknown-result blocking still apply before replay.

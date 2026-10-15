@@ -14,6 +14,8 @@
 | [文本阅读与可选能力](pa0-text.md) | 加密阅读协议、格式支持及暂缓的备份能力 |
 | [PA1 本机检索与模型分析](pa1-local.md) | 语义模型／缓存、独立私密模型许可、真实联调、MiMo Flash 与预算 |
 | [PA1 按需探索验收与使用入口](pa1-acceptance.md) | 本人渠道分析、公开研究、首次真实飞书投递、缓存时延和失败／恢复边界 |
+| [委托状态与 Pi 合成适配](agent-runtime-local.md) | 本机委托 CLI、租约／检查点、防重、可选 Pi 1.2.0 验证与尚未上线的范围 |
+| [本机按需 Agent 与恢复](agent-on-demand.md) | 实际 MiMo 闭环、持久重建／限次收尾、真实 Study 拒答、共享冷却与 Mac 发布；历史未知预留保留 |
 
 ## 验收与设计依据
 
@@ -30,7 +32,7 @@
 ## 后续计划
 
 - [实施计划](implementation-plan.md)：PA0 及 PA1 限定按需路径已交付；后续扩大检索质量评估，并按独立门槛推进框架、来源接入及各后续阶段。
-- [运行框架验证](agent-runtime-validation.md)：Pi 候选及权限、预算、恢复的验证门槛，尚未执行。
+- [运行框架验证](agent-runtime-validation.md)：本机状态与 Pi 合成验证已执行；本机 MiMo 闭环及实际来源路径已续验；本人渠道 Agent、通用隔离及持续委托仍待交付。
 - [详细架构](agent-architecture.md)、[信息来源](information-sources.md)：未来能力与接入路线。
 - [生活与申请需求](personal-development.md)：产品需求和场景，不表示领域能力已上线。
 

@@ -1,6 +1,6 @@
 # Personal Agent 架构审阅稿
 
-状态：整体架构共识已确认；PA0 已按 Mac 单节点范围完成验收，见 [最终结果](pa0-acceptance.md)。ROG 停用，独立备份／恢复密钥暂缓。MiMo 本机 CLI 已交付；渠道分析、Agent 执行框架与持续委托尚未上线；后续路线见 [实施计划](implementation-plan.md)。详细依据见 [架构](agent-architecture.md)、[来源](information-sources.md)与[总规格](../SPECIFICATION.md)。
+状态（2026-10-15）：整体架构共识已确认；PA0 已按 Mac 单节点范围完成验收，见 [最终结果](pa0-acceptance.md)。ROG 停用，独立备份／恢复密钥暂缓。MiMo 本机及本人渠道分析已交付；本机委托状态和 Pi 核心合成适配已通过 [第一切片验证](agent-runtime-local.md)。本机受控按需执行已通过 MiMo 实际闭环／恢复续验，见 [最新记录](agent-on-demand.md)；本人渠道 Agent 与持续委托尚未上线；后续路线见 [实施计划](implementation-plan.md)。详细依据见 [架构](agent-architecture.md)、[来源](information-sources.md)与[总规格](../SPECIFICATION.md)。
 
 ## 整体责任
 
@@ -63,4 +63,4 @@ Agent 可按认可规则把部分正文加入本机精选，标注代选理由�
 
 每项真实委托的主题、来源、频率、到期、预算、通知条件及代选规则，账号区域／凭据、获准站点、并行容量和备份目标，在部署切片配置；本稿不制造默认凭据或启用后台订阅。更改数据驻留、披露或权限的决策仍须明确记录。
 
-按既有交付顺序继续完成 PA0；Agent 上线位于通过 PA0 后的独立切片。已准备 [执行框架验证计划](agent-runtime-validation.md)，使用合成资料与模拟工具核验适配边界，真实 MiMo 兼容性另需配置后的有限调用验证。具体评估与后续组件选择不代表新阶段已上线。
+PA0 已验收；Agent 上线继续按独立切片推进。[执行框架验证](agent-runtime-validation.md)已使用实际 Pi 核心、合成资料与模拟提供商核验第一批边界，真实 MiMo 工具兼容性另需有限调用验证。具体评估与候选组件不代表生产 Agent 已上线。

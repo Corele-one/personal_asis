@@ -12,6 +12,8 @@ PA0 已于 2026-10-14 按 Mac 单节点范围完成七项功能验收及真实�
 
 核心要求 Python 3.11+、SQLite 3.34+ 与 FTS5 trigram；加密阅读、可选格式及备份依赖见 [文本说明](docs/pa0-text.md)。命令为 `scripts/asis doctor|status|search|reconcile`，测试为 `PYTHONPATH=src python3 -m unittest discover -s tests -v`。Mac 生产 Python、发布包与运行数据位于仓库外私密目录，维护时遵循运行说明，不把基础解释器的能力报告当作生产环境。
 
+2026-10-15 已新增 [委托状态与 Pi 合成适配](docs/agent-runtime-local.md)：本机 `work` CLI、事务领取／租约／检查点、防重与可选 Pi agent-core 1.2.0 已交付，真实 Pi＋模拟提供商验证通过。后续已实现 [本机按需 Agent](docs/agent-on-demand.md) 的 MiMo 协议客户端、PA1 权限／共享预算复用和持久步骤重建，实际 MiMo 合成闭环、跨进程恢复及真实 Study 的证据不足拒答已验收。共享冷却、脱敏诊断和会话清理已发布至既有 Mac 服务（`agent-local-51e8faaa94990dbb`），原解释器及回退材料保留；两个历史未知调用仍保留预算预留，旧 429 具体原因不能追溯。当前没有生产调度或后台委托，完整领域上下文及通用执行隔离未交付；本人渠道 Agent 入口尚未实现，新版无人值守恢复未验收。合成工具许可不能作为真实来源或外部写操作的授权。
+
 ## 文档分工与阅读顺序
 
 开始任务先阅读本指南，再按任务范围查阅：
