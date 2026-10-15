@@ -152,6 +152,8 @@ def main(argv=None):
     p.add_argument('--domain',choices=['supervisor','research','career','life'],help='显式采用已确认且获准模型使用的领域目标；resume 沿用原领域')
     p.add_argument('--with-history',action='store_true',help='新领域工作检索最多两条相关委托历史；恢复沿用原快照')
     p.add_argument('--mode',choices=['auto','research','career','life','team','conversation'],help='总管按需组织专业角色；team 核对三个领域，恢复沿用原计划')
+    p.add_argument('--use-context',action='store_true',help='仅专业角色使用各自已保存且获准的目标')
+    p.add_argument('--role-history',action='store_true',help='配合 --use-context，每个角色检索自己的相关工作历史')
     p = commands.add_parser('domain', help='本人明确配置的领域目标／约束；不自动推断、调度或授权资料')
     p.add_argument('action',choices=['set','show','list','forget','history'])
     p.add_argument('--domain',choices=['supervisor','research','career','life'])
@@ -198,7 +200,7 @@ def main(argv=None):
                 result=live_self_test(home,args.request_id,args.steps)
             else:
                 result=execute(home,args.query,args.request_id,args.source,
-                               resume=args.action=='resume',step_limit=args.steps,domain=args.domain,with_history=args.with_history,mode=args.mode)
+                               resume=args.action=='resume',step_limit=args.steps,domain=args.domain,with_history=args.with_history,mode=args.mode,use_context=args.use_context,role_history=args.role_history)
         elif args.command=='domain':
             from .domain_context import DomainContexts
             if args.action!='list' and not args.domain:

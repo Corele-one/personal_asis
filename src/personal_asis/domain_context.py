@@ -71,13 +71,14 @@ class DomainContexts:
         rows=self.db.execute('SELECT run,payload FROM agent_sessions WHERE payload IS NOT NULL').fetchall()
         cleared=0
         for row in rows:
-            binding=json.loads(row['payload']).get('domain_context')
-            if binding and binding['domain']==domain:
+            state=json.loads(row['payload']);binding=state.get('domain_context')
+            selected=state.get('role_contexts',{}).get(domain,{})
+            if (binding and binding['domain']==domain) or 'binding' in selected:
                 self.work.clean(self.work._run(row['run'])['delegation'])
                 cleared+=1
         return cleared
 
-    def set(self, domain, goal, constraints, source_ids, request_id, *, allow_model=False):
+    def set(self, domain, goal, constraints, source_ids, request_id, *, allow_model=False, expected_revision=None):
         self._domain(domain);self._id(request_id)
         if (not isinstance(goal,str) or not goal.strip() or len(goal)>2000
                 or not isinstance(constraints,str) or len(constraints)>4000
@@ -98,19 +99,23 @@ class DomainContexts:
             if self._duplicate(request_id,digest):
                 return {**self.show(domain),'replayed_update':True,'sessions_cleared':0}
             old=self.db.execute('SELECT revision FROM domain_contexts WHERE domain=?',(domain,)).fetchone()
+            if expected_revision is not None and expected_revision!=(old[0] if old else 0):
+                raise ValueError('domain_context_revision_conflict')
             revision=old[0]+1 if old else 1
             self.db.execute('INSERT OR REPLACE INTO domain_contexts VALUES(?,?,?,?,?,?,?,?,0)',
                 (domain,revision,goal,constraints,encoded(roots),int(allow_model),self.clock(),self.clock()+REVIEW_SECONDS))
             self.db.execute('INSERT INTO domain_context_updates VALUES(?,?,?,?)',(request_id,digest,domain,revision))
         return {**self.show(domain),'replayed_update':False,'sessions_cleared':self._clear_sessions(domain)}
 
-    def forget(self, domain, request_id):
+    def forget(self, domain, request_id, *, expected_revision=None):
         self._domain(domain);self._id(request_id)
         digest=fingerprint(['forget',domain])
         with self.work.transaction():
             if self._duplicate(request_id,digest):
                 return {**self.show(domain),'replayed_update':True,'sessions_cleared':0}
             current=self.show(domain)
+            if expected_revision is not None and expected_revision!=current['revision']:
+                raise ValueError('domain_context_revision_conflict')
             revision=current['revision']+1
             self.db.execute('''UPDATE domain_contexts SET revision=?,goal=NULL,constraints_text=NULL,
                 roots='{}',model_allowed=0,confirmed_at=?,review_after=?,deleted=1 WHERE domain=?''',

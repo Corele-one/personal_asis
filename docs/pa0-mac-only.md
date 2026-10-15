@@ -64,3 +64,5 @@ launchctl kickstart -k gui/$(id -u)/local.personal-asis.mac
 2026-10-15 综合助手发布：PA1 切换至 `assistant-cards-4acc99f9db7cdd3e`，原解释器及 PA0 plist 保持不变，旧包／plist／VPS 插件和代码保留。协调、PWA、AstrBot、nginx active；发现既有 SSH 隧道退出后已重启，并核验回环监听和实际心跳。本轮未复测无人值守休眠／整机重启。本人 `/asis` 卡片及按钮已现场确认，服务器显示查询／取消均已提交并完成平台原卡片更新，额外模型 Token 0。见[综合使用](assistant-usage.md)及[验收](validation/agent-roles-20261015.json)。
 
 2026-10-15 回应修复续发：PA1 使用 `assistant-reply-f0ce5caae433405a`，原解释器、PA0 plist、既有隧道及来源政策保留。简单倾听不读笔记、相对日期过滤及卡片回答／原文分区见[修复说明](agent-response-routing.md)和[验证](validation/agent-response-20261015.json)。旧工作仍使用原付费协议，不自动重新分析。
+
+2026-10-15 领域连续性续发：PA1 发布 `assistant-context-74c67f212641aa55`，原解释器和 PA0 配置保留；飞书目标管理复用既有长连接和加密结果回传。卡片页面另存元数据表，原卡片表形状保持兼容，旧版回退不要求删除或迁移个人工作数据。见[连续性](agent-role-continuity.md)及[验收](validation/agent-continuity-20261015.json)。

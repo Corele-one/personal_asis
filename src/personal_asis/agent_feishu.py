@@ -13,6 +13,9 @@ from .work import encoded, fingerprint
 
 def summary(view):
     value=view['result']
+    if value.get('kind')=='domain_context':
+        from .agent_roles import LABELS
+        return LABELS[value['domain']]+' · 已保存的领域目标\n'+(value.get('goal') or '尚未保存目标。')+'\n约束：'+(value.get('constraints') or '无')+'\n未调用模型。'
     lines=[f"Agent 工作 {view['target_id']}"]
     if value.get('error'):
         from .analysis_channel import error_message
@@ -52,16 +55,18 @@ class AgentInbox:
         with bridge.db:
             bridge.db.execute('DELETE FROM agent_routes WHERE created<?',(bridge.clock()-180*86400,))
 
-    def submit(self, platform, owner, message, action, *, target_id=None, query=None, source_ids=None, mode=None, reply_message_id=None, defer_transport=False):
+    def submit(self, platform, owner, message, action, *, target_id=None, query=None, source_ids=None, mode=None, reply_message_id=None, defer_transport=False, use_context=None, role_history=None, context=None):
         b=self.bridge
         if not b.authorized(platform,owner):
             raise ProtocolError('unauthorized',403)
         task=str(uuid.uuid5(uuid.NAMESPACE_URL,f'asis-agent-command:{platform}:{owner}:{message}'))
-        if action=='run':
+        if action in ('run','context'):
             target_id=str(uuid.uuid5(uuid.NAMESPACE_URL,f'asis-agent-work:{platform}:{owner}:{message}'))
         digest=fingerprint([platform,owner,message,action,target_id,query,source_ids])
         if mode is not None:
             digest=fingerprint([digest,mode])
+        options={k:v for k,v in {'use_context':use_context,'role_history':role_history,'context':context}.items() if v is not None}
+        if options:digest=fingerprint([digest,options])
         if reply_message_id is not None:
             if not isinstance(reply_message_id,str) or not 1<=len(reply_message_id)<=128:
                 raise ProtocolError('invalid_agent_reply_message')
@@ -81,6 +86,7 @@ class AgentInbox:
             'public_key':base64.b64encode(public).decode()}
         if mode is not None:
             job['mode']=mode
+        job.update(options)
         AgentRelay().request(job)  # Strict schema/credential filtering before durable receipt.
         with b.db:
             b.db.execute('INSERT INTO agent_routes VALUES(?,?,?,?,?,?,?,?,0)',

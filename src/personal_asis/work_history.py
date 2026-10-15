@@ -26,15 +26,17 @@ def _excerpt(text, limit):
     return re.sub(r'\[E[^\]\n]*\]','[旧引用已省略]',text)[:limit]
 
 
-def _record(work, home, rid, binding, source_ids, channel, visiting):
+def _record(work, home, rid, binding, source_ids, channel, visiting, role=None):
     if rid in visiting or len(visiting)>=MAX_DEPTH:
         raise ValueError('agent_history_dependency_depth_or_cycle')
     row=work._run(rid)
     delegation=work._delegation(row['delegation'])
     state=work.session(rid)
+    selected=state.get('role_contexts',{}).get(role,{}) if state and role else {}
+    origin_binding=selected.get('binding') if role else state.get('domain_context') if state else None
     if (row['state']!='completed' or row['result'] is None or state is None
             or delegation['state']!='active' or state['synthetic']
-            or fingerprint(state.get('domain_context'))!=fingerprint(binding)
+            or fingerprint(origin_binding)!=fingerprint(binding)
             or not state['roots'] or not set(state['roots'])<=set(source_ids)
             or any(identity!=binding['roots'].get(sid) for sid,identity in state['roots'].items())):
         raise ValueError('agent_history_origin_unavailable')
@@ -48,24 +50,29 @@ def _record(work, home, rid, binding, source_ids, channel, visiting):
     for recipient in {state.get('channel'),channel}-{None}:
         from .analysis_channel import validate_result
         validate_result(home,result,recipient)
-    dependencies=state.get('work_history',[])
+    dependencies=selected.get('history',[]) if role else state.get('work_history',[])
+    analysis=result
+    if role:
+        child=work.db.execute("SELECT result FROM runs WHERE parent=? AND role=? AND state='completed'",(rid,role)).fetchone()
+        if child is None or child['result'] is None:raise ValueError('agent_history_role_result_unavailable')
+        analysis=json.loads(child['result'])
     for saved in dependencies:
-        current=_record(work,home,saved['run_id'],binding,list(state['roots']),channel,visiting+(rid,))
+        current=_record(work,home,saved['run_id'],binding,list(state['roots']),channel,visiting+(rid,),role)
         if current!=saved:
             raise ValueError('agent_history_changed_or_revoked')
-    text=state['question']+'\n'+result['answer']+'\n'+result['uncertainty']
+    text=state['question']+'\n'+analysis['answer']+'\n'+analysis['uncertainty']
     if exclusion_reason('',text):
         raise ValueError('agent_history_credential_or_excluded_content')
-    return {'run_id':rid,'delegation_id':row['delegation'],'created':row['created'],
+    return {**({'request_id':state['request_id']} if role else {}),'run_id':rid,'delegation_id':row['delegation'],'created':row['created'],
             'digest':fingerprint([state['question'],state['roots'],state['settings'],
-                                  binding,result,dependencies]),
-            'question':_excerpt(state['question'],512),'status':result['status'],
-            'analysis_excerpt':_excerpt(result['answer'],700),
-            'uncertainty_excerpt':_excerpt(result['uncertainty'],300),
+                                  binding,result,dependencies,*([analysis,role] if role else [])]),
+            'question':_excerpt(state['question'],512),'status':analysis['status'],
+            'analysis_excerpt':_excerpt(analysis['answer'],700),
+            'uncertainty_excerpt':_excerpt(analysis['uncertainty'],300),
             'dependency_depth':1+max((item['dependency_depth'] for item in dependencies),default=0)}
 
 
-def retrieve_history(home, domain, query, source_ids, *, exclude_run=None, channel=None):
+def retrieve_history(home, domain, query, source_ids, *, exclude_run=None, channel=None, role=None):
     """Local-only ranking. No model call, new grants, source writes or full chat history."""
     home=Path(home)
     if (not isinstance(query,str) or not query.strip() or len(query)>512 or exclusion_reason('',query)):
@@ -81,7 +88,7 @@ def retrieve_history(home, domain, query, source_ids, *, exclude_run=None, chann
             if row['id']==exclude_run:
                 continue
             try:
-                record=_record(work,home,row['id'],binding,source_ids,channel,())
+                record=_record(work,home,row['id'],binding,source_ids,channel,(),role)
             except (OSError,ValueError,KeyError,TypeError):
                 continue
             # Leave room for this new run in the bounded dependency graph.
@@ -99,14 +106,14 @@ def retrieve_history(home, domain, query, source_ids, *, exclude_run=None, chann
     return selected
 
 
-def validate_history(home, history, binding, source_ids, channel=None):
+def validate_history(home, history, binding, source_ids, channel=None, role=None):
     if (not isinstance(history,list) or len(history)>MAX_RECORDS
             or len(encoded(history).encode())>MAX_BYTES):
         raise ValueError('agent_history_invalid_snapshot')
     with WorkStore(Path(home)/'work.sqlite3') as work:
         for saved in history:
             try:
-                current=_record(work,home,saved['run_id'],binding,source_ids,channel,())
+                current=_record(work,home,saved['run_id'],binding,source_ids,channel,(),role)
             except (OSError,ValueError,KeyError,TypeError):
                 raise ValueError('agent_history_changed_or_revoked') from None
             if current!=saved:
@@ -121,5 +128,5 @@ def prompt_history(prompt, history):
 
 
 def provenance(history):
-    return [{k:entry[k] for k in ('delegation_id','run_id','created')}
+    return [{**{k:entry[k] for k in ('delegation_id','run_id','created')},**({'request_id':entry['request_id']} if 'request_id' in entry else {})}
             for entry in history]

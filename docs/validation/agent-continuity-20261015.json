@@ -1,0 +1,116 @@
+{
+  "date": "2026-10-15",
+  "release": "assistant-context-74c67f212641aa55",
+  "source_digest": "74c67f212641aa55822d12c0c27e168df40ce816f4f64d15838201f20476fe78",
+  "scope": "Opt-in specialist goals and same-role work history; bound-owner goal management through Feishu cards and PWA",
+  "validation": {
+    "independent_mac_release": {
+      "total": 333,
+      "passed": 317,
+      "skipped": 16
+    },
+    "vps_core": {
+      "total": 333,
+      "passed": 201,
+      "skipped": 132
+    },
+    "actual_astrbot_sdk": {
+      "total": 25,
+      "passed": 25,
+      "send_api": "synthetic replacement; actual SDK types, callback dispatch, encrypted relay and request builders"
+    },
+    "synthetic_regressions": [
+      "Sibling goal/history isolation",
+      "No raw goals or history directly injected into supervisor",
+      "Snapshot paid replay after newer work",
+      "Goal update/delete clears affected parent and child payloads",
+      "Source deletion invalidates related history",
+      "Current-message support remains note-free",
+      "Revision conflicts and duplicate mutations do not overwrite newer values",
+      "Owner-only schema and credential filtering; no new source grants",
+      "Actual frontend JS and WebCrypto goal read/save/replace/delete and continuity fields",
+      "Regular analysis form no longer references Agent-only variables",
+      "Original card table shape and positional insert remain compatible with retained plugin"
+    ]
+  },
+  "live_mimo": {
+    "fixture": "isolated_synthetic_notes_and_goal",
+    "shared_production_budget": true,
+    "first_status": "completed",
+    "followup_status": "completed",
+    "generation_calls": 4,
+    "new_tokens": 3440,
+    "followup_history_count": 1,
+    "history_in_specialist_payload": true,
+    "raw_goal_in_supervisor_payload": false,
+    "repeat_cached": true,
+    "repeat_generation_calls": 0,
+    "repeat_new_tokens": 0,
+    "unknown_before": 2,
+    "unknown_after": 2
+  },
+  "semantic_review": {
+    "synthetic_answer_matches_two_literal_statements": true,
+    "invalidation": "removes a stale entry",
+    "coherence": "keeps replicas consistent",
+    "limitation": "Specialist and supervisor may still misalign citations or add interpretations; literal synthetic agreement is not general real-task acceptance"
+  },
+  "deployment": {
+    "status": "active",
+    "previous_stable_release": "assistant-reply-f0ce5caae433405a",
+    "rollback_retained": true,
+    "pa0_unchanged": true,
+    "original_interpreter_retained": true,
+    "original_card_schema_shape_retained": true,
+    "mac_worker_running": true,
+    "vps_services": {
+      "personal-asis-coordinator": "active",
+      "personal-asis-pwa": "active",
+      "astrbot": "active",
+      "nginx": "active"
+    },
+    "source_mismatches": [],
+    "active_plugin_matches": true,
+    "mac_heartbeat_age_at_check_seconds": 42.2,
+    "card_adapter_error_types": [],
+    "production_card_table_check": {
+      "original_columns": 10,
+      "no_page_column_added": true,
+      "page_metadata_created_lazily_on_card_use": true
+    }
+  },
+  "boundaries": {
+    "new_real_personal_goals_created": false,
+    "new_providers": false,
+    "new_source_roots": false,
+    "background_work_enabled": false,
+    "limits_unchanged": true,
+    "historical_unknown_calls": 2,
+    "browser_or_phone_manual_acceptance": false
+  },
+  "remaining": [
+    "Parallel specialist execution and progressive results",
+    "Real personal domain quality and long-task/unattended recovery acceptance",
+    "WUCAI/Folo and other authenticated source adapters",
+    "Configured continuing work schedules, notifications and selection rules",
+    "PA2 formal tasks, PA3 calendar, PA4 automatic memory/rules, PA5 mail and life capture"
+  ],
+  "production_read_only_probe": {
+    "verification": "production_ram_relay_read_only_domain_goal",
+    "response_kind": "domain_context",
+    "domain": "research",
+    "configured": false,
+    "revision": 0,
+    "private_sources_read": false,
+    "model_generation_requested": false,
+    "admin_session_created": false,
+    "unauthenticated_https_rejected": true,
+    "new_daily_tokens": 0
+  },
+  "production_https": {
+    "mac_worker_running": true,
+    "mac_release": "assistant-context-74c67f212641aa55",
+    "https_domain_management": true,
+    "https_context_crypto_and_commands": true
+  }
+}

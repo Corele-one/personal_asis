@@ -18,7 +18,7 @@ from personal_asis.coordinator import ProtocolError
 from personal_asis.pwa import settings
 
 
-@register("personal_asis", "Personal Asis", "资料搜索、证据分析与卡片助手", "0.6.0")
+@register("personal_asis", "Personal Asis", "资料搜索、证据分析与卡片助手", "0.7.0")
 class PersonalAsis(Star):
     def __init__(self, context: Context):
         super().__init__(context)
@@ -113,7 +113,7 @@ class PersonalAsis(Star):
                 if not self.bridge.authorized(job['platform'],job['owner']):return
                 receipt=self.bridge.agent.submit(job['platform'],job['owner'],job['command'],job['action'],
                     target_id=job['target_id'],query=job['query'],source_ids=job['source_ids'],
-                    mode=job['mode'],reply_message_id=job['message'],defer_transport=True)
+                    mode=job['mode'],reply_message_id=job['message'],defer_transport=True,**{k:job[k] for k in ('use_context','role_history','context') if k in job})
                 payload=receipt.pop('transport_payload',None)
                 if payload is not None:
                     from personal_asis.agent_channel import relay_control

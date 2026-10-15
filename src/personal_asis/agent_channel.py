@@ -39,14 +39,26 @@ class AgentRelay(AnalysisRelay):
             del self.jobs[key]
 
     def request(self, data):
-        exact({k:v for k,v in data.items() if k!='mode'}, ('request_id','target_id','action','query','source_ids','channel','client_nonce','public_key'))
-        if data['channel'] not in ('pwa','feishu') or data['action'] not in ('run','status','pause','resume','cancel'):
+        exact({k:v for k,v in data.items() if k not in ('mode','use_context','role_history','context')}, ('request_id','target_id','action','query','source_ids','channel','client_nonce','public_key'))
+        if data['channel'] not in ('pwa','feishu') or data['action'] not in ('run','status','pause','resume','cancel','context'):
             raise ProtocolError('invalid_agent_action')
         try:
             if str(uuid.UUID(data['target_id']))!=data['target_id']:
                 raise ValueError()
         except (ValueError,TypeError,AttributeError):
             raise ProtocolError('invalid_agent_target') from None
+        if data['action']=='context':
+            from .context_commands import validate
+            if data['query'] is not None or data['source_ids'] is not None or set(data)&{'mode','use_context','role_history'}:
+                raise ProtocolError('domain_context_invalid_command')
+            validate(data.get('context'))
+        elif 'context' in data:
+            raise ProtocolError('domain_context_invalid_command')
+        if set(data)&{'use_context','role_history'}:
+            if (data['action']!='run' or data.get('mode') not in ('auto','research','career','life','team')
+                    or type(data.get('use_context',False)) is not bool or type(data.get('role_history',False)) is not bool
+                    or (data.get('role_history') and not data.get('use_context'))):
+                raise ProtocolError('agent_invalid_role_context_options')
         if data['action']=='run':
             if not data['source_ids']:
                 raise ProtocolError('agent_explicit_sources_required')
@@ -95,7 +107,7 @@ class AgentRelay(AnalysisRelay):
                     keys=('request_id','target_id','action','query','source_ids','channel',
                           'client_nonce','public_key','lease')
                     return {'job':{**{k:value[k] for k in keys},
-                        **({'mode':value['mode']} if 'mode' in value else {}),
+                        **{k:value[k] for k in ('mode','use_context','role_history','context') if k in value},
                         'remaining_seconds':max(0,value['expires']-self.clock())}}
             return {'job':None}
 
@@ -104,6 +116,8 @@ class AgentRelay(AnalysisRelay):
         result['plan']='Mac 核对来源和权限 → 最多三次检索 → 共享预算内分析；支持暂停、恢复和取消'
         with self.lock:
             job=self.jobs.get(request_id)
+            if job and job['action']=='context':
+                result['plan']='Mac 核对并管理你明确保存的领域目标；不调用模型。'
             if job and 'mode' in job:
                 from .agent_roles import LABELS,plan
                 from .request_intent import response_plan
@@ -148,6 +162,9 @@ def snapshot(home, target, channel='pwa'):
         with WorkStore(Path(home)/'work.sqlite3') as work:
             result['roles']=[{'role':r['role'],'state':r['state']} for r in work.db.execute(
                 'SELECT role,state FROM runs WHERE parent=? ORDER BY created,rowid',(value['run_id'],))]
+    if session and 'role_contexts' in session:
+        from .role_context import summary
+        result['role_context_used']=summary(session['role_contexts'])
     if session:
         result['question']=session['question']
         if session.get('response_plan'):
@@ -195,7 +212,7 @@ class AgentWorker:
         before=self.stamp()
         if 'error' not in value:
             try:
-                value=snapshot(self.home,job['target_id'],job['channel'])
+                value=self._snapshot(job)
             except (ValueError,OSError) as error:
                 value=self.failure(error)
         after=self.stamp()
@@ -204,6 +221,12 @@ class AgentWorker:
         self.client.authenticated('/v1/agent/complete',{'request_id':job['request_id'],
             'lease':job['lease'],'status':'ready','envelope':encrypt(value,job,aad(job)),
             'policy_hash':after})
+
+    def _snapshot(self,job):
+        if job['action']=='context':
+            from .context_commands import snapshot as context_snapshot
+            return context_snapshot(self.home,job['context']['domain'])
+        return snapshot(self.home,job['target_id'],job['channel'])
 
     def _receipt(self, job):
         # Persist only command identity, never recipient keys or private payloads.
@@ -226,7 +249,7 @@ class AgentWorker:
     @staticmethod
     def failure(error):
         code=str(error)
-        if not re.fullmatch(r'(?:agent_|context_|pa1_|model_|delegation_|inactive_|cancelled_|optional_pi_|mimo_)[a-z_]+(?::[a-z_]+)?',code) or len(code)>120:
+        if not re.fullmatch(r'(?:agent_|context_|pa1_|model_|delegation_|inactive_|cancelled_|optional_pi_|mimo_|domain_context_)[a-z_]+(?::[a-z_]+)?',code) or len(code)>120:
             code='agent_execution_failed'
         return {'error':code,'automatic_retry':False}
 
@@ -238,7 +261,7 @@ class AgentWorker:
             if job['action']=='run':
                 self.executor(self.home,job['query'],job['target_id'],job['source_ids'],
                               channel=job['channel'],before_step=check_deadline,bootstrap=True,
-                              **({'mode':job['mode']} if 'mode' in job else {}))
+                              **{k:job[k] for k in ('mode','use_context','role_history') if k in job})
             else:
                 self.executor(self.home,None,job['target_id'],resume=True,
                               channel=job['channel'],before_step=check_deadline,bootstrap=True)
@@ -274,7 +297,11 @@ class AgentWorker:
             return {'claimed':True}
         try:
             if not self._receipt(job):
-                self._complete(job,snapshot(self.home,job['target_id'],job['channel']))
+                self._complete(job,self._snapshot(job))
+                return {'claimed':True}
+            if job['action']=='context':
+                from .context_commands import apply
+                self._complete(job,apply(self.home,job['context'],job['request_id']))
                 return {'claimed':True}
             if job['action']=='run':
                 # Persist receipt before starting the thread, so an immediate pause can fence it.
@@ -293,7 +320,7 @@ class AgentWorker:
                         if row is None:
                             raise ValueError('agent_request_not_found')
                         work.control(row['id'],job['action'])
-                self._complete(job,snapshot(self.home,job['target_id'],job['channel']))
+                self._complete(job,self._snapshot(job))
         except (OSError,ValueError,TypeError,KeyError,sqlite3.Error) as error:
             self._complete(job,self.failure(error))
         return {'claimed':True}

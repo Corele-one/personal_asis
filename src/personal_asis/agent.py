@@ -72,6 +72,11 @@ def validate_state(home, source_home, state, channel=None):
     if 'role_plan' in state:
         from .agent_roles import validate_plan
         validate_plan(state['role_plan'],state['question'])
+    if 'role_contexts' in state:
+        from .role_context import validate,VERSION
+        if state.get('role_context_version')!=VERSION:raise ValueError('agent_role_context_protocol_changed_no_retry')
+        for recipient in ({state.get('channel'),channel}-{None}) or {None}:
+            validate(source_home,state['role_contexts'],state['role_plan']['roles'],list(state['roots']),recipient)
     if state.get('domain_context'):
         from .domain_context import validate_binding
         validate_binding(source_home,state['domain_context'],list(state['roots']))
@@ -275,6 +280,9 @@ class AgentHost:
                 payload.pop('tools',None);payload.pop('tool_choice',None)
                 payload['messages']=specialist_messages(role,self.state['question'],evidence,
                                                        self.state.get('domain_context'))
+                if 'role_contexts' in self.state:
+                    from .role_context import messages
+                    payload['messages']=messages(role,payload['messages'],self.state['role_contexts'][role])
                 if self.state.get('evidence_protocol')=='dated-evidence-v1':
                     payload['messages'][0]['content']+=DATED_GUIDANCE
                 output=self._model_call('specialist:'+role,payload,True)
@@ -396,6 +404,9 @@ class AgentHost:
         if 'role_plan' in self.state:
             result['role_plan']=self.state['role_plan']
             result['specialist_calls']=sum(a['key'].startswith('specialist:') for a in self.state['actions'])
+        if 'role_contexts' in self.state:
+            from .role_context import summary
+            result['role_context_used']=summary(self.state['role_contexts'])
         if conversation:
             result.update(response_kind='conversation',coverage='current_message_only',sensitivity='private')
         if self.state.get('temporal_scope'):
@@ -413,7 +424,7 @@ def _source_home(home, request_id, synthetic):
 
 
 def execute(home, query, request_id, source_ids=None, *, resume=False, provider=None,
-            synthetic=False, step_limit=None, encoder_override=None, channel=None, before_step=None, bootstrap=False, domain=None, with_history=False, mode=None):
+            synthetic=False, step_limit=None, encoder_override=None, channel=None, before_step=None, bootstrap=False, domain=None, with_history=False, mode=None, use_context=False, role_history=False):
     home=Path(home)
     if channel not in (None,'pwa','feishu'):
         raise ValueError('context_channel_denied')
@@ -435,6 +446,10 @@ def execute(home, query, request_id, source_ids=None, *, resume=False, provider=
             raise ValueError('agent_unknown_role_mode')
     if type(with_history) is not bool or (with_history and (not domain or resume or synthetic)):
         raise ValueError('agent_history_requires_new_explicit_domain_run')
+    if (type(use_context) is not bool or type(role_history) is not bool
+            or (role_history and not use_context)
+            or ((use_context or role_history) and (resume or domain or with_history or not mode))):
+        raise ValueError('agent_role_context_requires_new_selected_roles')
     data=pa1.settings(home)
     node=load_pa1_config(home).node_id
     with WorkStore(home/'work.sqlite3') as work:
@@ -489,6 +504,11 @@ def execute(home, query, request_id, source_ids=None, *, resume=False, provider=
             from .retrieval_time import question_window
             window=question_window(query)
             if window:initial['temporal_scope']=window
+        if state is None and use_context and not reply_plan:
+            from .role_context import prepare,VERSION
+            initial['role_context_version']=VERSION
+            initial['role_contexts']=prepare(source_home,initial['role_plan']['roles'],query,source_ids,rid,channel,role_history)
+            initial['role_context_options']={'use_context':True,'role_history':role_history}
         if domain is not None:
             from .domain_context import DomainContexts
             with DomainContexts(source_home) as contexts:
@@ -497,6 +517,8 @@ def execute(home, query, request_id, source_ids=None, *, resume=False, provider=
             from .work_history import retrieve_history
             initial['work_history']=retrieve_history(home,domain,query,source_ids,exclude_run=rid,channel=channel)
         if state is not None:
+            if use_context and not reply_plan and state.get('role_context_options')!={'use_context':True,'role_history':role_history}:
+                raise ValueError('agent_role_context_options_conflict')
             if mode is not None and not reply_plan and state.get('role_plan')!=initial.get('role_plan'):
                 raise ValueError('agent_request_role_conflict')
             if domain is not None and (not state.get('domain_context') or state['domain_context']['domain']!=domain):
@@ -504,7 +526,7 @@ def execute(home, query, request_id, source_ids=None, *, resume=False, provider=
             if with_history and 'work_history' not in state:
                 raise ValueError('agent_request_history_conflict')
             # Transport changes never rewrite an existing paid session's contract.
-            for name in ('channel','bootstrap_search','domain_context','work_history','role_plan','response_plan','temporal_scope','evidence_protocol'):
+            for name in ('channel','bootstrap_search','domain_context','work_history','role_plan','response_plan','temporal_scope','evidence_protocol','role_contexts','role_context_options','role_context_version'):
                 initial.pop(name,None)
                 if name in state:
                     initial[name]=state[name]

@@ -14,7 +14,7 @@ async function api(path, data) {
   if (!res.ok) { if(res.status===401&&authenticated){authenticated=false;show('login');}throw new Error(errors[body.error]||'请求未完成，请重试。'); }
   return body;
 }
-function show(section) { if(section!=='console'){closeReader();clearAnalysis();clearAgent();}for(const id of ['login','setup','console']) $(id).hidden=id!==section;$('logout').hidden=section!=='console'; }
+function show(section) { if(section!=='console'){closeReader();clearAnalysis();clearAgent();clearContext();}for(const id of ['login','setup','console']) $(id).hidden=id!==section;$('logout').hidden=section!=='console'; }
 function element(tag,text,cls){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.className=cls;return e;}
 let readerSession=null;
 const encode64=raw=>btoa(String.fromCharCode(...new Uint8Array(raw)));
@@ -135,7 +135,6 @@ $('analysis-form').addEventListener('submit',async e=>{
   const query=$('analysis-query').value.trim(),publicQuery=$('research-query').value.trim(),urls=$('research-urls').value.split('\n').map(s=>s.trim()).filter(Boolean),source=$('analysis-source').value;
   if(urls.length>3||(!publicQuery&&urls.length)){message('公开研究需填写公开检索词，链接最多三条。');return;}
   const request={query,source_ids:source?[source]:null,research:publicQuery?{public_query:publicQuery,urls}:null};
-  if(action==='run'&&$('agent-mode').value)request.mode=$('agent-mode').value;
   const identity=JSON.stringify(request);
   try{
     if(!analysisSession||analysisSession.identity!==identity){
@@ -168,6 +167,11 @@ function renderAgent(value,page){
   if(value.role_plan){const names={research:'知识研究',career:'申请与职业',life:'生活复盘'};$('agent-status').textContent+=' · 总管分工：'+value.role_plan.roles.map(r=>names[r]).join('、');}
   if(value.result)renderAnalysis(value.result,$('agent-result'));
   else $('agent-result').replaceChildren();
+  if(value.role_context_used){
+    const names={research:'知识研究',career:'申请与职业',life:'生活复盘'};
+    $('agent-result').append(element('h3','本次领域上下文'));
+    for(const c of value.role_context_used)$('agent-result').append(element('p',`${names[c.role]||c.role}：${c.used?'已采用保存的目标；相关历史 '+c.history_used.length+' 条':'未采用（未配置、待复核或许可／来源不匹配）'}`,'hint'));
+  }
   if(value.question)$('agent-result').prepend(element('h3','你的问题'),element('pre',value.question));
 }
 async function agentCommand(action){
@@ -177,6 +181,10 @@ async function agentCommand(action){
   if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(target)){message('请先开始工作或填写有效的原工作编号。');return;}
   const request={target_id:target,action,query:action==='run'?$('agent-query').value.trim():null,source_ids:action==='run'?$('agent-source').value.split(','):null};
   if(action==='run'&&$('agent-mode').value)request.mode=$('agent-mode').value;
+  if(action==='run'&&$('agent-continuity').value!=='off'){
+    if(!request.mode||request.mode==='conversation'){message('采用领域目标时请选择自动分工或专业角色。');return;}
+    request.use_context=true;request.role_history=$('agent-continuity').value==='history';
+  }
   const identity=JSON.stringify(request);
   let session=page.commands.get(identity);
   try{
@@ -215,3 +223,54 @@ $('agent-form').addEventListener('submit',e=>{e.preventDefault();agentCommand('r
 for(const [id,action] of [['agent-status-button','status'],['agent-pause','pause'],['agent-resume','resume'],['agent-cancel','cancel']])$(id).addEventListener('click',()=>agentCommand(action));
 $('agent-clear').addEventListener('click',clearAgent);
 window.addEventListener('pagehide',clearAgent);
+
+let contextEditor={revision:null,domain:null,commands:new Map()};
+function clearContext(){contextEditor={revision:null,domain:null,commands:new Map()};for(const id of ['context-goal','context-constraints'])$(id).value='';$('context-status').textContent='';}
+async function contextCommand(op){
+  const page=contextEditor,domain=$('context-domain').value,command={op,domain};
+  if(op!=='show'){
+    if(page.domain!==domain||page.revision===null){message('请先查看此领域的当前目标。');return;}
+    command.expected_revision=page.revision;
+    if(op==='set'){
+      if(!$('context-goal').value.trim()||!$('context-source').value){message('请填写目标并选择适用来源。');return;}
+      Object.assign(command,{goal:$('context-goal').value,constraints:$('context-constraints').value,source_ids:$('context-source').value.split(','),allow_model:$('context-allow').value==='mimo'});
+    }
+  }
+  const identity=JSON.stringify(command);let session=op==='show'?null:page.commands.get(identity);
+  try{
+    if(!session){
+      session={};if(op!=='show')page.commands.set(identity,session);
+      session.keys=await crypto.subtle.generateKey({name:'RSA-OAEP',modulusLength:2048,publicExponent:new Uint8Array([1,0,1]),hash:'SHA-256'},false,['encrypt','decrypt']);
+      session.data={action:'context',context:command,query:null,source_ids:null,target_id:crypto.randomUUID(),request_id:crypto.randomUUID(),client_nonce:encode64(crypto.getRandomValues(new Uint8Array(16))),public_key:encode64(await crypto.subtle.exportKey('spki',session.keys.publicKey))};
+    }
+    if(page!==contextEditor||session.polling)return;session.polling=true;
+    await api('/api/agent/request',session.data);$('context-status').textContent='等待 Mac 核对当前目标；未调用模型。';
+    const deadline=Date.now()+14*60*1000;
+    while(page===contextEditor&&Date.now()<deadline){
+      const reply=await api('/api/agent/result',{request_id:session.data.request_id});
+      if(page!==contextEditor)return;
+      if(['waiting','running'].includes(reply.status)){await new Promise(r=>setTimeout(r,2000));continue;}
+      if(reply.status!=='ready')throw new Error('本次中转已失效，请查看当前目标；不会自动重复修改。');
+      const wrapped=await crypto.subtle.decrypt({name:'RSA-OAEP'},session.keys.privateKey,decode64(reply.envelope.wrapped_key));
+      const key=await crypto.subtle.importKey('raw',wrapped,'AES-GCM',false,['decrypt']);new Uint8Array(wrapped).fill(0);
+      const context=new TextEncoder().encode(['agent',session.data.request_id,session.data.target_id,session.data.client_nonce,'pwa'].join('\n'));
+      const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv:decode64(reply.envelope.nonce),additionalData:context},key,decode64(reply.envelope.ciphertext));
+      const value=JSON.parse(new TextDecoder().decode(plain));new Uint8Array(plain).fill(0);
+      if(page!==contextEditor||$('context-domain').value!==domain)return;
+      if(value.error)throw new Error(value.error==='domain_context_revision_conflict'?'目标已在其他入口更新，请重新查看后再保存。':'未能确认修改，请查看当前目标。');
+      if(value.kind!=='domain_context'||value.domain!==domain)throw new Error('返回内容不匹配，请重新查看。');
+      page.domain=domain;page.revision=value.revision;
+      $('context-goal').value=value.goal||'';$('context-constraints').value=value.constraints||'';
+      $('context-source').value=value.source_ids.sort().join(',');$('context-allow').value=value.model_allowed?'mimo':'local';
+      $('context-status').textContent=(value.configured?'当前目标已读取。':value.deleted?'已删除；关联旧上下文已停用。':'尚未保存目标。')+(value.needs_review?'需要重新确认目标。':'')+' 未调用模型。';return;
+    }
+    throw new Error('等待 Mac 超时，请查看当前目标；不自动重复修改。');
+  }catch(error){if(page===contextEditor)$('context-status').textContent=error.message;}
+  finally{if(session)session.polling=false;}
+}
+$('context-domain').addEventListener('change',clearContext);
+$('context-show').addEventListener('click',()=>contextCommand('show'));
+$('context-save').addEventListener('click',()=>contextCommand('set'));
+$('context-forget').addEventListener('click',()=>contextCommand('forget'));
+
+window.addEventListener('pagehide',clearContext);

@@ -278,6 +278,41 @@ class AstrBotPluginTests(unittest.TestCase):
             self.assertFalse(event.call_llm)
         self.plugin.bridge.agent.submit.assert_not_called()
 
+    def test_context_card_sdk_roundtrip_bound_fields_and_private_payload(self):
+        import json
+        from personal_asis.agent_channel import AgentRelay,aad
+        from personal_asis.evidence import control_server,encrypt
+        self.bind();self.card_adapter()
+        relay=AgentRelay();server,path=control_server(self.plugin.home,relay,'agent.sock')
+        self.addCleanup(path.unlink,missing_ok=True);self.addCleanup(server.server_close);self.addCleanup(server.shutdown)
+        async def submitted():
+            for _ in range(100):
+                await asyncio.sleep(.02)
+                job=relay.poll('mac','a'*64)['job']
+                if job:return job
+            self.fail('context callback not submitted')
+        async def deliver(job,value):
+            relay.complete('mac',{'request_id':job['request_id'],'lease':job['lease'],'status':'ready','envelope':encrypt(value,job,aad(job))})
+            row=self.plugin.bridge.agent.pending()[0]
+            self.assertEqual(await self.plugin.bridge.deliver(*row,self.plugin.send,send_view=self.plugin.send_card_view),'sent')
+        async def scenario():
+            await self.plugin.on_message(Event('/asis'))
+            response=self.card_callback('manage');self.assertEqual(response.card.type,'raw')
+            self.card_callback('context_show',{'domain':'research'})
+            job=await submitted();self.assertEqual(job['action'],'context');self.assertEqual(job['context']['op'],'show')
+            value={'kind':'domain_context','domain':'research','revision':0,'goal':'','constraints':'','source_ids':[],
+                'model_allowed':False,'needs_review':False,'configured':False,'model_called':False}
+            await deliver(job,value)
+            self.assertIn('保存新目标',self.card_requests[-1].request_body.content)
+            self.card_callback('context_set',{'goal':'SYNTHETIC_CONTEXT_GOAL','constraints':'SYNTHETIC_CONTEXT_CONSTRAINT','sources':'study','permission':'mimo'},value={'domain':'research','expected_revision':'0'})
+            job=await submitted();self.assertEqual(job['context']['goal'],'SYNTHETIC_CONTEXT_GOAL');self.assertTrue(job['context']['allow_model'])
+            value.update(revision=1,goal='SYNTHETIC_CONTEXT_GOAL',constraints='SYNTHETIC_CONTEXT_CONSTRAINT',source_ids=['study'],model_allowed=True,configured=True)
+            await deliver(job,value)
+            self.assertIn('SYNTHETIC_CONTEXT_GOAL',self.card_requests[-1].request_body.content)
+            disk=b''.join(p.read_bytes() for p in self.plugin.home.glob('*.sqlite3*'))
+            self.assertNotIn(b'SYNTHETIC_CONTEXT_GOAL',disk);self.assertNotIn(b'SYNTHETIC_CONTEXT_CONSTRAINT',disk)
+        asyncio.run(scenario())
+
 
 if __name__ == "__main__":
     unittest.main()
