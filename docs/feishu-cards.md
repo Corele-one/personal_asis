@@ -4,6 +4,10 @@
 
 实现依据为用户指定的[官方卡片机器人开发流程](https://open.feishu.cn/document/uAjLw4CM/ukzMukzMukzM/feishu-cards/quick-start/develop-a-card-interactive-bot?lang=zh-CN)、[JSON 2.0 表单容器](https://open.feishu.cn/document/feishu-cards/card-json-v2-components/containers/form-container)和[卡片回传交互](https://open.feishu.cn/document/uAjLw4CM/ukzMukzMukzM/feishu-cards/card-callback-communication)。卡片使用代码构造的 JSON 2.0，不需要创建模板或持久化 CardKit 实体。
 
+## 回答与原文
+
+新版按「你的问题」「系统状态」「Agent 的回答」「回答的局限」「检索范围」「参考资料」分区，原文另列 E 编号与笔记日期。无答案时显示尚未生成。新增「倾听与鼓励（不读笔记）」；自动／生活方式中的简单安慰请求也不再强制检索日记。旧结果不自动重算，刷新只更新展示。规则与限制见[回应路由](agent-response-routing.md)，本次验证见[修复记录](validation/agent-response-20261015.json)。
+
 ## 传输和平台配置
 
 复用当前 AstrBot 的 Lark socket、身份凭据与发送权限。已在用户登录的飞书开发者后台现场核对：与 VPS 配置相同的应用已经选择长连接接收回调、订阅 `card.action.trigger`，且当前配置已发布。因此未新增平台权限或修改订阅，也没有开第二条长连接争抢事件。

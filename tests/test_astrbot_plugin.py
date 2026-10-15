@@ -225,7 +225,7 @@ class AstrBotPluginTests(unittest.TestCase):
             self.assertIsNotNone(row);self.assertTrue(row[0])
             job=relay.poll('mac','a'*64)['job']
             self.assertEqual(job['mode'],'research')
-            view={'target_id':job['target_id'],'state':'completed','delegation_state':'active',
+            view={'question':'SYNTHETIC_CARD_QUESTION','target_id':job['target_id'],'state':'completed','delegation_state':'active',
                 'committed_actions':3,'unresolved_executions':0,'usage':None,
                 'result':{'answer':'SYNTHETIC_CARD_RESULT [E1]','uncertainty':'partial','citations':['E1'],
                     'evidence':[{'id':'E1','title':'Synthetic','source_id':'study','path_hint':'cache.md',
@@ -234,11 +234,13 @@ class AstrBotPluginTests(unittest.TestCase):
                 'envelope':encrypt(view,job,aad(job))})
             route,value,digest=self.plugin.bridge.agent.pending()[0]
             state=await self.plugin.bridge.deliver(route,value,digest,
-                lambda *a:self.module.PersonalAsis.send(self.plugin,*a))
+                lambda *a:self.module.PersonalAsis.send(self.plugin,*a),send_view=self.plugin.send_card_view)
             self.assertEqual(state,'sent')
             patched=self.card_requests[-1]
             self.assertEqual(patched.message_id,'om_card')
             self.assertIn('SYNTHETIC_CARD_RESULT',patched.request_body.content)
+            self.assertIn('Agent 的回答',patched.request_body.content)
+            self.assertIn('你的问题',patched.request_body.content)
             self.assertEqual(json.loads(patched.request_body.content)['schema'],'2.0')
             self.assertEqual(self.plugin.bridge.agent.pending(),[])
             disk=b''.join(p.read_bytes() for p in self.plugin.home.glob('*.sqlite3*'))

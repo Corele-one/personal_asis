@@ -106,8 +106,11 @@ class AgentRelay(AnalysisRelay):
             job=self.jobs.get(request_id)
             if job and 'mode' in job:
                 from .agent_roles import LABELS,plan
+                from .request_intent import response_plan
                 roles=plan(job['mode'],job['query'])['roles']
                 result['plan']='Mac 核对来源和权限 → 检索原始证据 → '+ '、'.join(LABELS[r] for r in roles)+' → 总管核对汇总；共享预算，支持暂停与恢复'
+                if response_plan(job['query'],job['mode']):
+                    result['plan']='回应本轮消息，不检索历史笔记；共用现有预算。'
         return result
 
     def complete(self, node, data):
@@ -145,6 +148,12 @@ def snapshot(home, target, channel='pwa'):
         with WorkStore(Path(home)/'work.sqlite3') as work:
             result['roles']=[{'role':r['role'],'state':r['state']} for r in work.db.execute(
                 'SELECT role,state FROM runs WHERE parent=? ORDER BY created,rowid',(value['run_id'],))]
+    if session:
+        result['question']=session['question']
+        if session.get('response_plan'):
+            result['response_plan']=session['response_plan']
+        if session.get('temporal_scope'):
+            result['temporal_scope']=session['temporal_scope']
     if value['result'] is not None:
         result['result']=validate_result(home,value['result'],channel)
     return result

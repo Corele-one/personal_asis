@@ -1,0 +1,102 @@
+{
+  "date": "2026-10-15",
+  "release": "assistant-reply-f0ce5caae433405a",
+  "source_digest": "f0ce5caae433405ac33513dd682ace40b0d89070f1a30d61c5bc1eeaca62cadd",
+  "trigger": "Owner reported unrelated historical analysis and indistinguishable card answers; no personal prompt or evidence included here.",
+  "changes": [
+    "Narrow auto/life support routing and explicit conversation mode with no note tools or encoder",
+    "Freeze supported relative date scopes; filter by explicit note dates; no older or undated fallback",
+    "Separate user question, status, Agent answer, limitations, search range and dated source quotations",
+    "Preserve old paid-session wire protocol and cached results"
+  ],
+  "regression": {
+    "checkout": {
+      "total": 319,
+      "passed": 304,
+      "skipped": 15
+    },
+    "independent_mac_release": {
+      "total": 319,
+      "passed": 304,
+      "skipped": 15
+    },
+    "vps_core": {
+      "total": 319,
+      "passed": 198,
+      "skipped": 121
+    },
+    "actual_astrbot_sdk_specialists": {
+      "total": 24,
+      "passed": 24,
+      "send_api": "synthetic replacement; actual SDK types, callback dispatch, encryption and request builders"
+    }
+  },
+  "live_synthetic_mimo": {
+    "status": "completed",
+    "answer_status": "conversational",
+    "response_kind": "conversation",
+    "searches": 0,
+    "evidence_count": 0,
+    "generation_calls": 1,
+    "tokens": 183,
+    "repeat_cached": true,
+    "repeat_tokens": 0,
+    "unknown_before": 2,
+    "unknown_after": 2
+  },
+  "old_personal_work_replay": {
+    "cached": true,
+    "new_tokens": 0,
+    "new_generation_calls": 0,
+    "old_answer_unchanged": true,
+    "typed_sections_rendered": true,
+    "private_content_in_git": false
+  },
+  "deployment": {
+    "status": "active",
+    "previous_release": "assistant-cards-4acc99f9db7cdd3e",
+    "mac_pa0_unchanged": true,
+    "original_interpreter_retained": true,
+    "rollback_retained": true,
+    "mac_worker_running": true,
+    "vps_services": {
+      "personal-asis-coordinator": "active",
+      "personal-asis-pwa": "active",
+      "astrbot": "active",
+      "nginx": "active"
+    },
+    "source_mismatches": [],
+    "active_plugin_matches": true,
+    "mac_heartbeat_age_at_check_seconds": 33.3,
+    "card_adapter_error_types": []
+  },
+  "not_validated": [
+    "New card layout on the actual phone",
+    "Quality of a new real personal response",
+    "General retrieval ranking quality and arbitrary time expressions",
+    "Latest unattended sleep and full reboot recovery"
+  ],
+  "unchanged_boundaries": {
+    "providers": [
+      "mimo"
+    ],
+    "model": "mimo-v2.6-flash",
+    "daily_tokens_limit": 100000,
+    "monthly_tokens_limit": 1000000,
+    "new_background_work": false,
+    "historical_unknown_calls": 2
+  },
+  "production_probe": {
+    "encrypted_mac_response_error": "agent_request_not_found",
+    "private_sources_read": false,
+    "model_generation_requested": false,
+    "admin_session_created": false,
+    "unauthenticated_https_rejected": true,
+    "new_daily_tokens": 0,
+    "https_agent_controls": true,
+    "https_conversation_option": true,
+    "https_answer_and_quote_headings": true,
+    "https_service_worker_v7": true,
+    "legacy_probe_label": "The older probe expected retired text 按需 Agent; controls and new headings were independently checked after that label-only mismatch."
+  }
+}

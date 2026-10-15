@@ -19,15 +19,68 @@ def button(session,action,label,*,form=False,primary=False):
     if form:result.update(name='submit_'+action,form_action_type='submit')
     return result
 
-def card(session,body=None):
-    if body is None and not session.get('target_id'):
+def _bounded(value,limit):
+    value=value if isinstance(value,str) else ''
+    raw=value.encode()
+    return raw[:limit].decode('utf-8','ignore')+('…（显示已截断）' if len(raw)>limit else '')
+
+
+def _section(title,body,limit=6000):
+    body=_bounded(body,limit)
+    return [paragraph('【'+title+'】')]+[paragraph(body[i:i+1200]) for i in range(0,len(body),1200)]
+
+
+def result_elements(view,question=None):
+    value=view.get('result',{})
+    labels={'completed':'已完成','running':'处理中','queued':'等待执行','waiting_node':'等待恢复／核对',
+            'paused':'已暂停','cancelled':'已取消','stopped':'本轮停止'}
+    elements=[]
+    query=value.get('question') or question
+    if query:elements+=_section('你的问题',query,1600)+[{'tag':'hr'}]
+    if value.get('error'):
+        from .analysis_channel import error_message
+        elements+=_section('系统回执 · 尚无新的 Agent 回答',error_message(value['error']),800)
+        return elements
+    state=labels.get(value.get('state'),'等待 Mac 核实')
+    elements+=_section('系统状态',state+'；已提交 '+str(value.get('committed_actions',0))+' 个步骤。',500)
+    answer=value.get('result')
+    if answer:
+        role='总管汇总' if answer.get('role_plan') else '本轮回应'
+        elements += [{'tag':'hr'}]+_section('Agent 的回答 · '+role,answer.get('answer',''))
+        if answer.get('uncertainty'):elements+=_section('回答的局限',answer['uncertainty'],1200)
+        elements+=[{'tag':'hr'}]
+        if answer.get('response_kind')=='conversation':
+            elements+=_section('使用的信息','只使用你本轮发送的消息，未检索笔记或日记。',300)
+        else:
+            window=answer.get('temporal_scope') or value.get('temporal_scope')
+            scope=(window['start']+' 至 '+window['end']+'；未纳入日期不明的笔记。') if window else '未指定时间范围；以下是历史资料，不代表你当前的状态。'
+            if window and window.get('basis')=='recent_defaults_to_30_days':scope+=' “最近”本次按近 30 天处理。'
+            if window and window.get('basis')=='question_months_as_30_days':scope+=' 相对月数按每月 30 天计算。'
+            elements+=_section('本次检索范围',scope,600)
+            elements+=_section('参考资料 · 原文摘录不是 Agent 的回答','',100)
+            from .retrieval_time import note_date
+            for entry in answer.get('evidence',[])[:6]:
+                recorded=entry.get('record_date') or note_date(entry.get('path_hint',''),'')[0]
+                label=entry.get('id','')+' · '+entry.get('source_id','')+' · 笔记日期：'+(recorded or '未标注')
+                body=label+'\n'+entry.get('title','')+'\n原文摘录：'+_bounded(entry.get('excerpt',''),700)
+                elements+=_section('资料 '+entry.get('id',''),body,1100)
+    else:
+        elements+=_section('Agent 的回答','尚未生成。状态回执不代表 Agent 已回答你的问题。',300)
+    if value.get('roles'):
+        progress='；'.join(LABELS.get(row['role'],row['role'])+'：'+labels.get(row['state'],row['state']) for row in value['roles'])
+        elements+=_section('专业角色进度',progress,600)
+    return elements
+
+
+def card(session,body=None,*,view=None,question=None):
+    if body is None and view is None and not session.get('target_id'):
         elements=[paragraph('围绕研究、申请与职业、生活复盘提问。选择本次资料范围，结果会更新在这张卡片中。'),
             {'tag':'form','name':'new_work','elements':[
                 paragraph('工作方式'),
                 {'tag':'select_static','name':'mode','required':True,'initial_option':'auto','width':'fill',
                  'options':[{'text':text(label),'value':mode} for mode,label in (
                     ('auto','总管自动分工'),('research',LABELS['research']),('career',LABELS['career']),
-                    ('life',LABELS['life']),('team','三个领域共同分析'))]},
+                    ('life',LABELS['life']),('team','三个领域共同分析'),('conversation','倾听与鼓励（不读笔记）'))]},
                 paragraph('资料范围'),
                 {'tag':'select_static','name':'sources','required':True,'initial_option':'study','width':'fill',
                  'options':[{'text':text(label),'value':value} for value,label in (
@@ -40,16 +93,20 @@ def card(session,body=None):
                 {'tag':'input','name':'target','required':True,'max_length':36,'placeholder':text('粘贴原工作编号')},
                 button(session,'lookup','查看原工作',form=True)]}]
     else:
-        body=body or ('工作 '+session['target_id']+'\n指令已接收，等待 Mac 核实；不会自动重复模型调用。')
-        # Plain text prevents model output becoming active links, mentions or buttons.
-        bounded=body.encode()[:18000].decode('utf-8','ignore')
-        elements=[paragraph(bounded[i:i+1800]) for i in range(0,len(bounded),1800)]
+        if view is not None:
+            elements=result_elements(view,question)
+        elif body is not None:
+            elements=_section('系统回执／旧版文字结果',body,17000)
+        else:
+            elements=[]
+            if question:elements+=_section('你的问题',question,1600)
+            elements+=_section('系统状态','指令已接收，等待 Mac 核实；尚无 Agent 的回答。',400)
         if session.get('target_id'):
             elements.append(paragraph('工作编号：'+session['target_id']))
             elements.extend(button(session,action,label) for action,label in (
                 ('status','刷新状态'),('pause','暂停这项工作'),('resume','明确恢复'),('cancel','取消工作')))
         elements.append(button(session,'new','新建问题'))
-    elements.append(paragraph('由在线 Mac 检索获准资料，MiMo 共用现有预算。关闭卡片不会停止工作；新建问题也不会取消原工作。此卡片交互有效 30 分钟，过期后重新发送 /asis。'))
+    elements.append(paragraph('由在线 Mac 处理；需要检索时只使用获准资料，MiMo 共用现有预算。关闭卡片不会停止工作；新建问题也不会取消原工作。此卡片交互有效 30 分钟，过期后重新发送 /asis。'))
     return {'schema':'2.0','config':{'update_multi':True,'enable_forward':False},
             'header':{'template':'turquoise','title':text('Personal Asis · 个人助手')},
             'body':{'elements':elements}}

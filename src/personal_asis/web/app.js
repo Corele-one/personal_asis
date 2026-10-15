@@ -92,18 +92,22 @@ function renderAnalysis(value,box=$('analysis-result')){
     else if(code.startsWith('research_'))reason='未取得足够的可用公开证据，请补充公开原始链接。';
     box.append(element('p',reason+' 不会自动重复模型调用。','status'));return;
   }
-  box.append(element('pre',value.answer));box.append(element('p','不确定性：'+value.uncertainty,'hint'));
+  box.append(element('h3','Agent 的回答'),element('pre',value.answer));
+  if(value.uncertainty)box.append(element('p','回答的局限：'+value.uncertainty,'hint'));
+  if(value.response_kind==='conversation')box.append(element('p','只使用本轮消息，未检索笔记或日记。','hint'));
+  if(value.temporal_scope)box.append(element('p',`笔记日期范围：${value.temporal_scope.start} 至 ${value.temporal_scope.end}；未纳入日期不明的笔记。`,'hint'));
   const report=value.report;
   if(report){
     for(const [key,label] of [['existing_knowledge','已有资料'],['external_findings','公开证据'],['knowledge_gaps','知识缺口'],['disagreements','分歧与限制']]){box.append(element('h3',label),element('pre',report[key]));}
     report.directions.forEach((d,i)=>{box.append(element('h3',`方向假设 ${i+1}：${d.hypothesis}`));for(const [key,label] of [['connection','资料关联'],['gap','能力缺口'],['opportunity','机会'],['risk','风险'],['next_step','下一步验证']])box.append(element('p',`${label}：${d[key]}`));});
   }
+  if(value.evidence.length)box.append(element('h3','参考资料 · 以下为原文摘录'));
   for(const e of value.evidence){
     const card=element('article',undefined,'card');card.append(element('h3',`[${e.id}] ${e.title}`));
     if(e.kind==='external'){
       const link=element('a',e.url);const url=new URL(e.url);if(url.protocol==='https:'){link.href=url.href;link.target='_blank';link.rel='noopener noreferrer';card.append(link);}
       card.append(element('p',`类型：${e.source_class} · 页面日期（未核实）：${e.published_at||'未知'} · 获取：${e.retrieved_at}`,'hint'));
-    }else{card.append(element('p',`${e.source_id} / ${e.path_hint} · 第${e.line_start}行 · 版本${e.content_hash.slice(0,12)}`,'hint'));}
+    }else{card.append(element('p',`${e.source_id} / ${e.path_hint} · 笔记日期：${e.record_date||'未标注'} · 第${e.line_start}行 · 版本${e.content_hash.slice(0,12)}`,'hint'));}
     card.append(element('pre',e.excerpt));box.append(card);
   }
   if(value.research_strategy){for(const gap of value.research_strategy.gaps)box.append(element('p',gap,'status'));}
@@ -164,6 +168,7 @@ function renderAgent(value,page){
   if(value.role_plan){const names={research:'知识研究',career:'申请与职业',life:'生活复盘'};$('agent-status').textContent+=' · 总管分工：'+value.role_plan.roles.map(r=>names[r]).join('、');}
   if(value.result)renderAnalysis(value.result,$('agent-result'));
   else $('agent-result').replaceChildren();
+  if(value.question)$('agent-result').prepend(element('h3','你的问题'),element('pre',value.question));
 }
 async function agentCommand(action){
   const page=agentPage;

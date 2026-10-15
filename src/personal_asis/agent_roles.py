@@ -3,7 +3,7 @@
 from .work import encoded, fingerprint
 
 
-MODES=('auto','research','career','life','team')
+MODES=('auto','research','career','life','team','conversation')
 LABELS={'supervisor':'总管','research':'知识研究','career':'申请与职业','life':'生活记录与复盘'}
 GUIDANCE={
     'research':'核对概念、机制、材料之间的支持与冲突，区分原始证据和推论，给出可验证的下一步。',
@@ -21,6 +21,9 @@ VERSION=fingerprint([GUIDANCE,SUPERVISOR_GUIDANCE])
 def plan(mode, question):
     if mode not in MODES:
         raise ValueError('agent_unknown_role_mode')
+    if mode=='conversation':
+        return {'version':'current-message-support-v1','mode':mode,'roles':[],
+                'reason':'回应本轮消息，不检索历史笔记。','parallel_limit':1}
     if mode=='team':
         roles=list(GUIDANCE)
         reason='本人选择三个专业角色共同核对所选来源，再由总管汇总。'

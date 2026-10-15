@@ -66,13 +66,15 @@ def context_excerpt(text, query, max_chars=600, window=None):
             'excerpt':line[offset:offset+max_chars], 'column_start':offset+1}
 
 
-def retrieve(index, query, limit=5, provider=None, encoder=None, source_ids=None):
+def retrieve(index, query, limit=5, provider=None, encoder=None, source_ids=None, time_window=None):
     if not isinstance(query, str) or not query.strip() or len(query) > 512 or not 1 <= limit <= 20:
         raise ValueError("invalid_retrieval_query")
     if provider and exclusion_reason('',query):
         raise ValueError('model_query_contains_credentials')
     if source_ids is not None and (not source_ids or set(source_ids)-{s.id for s in index.config.sources}):
         raise ValueError('retrieval_requires_known_source_ids')
+    from .retrieval_time import note_date,question_window,in_window
+    time_window=time_window or question_window(query)
     lexical = index.search(query, "local", 100)
     lexical_ids = [hit["document_id"] for group in lexical["results"] for hit in group["replicas"]]
     documents, denied, stale = [], 0, 0
@@ -93,12 +95,17 @@ def retrieve(index, query, limit=5, provider=None, encoder=None, source_ids=None
         if provider and not source.allows_model(provider, private, row["path"]):
             denied += 1
             continue
+        recorded,basis=note_date(row['path'],text)
+        if not in_window(recorded,time_window):
+            continue
         selection = context_excerpt(text, query)
         evidence = {"document_id":row["document_id"], "content_hash":row["content_hash"],
                     "node_id":index.config.node_id, "source_id":source.id, "path_hint":row["path"],
                     "title":row["title"], "index_version":row["index_version"],
                     "original_uri":path.as_uri(), **selection}
         evidence['sensitivity']='private' if private else 'normal'
+        if recorded:
+            evidence.update(record_date=recorded,record_date_basis=basis)
         documents.append((evidence, text))
     by_id = {e["document_id"]:e for e,_ in documents}
     lexical_ids = [doc for doc in lexical_ids if doc in by_id]
@@ -147,7 +154,7 @@ def retrieve(index, query, limit=5, provider=None, encoder=None, source_ids=None
             break
     return {"mode":mode, "evidence":hits, "policy_denied":denied,
             "stale_candidates_skipped":stale, "semantic_enabled":encoder is not None,
-            "degradation":degradation, "vector_cache":cache_status}
+            "degradation":degradation, "vector_cache":cache_status,'time_window':time_window}
 
 
 @dataclass
@@ -160,7 +167,8 @@ class ContextBundle:
 
     def cloud_input(self):
         return {"question":self.query, "evidence":[{"id":f"E{i+1}","title":e["title"],
-            "text":e["excerpt"]} for i,e in enumerate(self.evidence)]}
+            "text":e["excerpt"],**({'note_date':e['record_date']} if 'record_date' in e else {})}
+            for i,e in enumerate(self.evidence)]}
 
     def fingerprint(self):
         return hashlib.sha256(json.dumps({"query":self.query,"provider":self.provider,
@@ -180,6 +188,11 @@ class ContextBundle:
                 if current is None:
                     raise ValueError("context_evidence_stale")
                 source,path,text,private = current
+                if 'record_date' in evidence:
+                    from .retrieval_time import note_date
+                    recorded,basis=note_date(row['path'],text)
+                    if (recorded!=evidence['record_date'] or basis!=evidence.get('record_date_basis')):
+                        raise ValueError('context_note_date_mismatch')
                 if not source.allows_model(self.provider,private,row['path']):
                     raise ValueError("context_permission_revoked")
                 if (evidence['sensitivity']!=('private' if private else 'normal')
@@ -194,10 +207,10 @@ class ContextBundle:
                     raise ValueError("context_content_mismatch")
 
 
-def build_bundle(home, query, provider="mimo", encoder=None, source_ids=None):
+def build_bundle(home, query, provider="mimo", encoder=None, source_ids=None, time_window=None):
     config = load_pa1_config(Path(home))
     with Index(Path(home)/"index.sqlite3",config) as index:
-        result = retrieve(index,query,3,provider,encoder,source_ids)
+        result = retrieve(index,query,3,provider,encoder,source_ids,time_window)
     if not result['evidence']:
         raise ValueError("no_current_provider_authorized_evidence")
     for evidence in result['evidence']:

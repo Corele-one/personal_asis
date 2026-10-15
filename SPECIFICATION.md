@@ -270,3 +270,5 @@ The following are intentionally not decided until deployment, and must not be si
 - topics, schedules, sources, expiry, and aggregate budget for Opportunity Subscriptions and Model Cross-Review.
 
 Any choice that changes data residency, source policy, credentials, or external-write authority requires a new documented decision before implementation.
+
+Owner response routing and evidence dates (2026-10-15): new simple support requests in auto/life mode, or explicit conversation mode, use only the current message with one shared-budget model call and no note tools, encoder or specialist context. Grounded requests retain retrieval; supported relative date windows are frozen per new run and filter by explicit filename/frontmatter note dates, excluding unknown/conflicting dates without old-note fallback. Cards distinguish the user question, system status, Agent answer and historical quotations with dates. Existing paid sessions preserve their original wire protocol and cached answers. General intent planning, arbitrary time-language parsing and broad retrieval-quality acceptance remain pending. See [routing and limitations](docs/agent-response-routing.md).

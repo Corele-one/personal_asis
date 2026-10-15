@@ -18,7 +18,7 @@ from personal_asis.coordinator import ProtocolError
 from personal_asis.pwa import settings
 
 
-@register("personal_asis", "Personal Asis", "资料搜索、证据分析与卡片助手", "0.5.0")
+@register("personal_asis", "Personal Asis", "资料搜索、证据分析与卡片助手", "0.6.0")
 class PersonalAsis(Star):
     def __init__(self, context: Context):
         super().__init__(context)
@@ -95,7 +95,7 @@ class PersonalAsis(Star):
                 from personal_asis.feishu_cards import card
                 return P2CardActionTriggerResponse({'toast':{'type':'info','content':
                     '旧操作已处理，请使用当前卡片。' if duplicate else '已接收，正在核对。'},
-                    'card':{'type':'raw','data':card(session)}})
+                    'card':{'type':'raw','data':card(session,question=job['query'] if job else None)}})
             except Exception as error:
                 logger.warning('PA card callback error type='+type(error).__name__)
                 return P2CardActionTriggerResponse({'toast':{'type':'error',
@@ -151,6 +151,15 @@ class PersonalAsis(Star):
                                  .msg_type("text").uuid(delivery_id).reply_in_thread(False).build()).build())
         response = await adapter.lark_api.im.v1.message.areply(request)
         return response.success()
+
+    async def send_card_view(self,platform,message,view,delivery):
+        store=self.card_store()
+        if not store.db.execute('SELECT 1 FROM card_sessions WHERE card_message=?',(message,)).fetchone():
+            return None
+        session=store.for_delivery(message,delivery)
+        if session is None:return False
+        from personal_asis.feishu_cards import card
+        return await self.patch_card(platform,message,card(session,view=view))
 
     async def reply(self, event, text):
         key = str(uuid.uuid5(uuid.NAMESPACE_URL, f"asis-reply:{event.message_obj.message_id}:{text}"))
@@ -273,7 +282,7 @@ class PersonalAsis(Star):
             try:
                 async with self.lock:
                     for route, view, digest in self.bridge.pending()+self.bridge.pending_analyses()+self.bridge.agent.pending():
-                        state = await self.bridge.deliver(route, view, digest, self.send)
+                        state = await self.bridge.deliver(route, view, digest, self.send,send_view=self.send_card_view)
                         if view.get('kind')=='analysis':
                             self.bridge.analysis_keys.pop(route['task_id'],None)
                         if view.get('kind')=='agent' and state!='revoked_or_expired':

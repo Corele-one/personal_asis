@@ -246,7 +246,7 @@ class FeishuBridge:
                 output.append((dict(row), view, digest))
         return output
 
-    async def deliver(self, route, view, digest, send):
+    async def deliver(self, route, view, digest, send, send_view=None):
         if not self.authorized(route["platform_id"], route["open_id"]):
             return "unauthorized"
         if view.get('kind')=='agent' and not self.agent.ready_for_delivery(route,view):
@@ -271,7 +271,11 @@ class FeishuBridge:
             if (self.home / "pwa.json").exists():
                 from .pwa import settings
                 origin = settings(self.home)["origin"]
-            accepted = await send(route["platform_id"], route["message_id"], summary(view, origin), key)
+            accepted=None
+            if send_view is not None:
+                accepted=await send_view(route['platform_id'],route['message_id'],view,key)
+            if accepted is None:
+                accepted = await send(route["platform_id"], route["message_id"], summary(view, origin), key)
         except Exception:
             with self.db:
                 self.db.execute("UPDATE deliveries SET state='unknown',updated=? WHERE id=?", (self.clock(), key))

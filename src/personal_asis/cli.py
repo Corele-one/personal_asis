@@ -151,7 +151,7 @@ def main(argv=None):
     p.add_argument('--steps',type=int,help='本次最多新完成的步骤数；便于分步检查和恢复')
     p.add_argument('--domain',choices=['supervisor','research','career','life'],help='显式采用已确认且获准模型使用的领域目标；resume 沿用原领域')
     p.add_argument('--with-history',action='store_true',help='新领域工作检索最多两条相关委托历史；恢复沿用原快照')
-    p.add_argument('--mode',choices=['auto','research','career','life','team'],help='总管按需组织专业角色；team 核对三个领域，恢复沿用原计划')
+    p.add_argument('--mode',choices=['auto','research','career','life','team','conversation'],help='总管按需组织专业角色；team 核对三个领域，恢复沿用原计划')
     p = commands.add_parser('domain', help='本人明确配置的领域目标／约束；不自动推断、调度或授权资料')
     p.add_argument('action',choices=['set','show','list','forget','history'])
     p.add_argument('--domain',choices=['supervisor','research','career','life'])

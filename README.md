@@ -1,6 +1,6 @@
 # Personal Asis
 
-**已部署可按需使用的助手，完整实施计划尚未完成（2026-10-15）。** 当前版本 `assistant-cards-4acc99f9db7cdd3e` 支持本机资料检索／阅读、MiMo 分析与公开研究、总管及研究／申请职业／生活复盘三个专业角色的串行协作，以及本人 PWA／飞书卡片。逐项状态见[项目完成情况](docs/project-status.md)与[实施计划](docs/implementation-plan.md)。
+**已部署可按需使用的助手，完整实施计划尚未完成（2026-10-15）。** 当前版本 `assistant-reply-f0ce5caae433405a` 支持本机资料检索／阅读、MiMo 分析与公开研究、总管及研究／申请职业／生活复盘三个专业角色的串行协作，以及本人 PWA／飞书卡片。逐项状态见[项目完成情况](docs/project-status.md)与[实施计划](docs/implementation-plan.md)。
 
 PA0 已按 Mac 单节点范围验收；VPS 负责协调和渠道入口，ROG 停用。2026-10-14 验收时索引 Study 267 篇、Life 181 篇，共 448 篇 Markdown；这不是实时来源数量。独立备份和恢复密钥按用户选择暂缓，整机重启未验。
 

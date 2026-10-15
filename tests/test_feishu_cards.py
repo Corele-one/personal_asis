@@ -95,3 +95,31 @@ class CardTests(unittest.TestCase):
     def test_rebinding_removes_old_card_authority(self):
         code=self.bridge.pairing('lark')['pairing_code'];self.bridge.bind('lark','ou_new',code)
         with self.assertRaises(ValueError):self.start()
+
+    def test_structured_card_separates_user_agent_status_and_historical_quotes(self):
+        session,_,_=self.start()
+        view={'result':{'question':'SYNTHETIC_USER_MESSAGE','state':'completed','committed_actions':3,
+            'result':{'answer':'SYNTHETIC_AGENT_ANSWER','uncertainty':'SYNTHETIC_LIMIT',
+                'role_plan':{'roles':['life']},'evidence':[{'id':'E1','source_id':'life','title':'A note',
+                    'path_hint':'2026-06-03.md','excerpt':'SYNTHETIC_HISTORICAL_QUOTE'}]}}}
+        rendered=card(session,view=view)
+        content=[e['text']['content'] for e in rendered['body']['elements'] if e['tag']=='div']
+        self.assertLess(content.index('【你的问题】'),content.index('SYNTHETIC_USER_MESSAGE'))
+        self.assertLess(content.index('【Agent 的回答 · 总管汇总】'),content.index('SYNTHETIC_AGENT_ANSWER'))
+        self.assertIn('【参考资料 · 原文摘录不是 Agent 的回答】',content)
+        self.assertTrue(any('2026-06-03' in s for s in content))
+        self.assertTrue(any('不代表你当前的状态' in s for s in content))
+        self.assertTrue(all(e['tag']!='markdown' for e in rendered['body']['elements']))
+        disk=b''.join(p.read_bytes() for p in Path(self.tmp.name).glob('*.sqlite3*'))
+        self.assertNotIn(b'SYNTHETIC_USER_MESSAGE',disk)
+        self.assertNotIn(b'SYNTHETIC_AGENT_ANSWER',disk)
+
+    def test_current_message_reply_marks_no_history_and_pending_receipt_is_not_an_answer(self):
+        session,_,_=self.start()
+        pending=json.dumps(card(session,question='SYNTHETIC_CURRENT_INPUT'),ensure_ascii=False)
+        self.assertIn('尚无 Agent 的回答',pending)
+        rendered=json.dumps(card(session,view={'result':{'question':'SYNTHETIC_CURRENT_INPUT',
+            'state':'completed','result':{'answer':'SYNTHETIC_CURRENT_REPLY','response_kind':'conversation'}}}),ensure_ascii=False)
+        self.assertIn('Agent 的回答',rendered)
+        self.assertIn('未检索笔记或日记',rendered)
+        self.assertNotIn('参考资料 ·',rendered)
