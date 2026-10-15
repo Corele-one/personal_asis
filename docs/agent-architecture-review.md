@@ -1,10 +1,10 @@
 # Personal Agent 架构审阅稿
 
-状态（2026-10-15）：整体架构共识已确认；PA0 已按 Mac 单节点范围完成验收，见 [最终结果](pa0-acceptance.md)。ROG 停用，独立备份／恢复密钥暂缓。MiMo 本机及本人渠道分析已交付；本机委托状态和 Pi 核心合成适配已通过 [第一切片验证](agent-runtime-local.md)。本机受控按需执行已通过 MiMo 实际闭环／恢复续验，见 [最新记录](agent-on-demand.md)；本人渠道 Agent 与持续委托尚未上线；后续路线见 [实施计划](implementation-plan.md)。详细依据见 [架构](agent-architecture.md)、[来源](information-sources.md)与[总规格](../SPECIFICATION.md)。
+状态（2026-10-15）：整体架构共识已确认；PA0 已按 Mac 单节点范围完成验收，见 [最终结果](pa0-acceptance.md)。ROG 停用，独立备份／恢复密钥暂缓。MiMo 本机及本人渠道分析已交付；本机委托状态和 Pi 核心合成适配已通过 [第一切片验证](agent-runtime-local.md)。本机受控按需执行已通过 MiMo 实际闭环／恢复续验，见 [最新记录](agent-on-demand.md)；本人 PWA／飞书的受控 Agent 见 [后续切片](agent-channels.md)，其后已交付[串行专业角色协作](agent-roles.md)与[飞书卡片](feishu-cards.md)，统一当前状态见[完成情况](project-status.md)。完整领域上下文、角色并行和持续委托尚未上线；后续路线见 [实施计划](implementation-plan.md)。详细依据见 [架构](agent-architecture.md)、[来源](information-sources.md)与[总规格](../SPECIFICATION.md)。
 
 ## 整体责任
 
-我们构建并保有个人助手的业务权威：目标、持续委托、用户行动任务、资料政策、确认、预算、记忆规则和成果；Agent 执行框架通过适配接口负责模型与工具循环及可复用的运行机制。Pi 是优先验证候选，具体组件和版本由验证结果决定。
+我们构建并保有个人助手的业务权威：目标、持续委托、用户行动任务、资料政策、确认、预算、记忆规则和成果；Agent 执行框架通过适配接口负责模型与工具循环及可复用的运行机制。当前按需工具循环使用已验证的 Pi agent-core 1.2.0；通用执行与持续工作框架仍须另行验收。
 
 ```mermaid
 flowchart TD

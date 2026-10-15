@@ -1,0 +1,165 @@
+{
+  "date": "2026-10-15",
+  "release": "assistant-cards-4acc99f9db7cdd3e",
+  "scope": "owner_on_demand_comprehensive_assistant_and_feishu_card_ui",
+  "capabilities": [
+    "supervisor_serial_specialist_child_runs",
+    "research_career_life_modes",
+    "deterministic_auto_routing",
+    "owner_pwa_role_selection",
+    "feishu_bare_asis_json_v2_card",
+    "async_card_callback_and_original_message_update",
+    "shared_policy_budget_paid_replay_and_parent_child_control"
+  ],
+  "tests": {
+    "checkout": {
+      "total": 304,
+      "passed": 289,
+      "skipped": 15
+    },
+    "mac_standalone_release": {
+      "total": 304,
+      "passed": 289,
+      "skipped": 15
+    },
+    "vps_core": {
+      "total": 304,
+      "passed": 189,
+      "skipped": 115
+    },
+    "actual_astrbot_sdk_crypto_suite": {
+      "total": 24,
+      "passed": 24,
+      "sender": "synthetic_api_replacement"
+    },
+    "javascript_syntax": true,
+    "git_diff_check": true
+  },
+  "deployment": {
+    "mac_pa1_running": true,
+    "pa0_plist_unchanged": true,
+    "original_interpreters_retained": true,
+    "remote_source_mismatches": [],
+    "active_plugin_matches": true,
+    "coordinator": "active",
+    "pwa": "active",
+    "astrbot": "active",
+    "nginx": "active",
+    "mac_heartbeat_verified": true,
+    "https_certificate_verification": true,
+    "new_pwa_role_selector_served": true,
+    "rollback_retained": true
+  },
+  "real_mimo_synthetic_trial": {
+    "model": "mimo-v2.6-flash",
+    "budget_before": {
+      "day": "2026-10-15",
+      "month": "2026-10",
+      "daily_tokens": 28333,
+      "monthly_tokens": 38751,
+      "daily_limit": 100000,
+      "monthly_limit": 1000000,
+      "daily_remaining": 71667,
+      "monthly_remaining": 961249,
+      "approaching_limit": false,
+      "unresolved_calls": 2,
+      "includes_reservations": true,
+      "provider_cooldown": null
+    },
+    "first_status": "checkpointed",
+    "first_calls": 1,
+    "second_status": "completed",
+    "second_calls": 3,
+    "answer_status": "supported",
+    "citations": 2,
+    "evidence_count": 2,
+    "roles": [
+      "research",
+      "career",
+      "life"
+    ],
+    "specialist_calls": 3,
+    "model_turns": 1,
+    "searches": 1,
+    "usage": {
+      "completion_tokens": 876,
+      "prompt_tokens": 2339,
+      "total_tokens": 3215
+    },
+    "replay_cached": true,
+    "replay_additional_tokens": 0,
+    "budget_after": {
+      "day": "2026-10-15",
+      "month": "2026-10",
+      "daily_tokens": 31548,
+      "monthly_tokens": 41966,
+      "daily_limit": 100000,
+      "monthly_limit": 1000000,
+      "daily_remaining": 68452,
+      "monthly_remaining": 958034,
+      "approaching_limit": false,
+      "unresolved_calls": 2,
+      "includes_reservations": true,
+      "provider_cooldown": null
+    },
+    "answer_review": "core distinctions match synthetic statements; target-versus-means extrapolation exceeds direct evidence and requires review"
+  },
+  "earlier_known_trial": {
+    "question": "ambiguous_cache_only",
+    "result": "extra_json_field_rejected",
+    "known_tokens": 1981,
+    "automatic_regeneration": false
+  },
+  "real_feishu": {
+    "user_confirmed_card_visible_and_buttons_respond": true,
+    "production_card_session": "ready",
+    "submitted_card_actions": [
+      "lookup",
+      "cancel"
+    ],
+    "platform_result_update_states": [
+      "sent",
+      "sent"
+    ],
+    "new_model_tokens": 0,
+    "platform_callback_mode": "persistent_connection",
+    "card_action_trigger_subscribed": true,
+    "platform_configuration_already_published": true,
+    "platform_permissions_changed": false,
+    "private_question_or_answer_read_from_platform_for_validation": false
+  },
+  "budgets": {
+    "daily_limit": 100000,
+    "monthly_limit": 1000000,
+    "daily_occupied": 31548,
+    "monthly_occupied": 41966,
+    "historical_unknown_calls_retained": 2,
+    "limits_increased": false
+  },
+  "maintenance": {
+    "tunnel_found_exited": true,
+    "existing_tunnel_restarted": true,
+    "loopback_listener_and_heartbeat_verified": true,
+    "unattended_recovery_not_retested": true
+  },
+  "source_grants_changed": false,
+  "new_real_personal_goals_created": false,
+  "not_validated": [
+    "new_release_unattended_sleep_wake",
+    "whole_machine_reboot",
+    "real_personal_multi_role_analysis_quality",
+    "complete_pwa_role_interaction_in_browser",
+    "real_feishu_paid_analysis_quality_after_card_form_submission"
+  ],
+  "not_implemented": [
+    "background_delegation",
+    "parallel_specialist_execution",
+    "full_domain_context_continuity",
+    "generic_script_browser_isolation",
+    "automatic_long_term_memory",
+    "external_reading_account_adapters",
+    "meal_photo_sleep_capture",
+    "formal_tasks_calendar_email",
+    "remote_permission_management"
+  ]
+}

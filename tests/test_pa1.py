@@ -174,6 +174,36 @@ class PA1Tests(unittest.TestCase):
             with self.subTest(group=group),self.assertRaisesRegex(ValueError,'invalid_evidence'):
                 validate_answer(response,bundle)
 
+    def test_cited_abstention_discards_all_model_claims_but_unknown_ids_still_fail(self):
+        from personal_asis.model_provider import validate_answer
+        bundle=build_bundle(self.home,'cache')
+        body={'status':'insufficient_evidence','answer':'UNTRUSTED_ASSERTION [E1]',
+              'citations':['E1'],'uncertainty':'UNTRUSTED_EXPLANATION [E2]'}
+        response={'finish_reason':'stop','tool_calls':None,'content':json.dumps(body)}
+        result=validate_answer(response,bundle)
+        self.assertEqual(result['citations'],[])
+        self.assertTrue(result['abstention_references_removed'])
+        self.assertNotIn('UNTRUSTED',json.dumps(result))
+        for change in ({'citations':['E999']},{'answer':'unknown [E999]'},
+                       {'citations':'E1'},{'citations':[{}]}):
+            response['content']=json.dumps({**body,**change})
+            with self.subTest(change=change),self.assertRaisesRegex(ValueError,'invalid_evidence'):
+                validate_answer(response,bundle)
+
+    def test_empty_abstention_is_fixed_but_empty_supported_answer_still_rejected(self):
+        from personal_asis.model_provider import validate_answer
+        bundle=build_bundle(self.home,'cache')
+        body={'status':'insufficient_evidence','answer':'','citations':[],
+              'uncertainty':'UNTRUSTED_MODEL_EXPLANATION'}
+        response={'finish_reason':'stop','tool_calls':None,'content':json.dumps(body)}
+        result=validate_answer(response,bundle)
+        self.assertEqual(result['status'],'insufficient_evidence')
+        self.assertTrue(result['answer'])
+        self.assertNotIn('UNTRUSTED',json.dumps(result))
+        for change in ({'status':'supported'},{'answer':None},{'answer':[]},{'citations':['E999']}):
+            response['content']=json.dumps({**body,**change})
+            with self.subTest(change=change),self.assertRaises(ValueError):validate_answer(response,bundle)
+
     def test_model_paths_are_exact_files_not_directory_or_wildcard_grants(self):
         data=json.loads((self.home/'sources.yaml').read_text())
         data['sources'][0]['model_paths']=['*.md']

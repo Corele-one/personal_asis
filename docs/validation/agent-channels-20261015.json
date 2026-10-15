@@ -1,0 +1,100 @@
+{
+  "date": "2026-10-15",
+  "release": "agent-channels-8ae9212d723ecc7f",
+  "capabilities": [
+    "pwa_on_demand_agent",
+    "owner_feishu_agent_commands",
+    "host_initial_search",
+    "cross_channel_resume",
+    "encrypted_results",
+    "durable_command_and_delivery_dedup"
+  ],
+  "tests": {
+    "checkout": {
+      "total": 250,
+      "passed": 240,
+      "skipped": 10
+    },
+    "mac_release": {
+      "total": 250,
+      "passed": 240,
+      "skipped": 10
+    },
+    "vps_core": {
+      "total": 250,
+      "passed": 172,
+      "skipped": 78
+    },
+    "actual_astrbot_sdk_plugin": {
+      "passed": 7
+    },
+    "actual_astrbot_crypto_inbox": {
+      "passed": 6
+    },
+    "sdk_sender": "synthetic_only"
+  },
+  "deployment": {
+    "mac_pa1_new_release": true,
+    "vps_coordinator_and_pwa": true,
+    "feishu_plugin": "0.3.0",
+    "pa0_interpreter_or_release_changed": false,
+    "rollback_materials_retained": true,
+    "remote_source_hashes_match": true
+  },
+  "live_trials": [
+    {
+      "protocol": "original_channel",
+      "outcome": "rejected_no_search",
+      "known_tokens": 379,
+      "temporary_admin_session_revoked": true
+    },
+    {
+      "protocol": "host_initial_search",
+      "outcome": "cited_abstention_rejected_by_original_validator",
+      "searches": 1,
+      "evidence_count": 3,
+      "model_turns": 1,
+      "known_tokens": 634,
+      "temporary_admin_session_revoked": true
+    },
+    {
+      "protocol": "same_work_replay_after_validation_fix",
+      "outcome": "completed_insufficient_evidence",
+      "citation_count": 0,
+      "additional_model_calls": 0,
+      "additional_tokens": 0,
+      "absolute_uri_removed": true,
+      "temporary_admin_session_revoked": true
+    }
+  ],
+  "https_checks": {
+    "unauthenticated_rejected": true,
+    "duplicate_run_and_status_completed": true,
+    "duplicate_and_status_extra_tokens": 0,
+    "completed_work_pause_resume_cancel": true
+  },
+  "budget_snapshot": {
+    "known_new_tokens_this_continuation": 1013,
+    "daily_occupied": 24136,
+    "monthly_occupied": 34554,
+    "daily_remaining": 75864,
+    "monthly_remaining": 965446,
+    "historical_unknown_calls": 2,
+    "budget_limit_changed": false
+  },
+  "not_validated": [
+    "browser_manual_interaction",
+    "real_feishu_agent_message_roundtrip",
+    "new_unattended_sleep_wake",
+    "whole_machine_reboot"
+  ],
+  "not_implemented": [
+    "background_delegation",
+    "domain_working_context_and_role_collaboration",
+    "generic_execution_isolation",
+    "automatic_long_term_memory",
+    "remote_permission_management",
+    "formal_tasks_calendar_mail"
+  ],
+  "followup_record": "agent-domain-context-20261015.json"
+}

@@ -114,7 +114,8 @@ def validate_answer(response, bundle):
                 {'answer','citations','uncertainty'}, {'status','answer','citations','uncertainty'}):
             raise ValueError()
         stage='answer_text'
-        if not isinstance(answer['answer'],str) or not answer['answer'].strip() or len(answer['answer'])>12000:
+        if (not isinstance(answer['answer'],str) or len(answer['answer'])>12000
+                or (not answer['answer'].strip() and answer.get('status')!='insufficient_evidence')):
             raise ValueError()
         stage='uncertainty_text'
         if not isinstance(answer['uncertainty'],str) or len(answer['uncertainty'])>4000:
@@ -132,12 +133,14 @@ def validate_answer(response, bundle):
         status=answer.get('status','supported')
         if status=='insufficient_evidence':
             stage='abstention_has_references'
-            if citations!=[] or inline:
+            if (not isinstance(citations,list) or any(not isinstance(c,str) or c not in allowed for c in citations)
+                    or not inline<=allowed):
                 raise ValueError()
             # Show a deterministic abstention, never uncited model assertions
             # or ungrounded interpretations about the user.
             return {'status':status,'answer':'当前检索到的证据不足以回答这个问题。',
-                    'citations':[],'uncertainty':'请缩小问题范围或补充相关材料；当前结果不能代表全部资料。'}
+                    'citations':[],'uncertainty':'请缩小问题范围或补充相关材料；当前结果不能代表全部资料。',
+                    **({'abstention_references_removed':True} if citations or inline else {})}
         stage='status'
         if status!='supported':
             raise ValueError()

@@ -1,0 +1,67 @@
+{
+  "date": "2026-10-15",
+  "release": "agent-pwa-706c817f97bbb762",
+  "tests": {
+    "checkout": {
+      "total": 237,
+      "passed": 229,
+      "skipped": 8
+    },
+    "mac_release": {
+      "total": 237,
+      "passed": 229,
+      "skipped": 8
+    },
+    "vps_staging": {
+      "total": 237,
+      "passed": 171,
+      "skipped": 66
+    }
+  },
+  "deployed": {
+    "mac_pa1": true,
+    "vps_coordinator": true,
+    "vps_pwa": true,
+    "rollback_retained": true,
+    "pa0_interpreter_changed": false,
+    "astrbot_changed": false
+  },
+  "production_checks": {
+    "ssh_system_tunnel_recovered": true,
+    "loopback_http_status": 404,
+    "agent_socket_mode": "0600",
+    "synthetic_nonexistent_status_encrypted_roundtrip": true,
+    "https_unauthenticated_status": 401,
+    "https_static_controls_present": true,
+    "private_body_read": false,
+    "admin_session_created": false,
+    "new_model_tokens": 0,
+    "historical_unknown_calls": 2
+  },
+  "snapshot": {
+    "study_documents": 267,
+    "life_documents": 182,
+    "daily_budget_occupied": 23123,
+    "monthly_budget_occupied": 33541
+  },
+  "not_validated": [
+    "new_pwa_real_source_generation",
+    "interactive_browser",
+    "new_unattended_sleep_wake",
+    "whole_machine_reboot"
+  ],
+  "approval_review": {
+    "real_https_generation_action": "rejected_not_executed",
+    "safe_alternative": "synthetic_status_only_no_login_session_no_model_generation"
+  },
+  "not_implemented": [
+    "feishu_agent_commands",
+    "background_delegation",
+    "domain_working_context",
+    "generic_execution_isolation",
+    "automatic_long_term_memory",
+    "remote_permission_management"
+  ],
+  "record_scope": "first_pwa_slice_snapshot",
+  "superseded_by": "agent-channels-20261015.json"
+}

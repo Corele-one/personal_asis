@@ -16,6 +16,17 @@ from .coordinator import Coordinator, ProtocolError
 
 def summary(view, pwa_origin=None):
     """Render a fixed whitelist, even if a future evidence result contains text."""
+    if view.get('kind')=='agent_receipt':
+        if not view.get('submitted',True):
+            return (f"Agent 工作编号：{view['target_id']}。指令传输结果未知，不会自动重复执行。"
+                    '请用新消息 /asis agent-status 工作编号 查询。')
+        return (f"Agent 已收到指令，工作编号：{view['target_id']}。"
+                '等待 Mac 核实并执行；这不是已完成回执。\n'
+                '先检索证据，在共享预算内分析；/asis agent-status 工作编号 可查询，'
+                '/asis pause 工作编号 可暂停。不会创建正式任务或日历。')
+    if view.get('kind')=='agent':
+        from .agent_feishu import summary as agent_summary
+        return agent_summary(view)
     if view.get('kind')=='analysis':
         return analysis_summary(view)
     lines = [f"PA0 搜索 {view['task_id']}", "部分结果，等待补全" if view["partial"] else "搜索完成"]
@@ -109,8 +120,11 @@ class FeishuBridge:
             self.db.execute("DELETE FROM routes WHERE created < ?", (cutoff,))
             self.db.execute("DELETE FROM deliveries WHERE created < ?", (cutoff,))
             self.db.execute("DELETE FROM analysis_routes WHERE created < ?", (cutoff,))
+        from .agent_feishu import AgentInbox
+        self.agent=AgentInbox(self)
 
     def close(self):
+        self.agent.keys.clear()
         self.db.close()
 
     def pairing(self, platform_id):
@@ -134,7 +148,9 @@ class FeishuBridge:
             self.db.execute("UPDATE binding SET open_id=?,code_hash=NULL,expires=NULL WHERE singleton=1", (open_id,))
             # Rebinding cannot send old notifications to a newly selected owner.
             self.db.execute("DELETE FROM routes WHERE open_id!=? OR platform_id!=?", (open_id, platform_id))
+            self.db.execute('DELETE FROM agent_routes WHERE open_id!=? OR platform_id!=?',(open_id,platform_id))
             self.db.commit()
+            self.agent.keys.clear()
             return True
         except BaseException:
             self.db.rollback()
@@ -233,6 +249,8 @@ class FeishuBridge:
     async def deliver(self, route, view, digest, send):
         if not self.authorized(route["platform_id"], route["open_id"]):
             return "unauthorized"
+        if view.get('kind')=='agent' and not self.agent.ready_for_delivery(route,view):
+            return 'revoked_or_expired'
         key = str(uuid.uuid5(uuid.NAMESPACE_URL, f"asis:{route['task_id']}:{route['message_id']}:{digest}"))
         # Persist before calling the platform. A crash/timeout is outcome-unknown,
         # so neither restart nor an overlapping worker repeats the external write.

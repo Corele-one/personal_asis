@@ -11,6 +11,7 @@ import signal
 import sqlite3
 import time
 import uuid
+import threading
 
 from .coordinator import ProtocolError, exact
 from .data_policy import exclusion_reason
@@ -41,6 +42,34 @@ def error_message(code):
     return '本轮未能生成通过校验的回答；系统保留计费和防重状态。'
 
 
+def validate_request(data):
+    exact(data,('request_id','query','channel','source_ids','research','client_nonce','public_key'))
+    try:
+        if not isinstance(data['request_id'],str) or str(uuid.UUID(data['request_id']))!=data['request_id']:
+            raise ValueError()
+        nonce=base64.b64decode(data['client_nonce'],validate=True)
+        public=base64.b64decode(data['public_key'],validate=True)
+        # Coordinator only relays bounded opaque key bytes. Actual RSA type,
+        # size and OAEP validation happen at the source-holding Mac.
+        if len(nonce)!=16 or not 200<=len(public)<=600:
+            raise ValueError()
+    except (ValueError,TypeError):
+        raise ProtocolError('invalid_analysis_key') from None
+    if (not isinstance(data['query'],str) or not 1<=len(data['query'].strip())<=512
+            or exclusion_reason('',data['query']) or data['channel'] not in ('pwa','feishu')):
+        raise ProtocolError('invalid_analysis_query')
+    sources=data['source_ids']
+    if sources is not None and (not isinstance(sources,list) or not sources or len(sources)>20
+            or any(not isinstance(s,str) or not s or len(s)>64 for s in sources)):
+        raise ProtocolError('invalid_analysis_sources')
+    research=data['research']
+    if research is not None and (not isinstance(research,dict) or set(research)!={'public_query','urls'}
+            or not isinstance(research['public_query'],str) or not 1<=len(research['public_query'])<=240
+            or exclusion_reason('',research['public_query']) or not isinstance(research['urls'],list)
+            or len(research['urls'])>3 or any(not isinstance(u,str) or len(u)>2000 for u in research['urls'])):
+        raise ProtocolError('invalid_research_request')
+
+
 class AnalysisRelay(Relay):
     def __init__(self,clock=time.monotonic):
         super().__init__(clock,ttl=900)
@@ -53,31 +82,7 @@ class AnalysisRelay(Relay):
                 value['status'],value['envelope']='expired',None
 
     def request(self,data):
-        exact(data,('request_id','query','channel','source_ids','research','client_nonce','public_key'))
-        try:
-            if str(uuid.UUID(data['request_id']))!=data['request_id']:
-                raise ValueError()
-            nonce=base64.b64decode(data['client_nonce'],validate=True)
-            public=base64.b64decode(data['public_key'],validate=True)
-            # Coordinator only relays bounded opaque key bytes. Actual RSA type,
-            # size and OAEP validation happen at the source-holding Mac.
-            if len(nonce)!=16 or not 200<=len(public)<=600:
-                raise ValueError()
-        except (ValueError,TypeError):
-            raise ProtocolError('invalid_analysis_key') from None
-        if (not isinstance(data['query'],str) or not 1<=len(data['query'].strip())<=512
-                or exclusion_reason('',data['query']) or data['channel'] not in ('pwa','feishu')):
-            raise ProtocolError('invalid_analysis_query')
-        sources=data['source_ids']
-        if sources is not None and (not isinstance(sources,list) or not sources or len(sources)>20
-                or any(not isinstance(s,str) or not s or len(s)>64 for s in sources)):
-            raise ProtocolError('invalid_analysis_sources')
-        research=data['research']
-        if research is not None and (not isinstance(research,dict) or set(research)!={'public_query','urls'}
-                or not isinstance(research['public_query'],str) or not 1<=len(research['public_query'])<=240
-                or exclusion_reason('',research['public_query']) or not isinstance(research['urls'],list)
-                or len(research['urls'])>3 or any(not isinstance(u,str) or len(u)>2000 for u in research['urls'])):
-            raise ProtocolError('invalid_research_request')
+        validate_request(data)
         digest=hashlib.sha256(json.dumps(data,sort_keys=True).encode()).hexdigest()
         with self.lock:
             self._prune()
@@ -273,12 +278,17 @@ class Worker:
 
 def serve_worker(home,emit):
     stop=False
+    agent_stop=threading.Event()
     def shutdown(*_):
         nonlocal stop
         stop=True
+        agent_stop.set()
     signal.signal(signal.SIGTERM,shutdown)
     signal.signal(signal.SIGINT,shutdown)
     worker=Worker(home)
+    from .agent_channel import serve as serve_agent
+    agent_thread=threading.Thread(target=serve_agent,args=(home,agent_stop,emit),daemon=True)
+    agent_thread.start()
     while not stop:
         try:
             value=worker.once()

@@ -1,6 +1,8 @@
 # Agent 执行框架候选验证计划
 
-状态（2026-10-15）：已按 [实施顺序](implementation-plan.md)交付本机委托状态基础层，并实际运行 Pi agent-core 1.2.0＋模拟提供商的合成验证。接口、命令、组件比较与限制见 [本轮实现](agent-runtime-local.md)，机器可读摘要见 [记录](validation/agent-runtime-20261015.json)。本机 MiMo 工具闭环、跨进程恢复及 Study 拒答随后通过 [实际续验](agent-on-demand.md)，既有 Mac 服务已更新维护逻辑；本人渠道 Agent 和后台委托未上线；Pi 核心仍是后续生产适配的优先候选。框架会话、任务或存储不成为本系统业务权威。
+当前交付总览见[项目完成情况](project-status.md)；本页保留该切片的范围与验收快照，最新串行角色／飞书卡片发布见[本轮记录](validation/agent-roles-20261015.json)。
+
+状态（2026-10-15）：已按 [实施顺序](implementation-plan.md)交付本机委托状态基础层，并实际运行 Pi agent-core 1.2.0＋模拟提供商的合成验证。接口、命令、组件比较与限制见 [本轮实现](agent-runtime-local.md)，机器可读摘要见 [记录](validation/agent-runtime-20261015.json)。本机 MiMo 工具闭环、跨进程恢复及 Study 拒答随后通过 [实际续验](agent-on-demand.md)，既有 Mac 服务已更新维护逻辑；本人 PWA／飞书 Agent 的后续实现与真实发布见 [独立记录](agent-channels.md)；后台委托未上线；Pi 1.2.0 已用于当前按需执行；通用运行与持续调度仍须后续验证。框架会话、任务或存储不成为本系统业务权威。
 
 ## 范围
 

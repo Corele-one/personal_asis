@@ -1,0 +1,170 @@
+{
+  "date": "2026-10-15",
+  "release": "agent-channels-02dc62ef59a96c83",
+  "capabilities": [
+    "explicit_local_related_work_history",
+    "same_domain_revision_and_source_scope_filter",
+    "frozen_history_snapshot_for_paid_replay",
+    "fresh_original_evidence_and_channel_checks",
+    "bounded_transitive_invalidation",
+    "metadata_only_relay_revocation_stamp"
+  ],
+  "limits": {
+    "records_per_run": 2,
+    "candidates": 200,
+    "snapshot_utf8_bytes": 6000,
+    "dependency_layers": 3,
+    "payload_days": 30,
+    "new_tools": 0,
+    "daily_tokens": 100000,
+    "monthly_tokens": 1000000
+  },
+  "tests": {
+    "checkout": {
+      "total": 277,
+      "passed": 267,
+      "skipped": 10
+    },
+    "mac_standalone_release": {
+      "total": 277,
+      "passed": 267,
+      "skipped": 10
+    },
+    "vps_core": {
+      "total": 277,
+      "passed": 180,
+      "skipped": 97
+    },
+    "new_history_tests": 13,
+    "new_channel_revocation_tests": 2,
+    "actual_astrbot_sdk": {
+      "passed": 7,
+      "rerun": true,
+      "sender": "synthetic_only"
+    },
+    "actual_crypto_inbox": {
+      "passed": 6,
+      "rerun": true,
+      "sender": "synthetic_only"
+    },
+    "actual_crypto_relay": {
+      "passed": 4,
+      "rerun": true
+    }
+  },
+  "deployment": {
+    "release": "agent-channels-02dc62ef59a96c83",
+    "checkout_release_hashes_match": true,
+    "remote_source_hashes_match": true,
+    "mac_pa1_points_to_new_release": true,
+    "pa0_plist_unchanged": true,
+    "vps_services": [
+      "active",
+      "active",
+      "active"
+    ],
+    "rollback_retained": true
+  },
+  "real_mimo_synthetic_trial": {
+    "verification": "real_mimo_synthetic_work_history_shared_production_budget",
+    "sources": "two_exact_synthetic_fixture_notes",
+    "fixture_private": true,
+    "real_personal_domain_records_created": false,
+    "max_generation_calls": 4,
+    "budget_before": {
+      "day": "2026-10-15",
+      "month": "2026-10",
+      "daily_tokens": 24768,
+      "monthly_tokens": 35186,
+      "daily_limit": 100000,
+      "monthly_limit": 1000000,
+      "daily_remaining": 75232,
+      "monthly_remaining": 964814,
+      "approaching_limit": false,
+      "unresolved_calls": 2,
+      "includes_reservations": true,
+      "provider_cooldown": null
+    },
+    "model": "mimo-v2.6-flash",
+    "automatic_retry": false,
+    "followup_cached_replay": true,
+    "replay_generation_calls": 0,
+    "generation_calls": 2,
+    "budget_after": {
+      "day": "2026-10-15",
+      "month": "2026-10",
+      "daily_tokens": 26352,
+      "monthly_tokens": 36770,
+      "daily_limit": 100000,
+      "monthly_limit": 1000000,
+      "daily_remaining": 73648,
+      "monthly_remaining": 963230,
+      "approaching_limit": false,
+      "unresolved_calls": 2,
+      "includes_reservations": true,
+      "provider_cooldown": null
+    },
+    "new_daily_tokens": 1584,
+    "works": [
+      {
+        "history_requested": false,
+        "status": "completed",
+        "answer_status": "supported",
+        "citations": 2,
+        "evidence_count": 2,
+        "history_count": 0,
+        "usage": {
+          "prompt_tokens": 483,
+          "completion_tokens": 152,
+          "total_tokens": 635
+        },
+        "searches": 1,
+        "model_turns": 1
+      },
+      {
+        "history_requested": true,
+        "status": "completed",
+        "answer_status": "supported",
+        "citations": 2,
+        "evidence_count": 2,
+        "history_count": 1,
+        "usage": {
+          "prompt_tokens": 797,
+          "completion_tokens": 152,
+          "total_tokens": 949
+        },
+        "searches": 1,
+        "model_turns": 1
+      }
+    ],
+    "source_review": "both_answers_match_two_fixture_statements_and_state_coverage_limits",
+    "replay_additional_tokens": 0
+  },
+  "production_probe": {
+    "verification": "production_ram_relay_synthetic_nonexistent_status_only",
+    "encrypted_mac_response_error": "agent_request_not_found",
+    "unauthenticated_https_rejected": true,
+    "https_serves_agent_controls": true,
+    "new_daily_tokens": 0,
+    "model_generation_requested": false,
+    "admin_session_created": false
+  },
+  "standing_source_permissions_changed": false,
+  "real_personal_domain_records_created": false,
+  "not_validated": [
+    "real_personal_history_analysis_quality",
+    "browser_manual_interaction",
+    "new_unattended_sleep_wake",
+    "whole_machine_reboot"
+  ],
+  "not_implemented": [
+    "specialist_execution_and_supervisor_collaboration",
+    "remote_domain_selection_and_editing",
+    "background_delegation",
+    "automatic_long_term_memory",
+    "generic_execution_isolation",
+    "remote_permission_management",
+    "formal_tasks_calendar_mail"
+  ],
+  "feishu_gui_testing": "user_owned_no_messages_sent_by_agent_this_continuation"
+}

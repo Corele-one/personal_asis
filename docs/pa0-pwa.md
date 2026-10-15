@@ -41,3 +41,5 @@ sudo /opt/personal-asis-certbot/bin/certbot renew --dry-run
 ## 后续 PA1 分析入口
 
 本人控制台已增加「结合资料分析」及可选「按需公开研究」，不改变 PA0 搜索与正文阅读的独立权限。临时解密密钥仅在当前页面，关闭不取消已开始的模型调用；使用与验证见 [PA1](pa1-acceptance.md)。
+
+本人控制台现已新增「按需 Agent」及状态、暂停、恢复、取消，使用与独立验收见 [本人渠道 Agent](agent-channels.md)。原 PA1 分析和 PA0 搜索入口继续保留。

@@ -1,0 +1,107 @@
+{
+  "date": "2026-10-15",
+  "release": "agent-channels-efcd2f3a421837db",
+  "scope": [
+    "empty_abstention_validation_fix",
+    "explicit_local_domain_goals_and_constraints",
+    "paid_session_revocation_and_replay"
+  ],
+  "tests": {
+    "checkout": {
+      "total": 262,
+      "passed": 252,
+      "skipped": 10
+    },
+    "mac_standalone_release": {
+      "total": 262,
+      "passed": 252,
+      "skipped": 10
+    },
+    "vps_core": {
+      "total": 262,
+      "passed": 180,
+      "skipped": 82
+    },
+    "new_domain_tests": 11,
+    "new_abstention_regression": 1,
+    "prior_actual_astrbot_sdk": {
+      "passed": 7,
+      "rerun": false,
+      "routing_files_unchanged": true
+    },
+    "prior_actual_crypto_inbox": {
+      "passed": 6,
+      "rerun": false,
+      "routing_files_unchanged": true
+    },
+    "model_and_sources_for_domain_tests": "synthetic_only"
+  },
+  "deployment": {
+    "release": "agent-channels-efcd2f3a421837db",
+    "checkout_release_hashes_match": true,
+    "remote_source_hashes_match": true,
+    "mac_pa1_points_to_new_release": true,
+    "pa0_plist_unchanged": true
+  },
+  "services": {
+    "vps_coordinator": "active",
+    "vps_pwa": "active",
+    "vps_astrbot": "active",
+    "mac_pa1_installed": true,
+    "rollback_retained": true
+  },
+  "live_owner_feishu": {
+    "original_platform_delivery_states": [
+      "sent"
+    ],
+    "original_platform_sent_content": "error_receipt_before_repair",
+    "state": "completed",
+    "error": null,
+    "recovered_result_status": "insufficient_evidence",
+    "known_usage": {
+      "completion_tokens": 147,
+      "prompt_tokens": 485,
+      "total_tokens": 632
+    },
+    "citation_count": 0,
+    "unresolved_executions": 0,
+    "absolute_uri_removed": true,
+    "new_daily_tokens": 0,
+    "computer_use": "app_access_not_approved",
+    "gui_test_completed": false
+  },
+  "live_owner_feishu_recheck": "production_encrypted_feishu_channel_status_only_no_platform_send",
+  "budget_snapshot": {
+    "day": "2026-10-15",
+    "month": "2026-10",
+    "daily_tokens": 24768,
+    "monthly_tokens": 35186,
+    "daily_limit": 100000,
+    "monthly_limit": 1000000,
+    "daily_remaining": 75232,
+    "monthly_remaining": 964814,
+    "approaching_limit": false,
+    "unresolved_calls": 2,
+    "includes_reservations": true,
+    "provider_cooldown": null
+  },
+  "real_domain_records_created": false,
+  "not_validated": [
+    "post_fix_real_feishu_platform_reply",
+    "computer_use_feishu_gui",
+    "browser_manual_interaction",
+    "new_unattended_sleep_wake",
+    "whole_machine_reboot"
+  ],
+  "not_implemented": [
+    "domain_related_history_retrieval",
+    "specialist_execution_and_supervisor_collaboration",
+    "remote_domain_editing",
+    "background_delegation",
+    "automatic_long_term_memory",
+    "generic_execution_isolation",
+    "remote_permission_management",
+    "formal_tasks_calendar_mail"
+  ],
+  "followup_record": "agent-work-history-20261015.json"
+}

@@ -149,6 +149,18 @@ def main(argv=None):
     p.add_argument('--source', action='append')
     p.add_argument('--request-id')
     p.add_argument('--steps',type=int,help='本次最多新完成的步骤数；便于分步检查和恢复')
+    p.add_argument('--domain',choices=['supervisor','research','career','life'],help='显式采用已确认且获准模型使用的领域目标；resume 沿用原领域')
+    p.add_argument('--with-history',action='store_true',help='新领域工作检索最多两条相关委托历史；恢复沿用原快照')
+    p.add_argument('--mode',choices=['auto','research','career','life','team'],help='总管按需组织专业角色；team 核对三个领域，恢复沿用原计划')
+    p = commands.add_parser('domain', help='本人明确配置的领域目标／约束；不自动推断、调度或授权资料')
+    p.add_argument('action',choices=['set','show','list','forget','history'])
+    p.add_argument('--domain',choices=['supervisor','research','career','life'])
+    p.add_argument('--goal')
+    p.add_argument('--query',help='本机历史检索词；history 必填，不调用模型')
+    p.add_argument('--constraints',default='')
+    p.add_argument('--source',action='append')
+    p.add_argument('--request-id')
+    p.add_argument('--allow-model',action='store_true',help='明确许可本条目标／约束供既有 MiMo 使用；默认仅本机保存')
     p = commands.add_parser('work', help='仅本机委托状态管理；不自动调度或授予来源权限')
     p.add_argument('action', choices=['create', 'list', 'show', 'enqueue', 'pause', 'resume', 'cancel',
                                      'stop-run', 'executions', 'resolve', 'clear-results'])
@@ -186,7 +198,25 @@ def main(argv=None):
                 result=live_self_test(home,args.request_id,args.steps)
             else:
                 result=execute(home,args.query,args.request_id,args.source,
-                               resume=args.action=='resume',step_limit=args.steps)
+                               resume=args.action=='resume',step_limit=args.steps,domain=args.domain,with_history=args.with_history,mode=args.mode)
+        elif args.command=='domain':
+            from .domain_context import DomainContexts
+            if args.action!='list' and not args.domain:
+                raise ValueError('domain_context_domain_required')
+            with DomainContexts(home) as contexts:
+                if args.action=='set':
+                    result=contexts.set(args.domain,args.goal,args.constraints,args.source,args.request_id,allow_model=args.allow_model)
+                elif args.action=='forget':
+                    result=contexts.forget(args.domain,args.request_id)
+                elif args.action=='show':
+                    result=contexts.show(args.domain)
+                elif args.action=='history':
+                    from .work_history import retrieve_history
+                    result={'records':retrieve_history(home,args.domain,args.query,args.source),
+                            'coverage':'up_to_two_matches_from_latest_200_completed_runs',
+                            'model_called':False}
+                else:
+                    result={'contexts':contexts.list(),'automatic_execution':False}
         elif args.command == 'work':
             from .work import WorkStore
             if args.action == 'create':

@@ -12,7 +12,11 @@ PA0 已于 2026-10-14 按 Mac 单节点范围完成七项功能验收及真实�
 
 核心要求 Python 3.11+、SQLite 3.34+ 与 FTS5 trigram；加密阅读、可选格式及备份依赖见 [文本说明](docs/pa0-text.md)。命令为 `scripts/asis doctor|status|search|reconcile`，测试为 `PYTHONPATH=src python3 -m unittest discover -s tests -v`。Mac 生产 Python、发布包与运行数据位于仓库外私密目录，维护时遵循运行说明，不把基础解释器的能力报告当作生产环境。
 
-2026-10-15 已新增 [委托状态与 Pi 合成适配](docs/agent-runtime-local.md)：本机 `work` CLI、事务领取／租约／检查点、防重与可选 Pi agent-core 1.2.0 已交付，真实 Pi＋模拟提供商验证通过。后续已实现 [本机按需 Agent](docs/agent-on-demand.md) 的 MiMo 协议客户端、PA1 权限／共享预算复用和持久步骤重建，实际 MiMo 合成闭环、跨进程恢复及真实 Study 的证据不足拒答已验收。共享冷却、脱敏诊断和会话清理已发布至既有 Mac 服务（`agent-local-51e8faaa94990dbb`），原解释器及回退材料保留；两个历史未知调用仍保留预算预留，旧 429 具体原因不能追溯。当前没有生产调度或后台委托，完整领域上下文及通用执行隔离未交付；本人渠道 Agent 入口尚未实现，新版无人值守恢复未验收。合成工具许可不能作为真实来源或外部写操作的授权。
+当前交付结论（2026-10-15）：已部署基于本机资料的按需助手，尚未完成[实施计划](docs/implementation-plan.md)中的完整 Personal Agent。当前 PA1 发布为 `assistant-cards-4acc99f9db7cdd3e`；PA0 保持原发布与解释器。能力和缺口统一见[完成情况](docs/project-status.md)。
+
+已实现本机委托状态、Pi 1.2.0 工具循环、持久步骤重建、共享预算／冷却、本人 PWA／飞书的状态与暂停／恢复／取消、显式本机领域目标及相关历史检索。新增[总管与三个专业角色的串行协作](docs/agent-roles.md)和[飞书 `/asis` 交互卡片](docs/feishu-cards.md)；真实卡片展示／按钮回传经用户确认，查询与取消的原卡片更新有平台成功回执。完整记录见[最新验收](docs/validation/agent-roles-20261015.json)，日常入口见[使用指南](docs/assistant-usage.md)。
+
+WUCAI／Folo／知乎／小红书等账户来源适配、完整领域上下文与角色并行、持续后台委托／代选、自动长期记忆／规则、通用脚本／浏览器隔离、正式任务／日历／邮件及饮食照片／作息采集仍未交付。新版无人值守休眠／整机重启、真实个人多角色分析质量和卡片付费分析质量仍未验收；合成引用校验通过不等于语义正确。两笔历史未知调用继续保留预算预留。维护授权、合成测试与真实来源／外部写操作授权不得混同。
 
 ## 文档分工与阅读顺序
 

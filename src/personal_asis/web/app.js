@@ -14,7 +14,7 @@ async function api(path, data) {
   if (!res.ok) { if(res.status===401&&authenticated){authenticated=false;show('login');}throw new Error(errors[body.error]||'请求未完成，请重试。'); }
   return body;
 }
-function show(section) { if(section!=='console'){closeReader();clearAnalysis();}for(const id of ['login','setup','console']) $(id).hidden=id!==section;$('logout').hidden=section!=='console'; }
+function show(section) { if(section!=='console'){closeReader();clearAnalysis();clearAgent();}for(const id of ['login','setup','console']) $(id).hidden=id!==section;$('logout').hidden=section!=='console'; }
 function element(tag,text,cls){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.className=cls;return e;}
 let readerSession=null;
 const encode64=raw=>btoa(String.fromCharCode(...new Uint8Array(raw)));
@@ -80,8 +80,8 @@ start();
 
 let analysisSession=null;
 function clearAnalysis(){analysisSession=null;$('analysis-result').replaceChildren();$('analysis-status').textContent='';}
-function renderAnalysis(value){
-  const box=$('analysis-result');box.replaceChildren();
+function renderAnalysis(value,box=$('analysis-result')){
+  box.replaceChildren();
   if(value.error){
     const code=value.error;
     let reason='本轮未能生成通过校验的回答；系统保留计费与防重状态。';
@@ -131,6 +131,7 @@ $('analysis-form').addEventListener('submit',async e=>{
   const query=$('analysis-query').value.trim(),publicQuery=$('research-query').value.trim(),urls=$('research-urls').value.split('\n').map(s=>s.trim()).filter(Boolean),source=$('analysis-source').value;
   if(urls.length>3||(!publicQuery&&urls.length)){message('公开研究需填写公开检索词，链接最多三条。');return;}
   const request={query,source_ids:source?[source]:null,research:publicQuery?{public_query:publicQuery,urls}:null};
+  if(action==='run'&&$('agent-mode').value)request.mode=$('agent-mode').value;
   const identity=JSON.stringify(request);
   try{
     if(!analysisSession||analysisSession.identity!==identity){
@@ -148,3 +149,64 @@ $('analysis-form').addEventListener('submit',async e=>{
 });
 $('analysis-clear').addEventListener('click',clearAnalysis);
 window.addEventListener('pagehide',clearAnalysis);
+
+
+let agentPage={commands:new Map()};
+function clearAgent(){agentPage={commands:new Map()};$('agent-target').value='';$('agent-result').replaceChildren();$('agent-status').textContent='';}
+function renderAgent(value,page){
+  if(agentPage!==page)return;
+  if(value.error){
+    const codes={agent_request_not_found:'Mac 没有找到此工作编号。',agent_channel_command_conflict:'原指令的内容不一致，已拒绝执行。',agent_channel_request_expired:'本轮执行期限已到，后续步骤已停止。',inactive_or_stale_work_claim:'运行已被暂停或停止，旧进程不能继续提交。',cancelled_delegation_cannot_resume:'已取消的工作不能恢复。'};
+    $('agent-status').textContent=(codes[value.error]||'本轮受限或结果未知，未自动重试。请查看原编号状态。')+' 共享计费与防重记录保留。';return;
+  }
+  const labels={completed:'已完成',running:'执行中',queued:'等待执行',waiting_node:'等待恢复或核对',paused:'已暂停',cancelled:'已取消',stopped:'本轮已停止'};
+  $('agent-status').textContent=`${value.target_id} · ${labels[value.state]||value.state}${value.delegation_state==='cancelled'?'（工作已取消）':value.delegation_state==='paused'&&value.state!=='paused'?'（工作已暂停）':''} · 已提交 ${value.committed_actions} 个步骤`+(value.usage?` · ${value.usage.total_tokens} Token`:'')+(value.unresolved_executions?' · 有结果未知的动作，需本机核对；不会自动重试':'');
+  if(value.role_plan){const names={research:'知识研究',career:'申请与职业',life:'生活复盘'};$('agent-status').textContent+=' · 总管分工：'+value.role_plan.roles.map(r=>names[r]).join('、');}
+  if(value.result)renderAnalysis(value.result,$('agent-result'));
+  else $('agent-result').replaceChildren();
+}
+async function agentCommand(action){
+  const page=agentPage;
+  let target=$('agent-target').value.trim();
+  if(!target&&action==='run'){target=crypto.randomUUID();$('agent-target').value=target;}
+  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(target)){message('请先开始工作或填写有效的原工作编号。');return;}
+  const request={target_id:target,action,query:action==='run'?$('agent-query').value.trim():null,source_ids:action==='run'?$('agent-source').value.split(','):null};
+  if(action==='run'&&$('agent-mode').value)request.mode=$('agent-mode').value;
+  const identity=JSON.stringify(request);
+  let session=page.commands.get(identity);
+  try{
+    if(!session){
+      session={};page.commands.set(identity,session);
+      session.keys=await crypto.subtle.generateKey({name:'RSA-OAEP',modulusLength:2048,publicExponent:new Uint8Array([1,0,1]),hash:'SHA-256'},false,['encrypt','decrypt']);
+      if(agentPage!==page)return;
+      session.data={...request,request_id:crypto.randomUUID(),client_nonce:encode64(crypto.getRandomValues(new Uint8Array(16))),public_key:encode64(await crypto.subtle.exportKey('spki',session.keys.publicKey))};
+    }
+    if(!session.data||session.polling)return;
+    session.polling=true;
+    await api('/api/agent/request',session.data);
+    $('agent-status').textContent=`${target} · 指令已接收，等待 Mac 核实并执行。`;
+    const deadline=Date.now()+14*60*1000;
+    while(agentPage===page&&Date.now()<deadline){
+      let reply;
+      try{reply=await api('/api/agent/result',{request_id:session.data.request_id});}
+      catch(error){if(agentPage!==page)return;$('agent-status').textContent=error.message+' 保留原指令，不新建模型请求。';await new Promise(r=>setTimeout(r,3000));continue;}
+      if(agentPage!==page)return;
+      if(reply.status==='waiting'||reply.status==='running'){$('agent-status').textContent=target+' · '+(reply.plan||'等待 Mac 执行');await new Promise(r=>setTimeout(r,2000));continue;}
+      if(reply.status!=='ready')throw new Error('中转已过期或权限改变。请用原工作编号查看状态；不会自动再次付费。');
+      const wrapped=await crypto.subtle.decrypt({name:'RSA-OAEP'},session.keys.privateKey,decode64(reply.envelope.wrapped_key));
+      const key=await crypto.subtle.importKey('raw',wrapped,'AES-GCM',false,['decrypt']);new Uint8Array(wrapped).fill(0);
+      const context=new TextEncoder().encode(['agent',session.data.request_id,target,session.data.client_nonce,'pwa'].join('\n'));
+      const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv:decode64(reply.envelope.nonce),additionalData:context},key,decode64(reply.envelope.ciphertext));
+      const value=JSON.parse(new TextDecoder().decode(plain));new Uint8Array(plain).fill(0);
+      renderAgent(value,page);
+      // Each deliberate status/control click gets a new receipt. Network retries above retain this one.
+      page.commands.delete(identity);return;
+    }
+    if(agentPage===page)$('agent-status').textContent='等待已超时。请用原编号查看状态或明确恢复；不会自动新建模型请求。';
+  }catch(error){message(error.name==='OperationError'?'结果完整性校验失败，请用原编号查看状态。':error.message);}
+  finally{if(session)session.polling=false;}
+}
+$('agent-form').addEventListener('submit',e=>{e.preventDefault();agentCommand('run');});
+for(const [id,action] of [['agent-status-button','status'],['agent-pause','pause'],['agent-resume','resume'],['agent-cancel','cancel']])$(id).addEventListener('click',()=>agentCommand(action));
+$('agent-clear').addEventListener('click',clearAgent);
+window.addEventListener('pagehide',clearAgent);

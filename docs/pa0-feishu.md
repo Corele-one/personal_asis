@@ -79,3 +79,11 @@ scripts/asis --home /home/mac/.local/share/personal-asis-coordinator feishu audi
 ## 后续 PA1 命令
 
 现有 PA0 搜索仍为元数据固定输出；本人私聊另提供 `/asis analyze`、`/asis research` 和分析状态，参数、权限与实际验收见 [PA1](pa1-acceptance.md)。分析不经过 AstrBot 默认模型流；模型和来源检查在 Mac 执行，VPS 不持久化回答或摘录。
+
+## 按需 Agent
+
+本人私聊现已增加 `/asis agent 来源ID | 问题`、`agent-status`、`pause|stop|resume|cancel`。执行、来源许可与模型预算仍在 Mac，飞书收件／最终回执分别防重，具体使用和实际验证见 [本人渠道 Agent](agent-channels.md)。
+
+## 交互卡片入口
+
+本人私聊发送 `/asis` 可打开[助手卡片](feishu-cards.md)，选择角色、资料范围并提交问题，结果及状态／暂停／恢复／取消在原卡片更新。原文字搜索与分析命令继续保留。

@@ -8,6 +8,7 @@ import sqlite3
 from .coordinator import Coordinator, ProtocolError, exact
 from .evidence import Relay, control_server
 from .analysis_channel import AnalysisRelay
+from .agent_channel import AgentRelay
 
 
 MAX_BODY = 512 * 1024
@@ -16,6 +17,7 @@ MAX_BODY = 512 * 1024
 def server(path, port=8765, nodes=("mac",)):
     relay = Relay()
     analysis = AnalysisRelay()
+    agent = AgentRelay()
     class Handler(BaseHTTPRequestHandler):
         protocol_version = "HTTP/1.1"
 
@@ -84,6 +86,14 @@ def server(path, port=8765, nodes=("mac",)):
                             result = analysis.poll(node,data['policy_hash'])
                         elif self.path == "/v1/analysis/complete":
                             result = analysis.complete(node,data)
+                        elif self.path == '/v1/agent/poll':
+                            exact(data, ('policy_hash','busy'))
+                            if (not isinstance(data['policy_hash'],str) or len(data['policy_hash'])!=64
+                                    or type(data['busy']) is not bool):
+                                raise ProtocolError('invalid_agent_poll')
+                            result = agent.poll(node,data['policy_hash'],data['busy'])
+                        elif self.path == '/v1/agent/complete':
+                            result = agent.complete(node,data)
                         else:
                             raise ProtocolError("not_found", 404)
                 self.send_json(result)
@@ -97,7 +107,14 @@ def server(path, port=8765, nodes=("mac",)):
     class Server(ThreadingHTTPServer):
         control = None
         analysis_control = None
+        agent_control = None
         def server_close(self):
+            if self.agent_control is not None:
+                control, path = self.agent_control
+                self.agent_control = None
+                control.shutdown()
+                control.server_close()
+                path.unlink(missing_ok=True)
             if self.analysis_control is not None:
                 control, path = self.analysis_control
                 self.analysis_control = None
@@ -115,10 +132,12 @@ def server(path, port=8765, nodes=("mac",)):
     try:
         result.control = control_server(Path(path).parent, relay)
         result.analysis_control = control_server(Path(path).parent, analysis, 'analysis.sock')
+        result.agent_control = control_server(Path(path).parent, agent, 'agent.sock')
     except Exception:
         result.server_close()
         raise
     result.daemon_threads = True
     result.relay = relay
     result.analysis = analysis
+    result.agent = agent
     return result
