@@ -10,7 +10,7 @@ from personal_asis.model_provider import validate_answer
 
 class ResearchTests(unittest.TestCase):
     def setUp(self):
-        self.dns=patch('personal_asis.research.socket.getaddrinfo',return_value=[(2,1,6,'',('8.8.8.8',443))])
+        self.dns=patch('personal_asis.web_search.resolve',return_value=['8.8.8.8'])
         self.dns.start();self.addCleanup(self.dns.stop)
         self.request={'public_query':'AI accelerator inference','urls':['https://www.nvidia.com/research']}
         self.text='Title: Synthetic technical material\nPublished Time: 2026-10-01\nMarkdown Content:\n\n'+('AI accelerator inference memory bandwidth. '*10)
@@ -18,8 +18,8 @@ class ResearchTests(unittest.TestCase):
     def test_private_network_credentials_and_nonpublic_urls_rejected(self):
         for url in ('http://example.com','https://user:secret@example.com','https://example.com/?token=secret','https://example.com/#private'):
             with self.assertRaises(ValueError):public_url(url)
-        with patch('personal_asis.research.socket.getaddrinfo',return_value=[(2,1,6,'',('127.0.0.1',443))]):
-            with self.assertRaisesRegex(ValueError,'private_network'):public_url('https://example.com')
+        with patch('personal_asis.web_search.resolve',return_value=['127.0.0.1']):
+            with self.assertRaisesRegex(ValueError,'dns_nonpublic'):public_url('https://example.com')
 
     def test_search_gets_only_explicit_public_query_and_url_fallback_is_dated(self):
         def fail(query):

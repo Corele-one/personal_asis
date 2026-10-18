@@ -39,7 +39,9 @@
 
 新增的 [Retrieval & Context Layer](retrieval-v2.md) 是独立本机实验路径：当前实现来源／版本过滤 → Chunk lexical/semantic → RRF 与原始精确保护 → 可控邻段展开／预算 Bundle → 归属、位置与权限重核。它不修改 Pi 工具声明、历史输入序列化、付费指纹、MiMo 预算或 work.sqlite3。来源仍是权威，VPS 不持有该索引。
 
-目标是在同一层前接条件式问题理解、来源路由与拆解，在后接 Coverage Check 和有限补查；精确事实优先廉价词法，综合／长文／近期外界问题再选择不同策略。Live、reranker、专业角色独立只读检索、层级导航尚未实现；现有角色仍复用首次原始证据。接入角色前必须先通过[Retrieval Quality Gate](implementation-plan.md)，并为新会话注册独立版本协议。
+目标是在同一层前接条件式问题理解、来源路由与拆解，在后接 Coverage Check 和有限补查；精确事实优先廉价词法，综合／长文／近期外界问题再选择不同策略。公开 Live 的最小切片已在 checkout 的独立 `agent-web-v1` 实现，尚未部署；账户自主 Live、reranker、专业角色独立只读检索、层级导航仍未实现，现有角色仍复用首次原始证据。接入角色前必须先通过[Retrieval Quality Gate](implementation-plan.md)，并为新会话注册独立版本协议。
+
+2026-10-18 联网增量：新显式会话由 Pi 选择本地 V2 `search_notes`、Exa `search_web` 和受控静态 `fetch_web`；Host 持有公开查询白名单、URL能力范围、搜索／阅读／时间预算及独立网络用量回执。公开网页不进入账户缓存，账户正文不进入公开搜索；MixedBundle 对本地 Chunk 和公开快照分派校验，再经原 MiMo Token 账本及引用校验。旧工具声明／工具文本次序／付费工作保持原样。`reading retrieve --fetch-body` 串接已有只读连接器和统一 Chunk；远程获取正文与新联网工作创建仍待接线。协议、SSRF、费用、模拟与真实边界见[联网集成](web-search-integration.md)。
 
 - VPS 负责低敏感协调；本机节点保存个人资料、索引与需要事务保证的状态，并发起出站轮询。
 - PA1 每次选定一个在线本机节点组装最小上下文并调用可替换模型；跨节点模型综合延期。

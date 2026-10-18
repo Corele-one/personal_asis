@@ -2,6 +2,8 @@
 
 2026-10-18 初次完成 Phase 0 合成基线与 Phase 1 独立本机闭环；随后按用户明确要求发布 `retrieval-v2-de593bc25486b7cc` 到 Mac／VPS，并增加显式飞书只读实验。**普通生产 PA1、Pi 工具与旧付费协议没有切换**，Phase 2 仍仅设计。来源与模型／渠道政策未改，无生成调用或后台抓取。初次未部署的验收保留在原记录；续发见[部署验收](validation/retrieval-v2-deployment-20261018.json)。
 
+同日后续 checkout（未部署）：[agent-web-v1 联网切片](web-search-integration.md)把 V2 接入显式新会话的 `search_notes`，并增加 Exa搜索／安全正文读取与分类型证据校验；原文、划线、批注的结构归属可进入新工具结果。真实 Pi＋模拟 Provider 已测，真实新协议质量未验收，默认／历史 Agent 不变。纯只读 V2渠道现在只查阅读／渠道许可，可与 MiMo许可分离；账户明确条目的按需获取→V2 已有本机入口，但账户自主Live、远程抓取接线与完整 Quality Gate 仍待完成。以下审计表与基线保留初次切片范围。
+
 ## 当前代码与运行审计
 
 本机 `main` HEAD 与 GitHub main 均为 `b5d2d25d7b2db8eb9617cdd3a01070a5396971b5`。开始时已有外部阅读接入的修改和未跟踪文件；它们已超出 main 的旧文档状态，本轮保留。基线使用**开始时的工作区实现**，包含该接入，不能等同于纯 Git main。基线 JSON 保存参与检索文件 SHA256。

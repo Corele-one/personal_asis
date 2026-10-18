@@ -1,0 +1,175 @@
+{
+  "date": "2026-10-18",
+  "scope": "checkout_only_explicit_agent_web_v1_and_account_item_retrieval",
+  "baseline_commit": "f1aec1afcad1915fc63d8756841226f8c7c9a9e7",
+  "deployment": {
+    "performed": false,
+    "service_restarts": false,
+    "production_configuration_changed": false,
+    "production_release": "retrieval-v2-de593bc25486b7cc"
+  },
+  "audit": {
+    "exa": {
+      "mcporter_installed": true,
+      "tool_schema_request_succeeded": true,
+      "tool": "web_search_exa",
+      "required_arguments": [
+        "query",
+        "objective"
+      ],
+      "recency_server_parameter": false,
+      "real_search_executed": false
+    },
+    "jina": {
+      "doctor_advertises_reader": true,
+      "real_read_or_conversion_executed": false,
+      "strict_dns_probe": "denied_or_unavailable_for_reader_and_example_origin",
+      "live_html_post_integration_verified": false
+    },
+    "accounts": {
+      "wucai": {
+        "cached": 24,
+        "kinds": {
+          "highlights_only": 3,
+          "metadata_only": 21
+        }
+      },
+      "folo": {
+        "cached": 9,
+        "kinds": {
+          "feed_content": 1,
+          "metadata_only": 8
+        }
+      },
+      "xiaohongshu": {
+        "cached": 8,
+        "kinds": {
+          "note_text": 1,
+          "metadata_only": 7
+        }
+      }
+    },
+    "account_common": {
+      "enabled": true,
+      "credential_available": true,
+      "new_authenticated_body_read_verified": false,
+      "model_grants": false,
+      "remote_grants": false,
+      "new_permission_grants": false,
+      "classifications": "all_unclassified",
+      "zhihu_excluded": true
+    },
+    "runtime": {
+      "mac_pa0_pa1_xhs_processes_present": true,
+      "tunnel_process_present_with_last_exit_255": true,
+      "vps_release_unchanged": true,
+      "vps_coordinator_pwa_astrbot_nginx_active": true,
+      "current_end_to_end_relay_probe_performed": false
+    }
+  },
+  "tests": {
+    "environment": {
+      "python": "3.14.5",
+      "node_and_actual_pi_runtime": true,
+      "web_provider": "synthetic",
+      "model_provider": "synthetic"
+    },
+    "baseline": {
+      "run": 441,
+      "passed": 424,
+      "skipped": 17,
+      "failed": 0,
+      "seconds": 62.907
+    },
+    "initial_extended_failure": {
+      "run": 480,
+      "failed": 1,
+      "skipped": 17,
+      "reason": "credential_header_in_title_missed_after_json_serialization",
+      "resolution": "scan_original_string_fields_before_disclosure"
+    },
+    "new_targeted": {
+      "run": 40,
+      "passed": 40,
+      "skipped": 0,
+      "failed": 0,
+      "seconds": 3.428
+    },
+    "final": {
+      "run": 481,
+      "passed": 464,
+      "skipped": 17,
+      "failed": 0,
+      "errors": 0,
+      "seconds": 65.614
+    },
+    "skips_by_reason": {
+      "run with the VPS AstrBot interpreter": 14,
+      "requires test-formats dependency": 1,
+      "requires Calc, Impress and system UNO": 1,
+      "requires LibreOffice and system UNO": 1
+    },
+    "resource_warning_count": 5,
+    "coverage": [
+      "actual_pi_with_mock_model_and_web",
+      "local_public_mixed_tool_paths",
+      "current_message_no_note_or_embedding_access",
+      "approved_public_query_privacy_gate",
+      "partial_body_and_snippet_separation",
+      "local_and_web_citations_and_url_rendering",
+      "dns_pin_private_target_redirect_rebinding_denial",
+      "absolute_http_deadline",
+      "response_and_subprocess_output_caps",
+      "search_read_and_time_limits",
+      "unknown_network_crash_no_retry",
+      "legacy_paid_protocol_unchanged",
+      "new_protocol_checkpoint_wire_identity",
+      "expired_or_revoked_evidence_not_reused",
+      "account_detail_to_index_to_attributed_chunk",
+      "metadata_not_fulltext",
+      "model_and_channel_permissions_independent"
+    ],
+    "limits": [
+      "routing_decisions_are_scripted_not_real_model_quality",
+      "no_actual_exa_search_jina_conversion_or_mimo_generation",
+      "no_new_private_account_body_read",
+      "no_feishu_messages_or_ui_acceptance",
+      "no_production_deployment",
+      "retrieval_quality_gate_remains_unpassed"
+    ]
+  },
+  "costs": {
+    "actual_exa_search_calls": 0,
+    "actual_jina_read_calls": 0,
+    "actual_mimo_generation_calls": 0,
+    "new_paid_services": false,
+    "mimo_budget_changed": false,
+    "web_money_accounting": "operation_receipts_only_provider_cost_unknown_not_a_currency_invoice"
+  },
+  "compatibility": {
+    "legacy_tools_system_wire_order_unchanged": true,
+    "work_database_schema_migration": false,
+    "new_protocol_opt_in": true,
+    "legacy_research_fresh_reads_use_stricter_adapter": true,
+    "new_protocol_cannot_resume_on_old_code": true
+  },
+  "remaining": [
+    "real_public_provider_dns_and_mimo_quality_validation",
+    "account_local_classification_and_explicit_disclosure_configuration",
+    "remote_explicit_account_body_fetch_and_web_work_creation",
+    "feishu_card_ui_validation",
+    "cross_public_account_dedup_and_optional_planner_reranker"
+  ],
+  "code_sha256": {
+    "src/personal_asis/agent.py": "d6bb504239eeea4a02172c8f3e6b1b47407b8c3372ea1b7fc4848698d8de35b9",
+    "src/personal_asis/agent_web.py": "af017042ffa24ba86e4120460134031c872ee52b7da09c5f694cc653d2c1daa4",
+    "src/personal_asis/web_search.py": "1fe77cdbc3d2b3e3237115ffac06a6714f99729ee5812c400c1232e610bbe353",
+    "src/personal_asis/reading_retrieval.py": "6f6e382cd46429e63be979ec2c5cd57cd04d77df9b3e3280d84d39b9884a0ebf",
+    "src/personal_asis/analysis_channel.py": "ece947d8824870ded2c5b6f055c3281ae1fee8b9c26f95a45d9aebf3219c18ce",
+    "src/personal_asis/retrieval_v2.py": "24f0be498dbdedaf4af207981d875f8371b0a8cf3d711b05682fd3b28dbc71ea",
+    "src/personal_asis/retrieval_channel.py": "70d8ed055d8414174553309a083a8f44c3ef8ed58562b5899fb97d8cd0baf335",
+    "src/personal_asis/research.py": "fb1fce4faa71949988fdc50659e650cf12c9675716d6d74305f65a2f3e309007",
+    "src/personal_asis/feishu.py": "cde13a3ae8cabb7c129ee9331ce5708065b300e834ca8a0e86daa2928df1a190",
+    "src/personal_asis/cli.py": "80bb0660e7a76a60ec04253933be7a228626d0b7f1d7ad48517b2af0e378ea9c"
+  }
+}

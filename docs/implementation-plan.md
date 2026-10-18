@@ -10,6 +10,16 @@
 
 ## 依赖与交付顺序
 
+2026-10-18 联网增量（checkout，未部署）：先审计实际 Exa schema／Jina路径／生产连接器和披露政策，再交付[新会话 web-v1](web-search-integration.md) 的搜索→读取→独立 Evidence→原预算模型闭环；另串接明确账户条目的只读 fetch→V2。模拟 Provider 与真实 Pi 测试先行；没有真实 Exa/Jina/MiMo 生成调用。默认协议和历史付费结果不升级，三账户现有模型／远程许可不变。
+
+| 本轮增量 | 交付／验收边界 | 后续依赖 |
+|---|---|---|
+| Adapter 与新协议 | 已实现可替换 Exa/Jina Provider、查询白名单、SSRF、独立操作上限、混合 Evidence、持久防重；合成检查见本轮记录 | 真实公开任务与 MiMo 路由质量，DNS／Reader POST 联调 |
+| 账户正文 | 已实现明确 item 的按需获取→索引→归属正确 Chunk；渠道阅读不再依赖模型许可 | 分类／逐项披露配置、远程显式获取和 Agent 自主账户读取；知乎不推进 |
+| 渠道与发布 | 新结果渠道复核／URL展示已测试；无生产部署或权限修改 | 飞书新联网工作创建、真实 UI、质量 Gate、单独发布验收 |
+
+顺序为真实公开闭环与质量 Gate → 账户分类和披露闭环 → 飞书接线与真人验证；尚未接入 Brave/Tavily、Planner、Reranker、角色联网或后台调度。
+
 2026-10-18 调整：**Retrieval Quality Gate 先于专业角色独立检索、扩大后台来源覆盖或切换生产检索协议。** 本轮交付 [Retrieval V2](retrieval-v2.md) 的 P0＋P1 独立基础闭环；旧按需入口继续运行。来源真实接通现状按[分层矩阵](information-sources.md)，不能把旧“等待接入”继续作为已完成连接器的工作。
 
 | 检索阶段 | 当前交付 | 验收与依赖 |

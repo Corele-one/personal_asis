@@ -72,10 +72,14 @@ def analysis_summary(view):
     for e in result['evidence']:
         if e['id'] not in result['citations']:
             continue
-        if e.get('kind')=='external':
+        if e.get('kind')=='public_web':
+            lines.append(f"[{e['id']}] {e['title']}｜公开网页｜{e['url']}｜正文：{e['content_completeness']}｜页面日期（{e['publication_date_status']}）：{e['published_at'] or '未知'}｜抓取：{e['fetched_at']}")
+        elif e.get('kind')=='external':
             lines.append(f"[{e['id']}] {e['title']}｜{e['url']}｜页面日期（未核实）：{e['published_at'] or '未知'}｜获取：{e['retrieved_at']}")
         else:
             lines.append(f"[{e['id']}] {e['title']}｜{e['source_id']}｜{e['path_hint']}｜第{e['line_start']}行\n摘录：{e['excerpt']}")
+            if e.get('kind')=='local_v2':
+                lines.append('归属：'+e['attribution_actor']+'｜'+e['content_kind']+'｜'+e['content_completeness'])
     lines.append('以上为基于检索证据的分析；未创建任务或日历。')
     return '\n'.join(lines)[:20000]
 

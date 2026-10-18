@@ -1,5 +1,13 @@
 # PA1 本机检索与模型分析
 
+## 新联网实验与账户正文（2026-10-18，未部署）
+
+checkout 的 `scripts/asis-agent run --web --public-query '公开关键词' --query '问题' --request-id NEW_ID` 新建三工具版本；可选 `--source study` 做本地／公开联合检索，不加来源时仅公开。搜索白名单和 Provider 冻结在会话，恢复只加原 `--request-id`，不以新工具重放旧付费请求。本地检索懒加载既有 Embedding、不可用则词法；公开搜索失败返回缺口，Jina失败静态降级，严格非公网 DNS 拒绝，不回退到宽松代理放行。
+
+`scripts/asis reading retrieve --source folo --item-id ITEM_ID --query '关键词' --fetch-body` 可从账户只读获取指定条目，再选本机V2段落；`--for-model`、`--channel feishu` 仅检查各自既有许可，不调用模型、不发送消息、不新增许可。支持 WUCAI/Folo/小红书，知乎不推进。公开网页与账户正文分开验证，不把摘要当全文或作者观点当用户事实。
+
+普通 PA1／已保存 Agent 和模型配置不变，新协议暂不接专业角色或领域历史。搜索2次、正文3次、每篇2400字符、总证据6144字节、网络90秒，完整模型请求仍受原8192字节默认限制及共享Token预算；复杂请求可能提前停止，不自动加预算。实际 Pi＋模拟 Provider 已测，真实 Exa/Jina/MiMo及飞书新入口待验收；三账户现有模型／渠道许可未开启。细节、费用未知记账与回退见[联网集成](web-search-integration.md)。
+
 ## 独立 V2 飞书实验续发
 
 当前发布 `retrieval-v2-de593bc25486b7cc` 已部署Mac／VPS；原解释器、来源／模型许可与普通搜索／Agent协议保持原值。本人飞书私聊测试：`/asis retrieve-v2 study | 缓存一致性`。这是显式词法候选阅读，返回段落与位置，0模型调用；完整质量Gate未过，普通检索未切换。实际协议／测试与回滚见[部署验收](validation/retrieval-v2-deployment-20261018.json)。真实飞书消息和界面由用户自行验证，下列较早发布编号与数量保留历史范围。

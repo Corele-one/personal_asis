@@ -2,6 +2,8 @@
 
 **已部署可按需使用的助手，完整实施计划尚未完成。** 2026-10-18 只读核对：Mac／VPS 当前发布为 `retrieval-v2-de593bc25486b7cc`，支持本机资料检索／阅读、MiMo 分析与公开研究、串行专业角色及本人 PWA／飞书。WUCAI、Folo、小红书已有真实读取和本机缓存，完整性与许可分别记录。新增 [Retrieval V2](docs/retrieval-v2.md) 独立本机实验接口、39 题评测及 Chunk／预算上下文基础闭环；显式飞书实验命令已部署，**普通 PA1／Agent 检索仍保持原协议**。逐项状态见[项目完成情况](docs/project-status.md)与[实施计划](docs/implementation-plan.md)。
 
+同日 checkout 新增[联网 Agent 实验](docs/web-search-integration.md)：显式 `--web` 新会话支持本地／Exa搜索／安全正文读取、分别校验的 Evidence 和引用回答；账户明确条目可按需读取并进入 V2。实际Pi＋模拟Provider已测，真实新协议、飞书新工作创建与完整账户披露链路尚未验收，**本轮未部署或更改许可**。知乎不推进，MiMo预算及旧付费恢复保持原值。
+
 PA0 已按 Mac 单节点范围验收；VPS 负责协调和渠道入口，ROG 停用。2026-10-14 验收时索引 Study 267 篇、Life 181 篇，共 448 篇 Markdown；这不是实时来源数量。独立备份和恢复密钥按用户选择暂缓，整机重启未验。
 
 ## 使用入口
@@ -22,6 +24,7 @@ V2 只读实验：本人已绑定飞书私聊发送 `/asis retrieve-v2 study | �
 | 需要了解的内容 | 文档 |
 |---|---|
 | 检索架构审计、独立 V2 与质量门槛 | [Retrieval V2](docs/retrieval-v2.md) |
+| 新版 Agent 联网工具、账户正文、隐私／预算与回退 | [联网集成](docs/web-search-integration.md) |
 | 当前完成情况与缺口 | [项目完成情况](docs/project-status.md) |
 | 综合助手／飞书卡片 | [使用指南](docs/assistant-usage.md)、[卡片说明](docs/feishu-cards.md) |
 | 完整文档导航 | [文档索引](docs/README.md) |

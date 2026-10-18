@@ -4,10 +4,10 @@ from .retrieval_v2 import PROTOCOL, build_bundle_v2
 
 
 def snapshot(home, job):
-    # No encoder, model API, billing ledger or work session. Provider permission is
-    # an additional conservative filter; it does not imply a model call.
+    # Read/channel permission is independent from permission to disclose to MiMo.
+    # No encoder, model API, billing ledger, account fetch or work session.
     bundle = build_bundle_v2(home, job['query'], source_ids=job['source_ids'],
-                             provider='mimo', mode='lexical', channel=job['channel'], max_bytes=6144)
+                             provider=None, mode='lexical', channel=job['channel'], max_bytes=6144)
     bundle.cloud_input(home, job['channel'])
     fields = ('source_id', 'title', 'path_hint', 'chunk_id', 'line_start', 'line_end',
               'column_start', 'section_path', 'excerpt', 'content_kind', 'attribution_actor',

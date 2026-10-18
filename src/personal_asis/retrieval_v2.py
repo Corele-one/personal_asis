@@ -374,7 +374,7 @@ def validate_evidence(index, evidence, provider, channel='local'):
         if value is None:
             raise ValueError('v2_context_stale')
         base, text, source, private = value
-        if (not source.allows_model(provider, private, base['path_hint'])
+        if (provider is not None and not source.allows_model(provider, private, base['path_hint'])
                 or base['content_completeness'] == 'metadata'
                 or channel != 'local' and not source.allows_remote_evidence(private, base['path_hint'])):
             raise ValueError('v2_context_permission_revoked')

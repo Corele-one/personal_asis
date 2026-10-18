@@ -3,11 +3,8 @@
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import hashlib
-import ipaddress
 import json
 import re
-import shutil
-import socket
 import subprocess
 from urllib.parse import urlsplit
 
@@ -20,66 +17,20 @@ PRIMARY_DOMAINS = ('nvidia.com','amd.com','intel.com','cloud.google.com','resear
 
 
 def public_url(url):
-    if not isinstance(url,str) or len(url)>2000:
-        raise ValueError('research_public_https_required')
-    parts=urlsplit(url)
-    if (parts.scheme!='https' or not parts.hostname or parts.username or parts.password
-            or parts.port not in (None,443) or parts.fragment or parts.query
-            or exclusion_reason('',url)):
-        raise ValueError('research_public_https_required')
-    host=parts.hostname.lower()
-    try:
-        ipaddress.ip_address(host)
-    except ValueError:
-        pass
-    else:
-        raise ValueError('research_ip_target_denied')
-    if '.' not in host or host.endswith(('.local','.localhost','.internal','.lan','.home')):
-        raise ValueError('research_private_network_denied')
-    addresses=socket.getaddrinfo(parts.hostname,443,type=socket.SOCK_STREAM)
-    # The desktop proxy returns RFC2544/RFC5180 benchmark addresses for public
-    # names. We never connect to these targets: Jina resolves/fetches the URL.
-    proxy_ranges=[ipaddress.ip_network('198.18.0.0/15'),ipaddress.ip_network('2001:2::/48')]
-    def acceptable(value):
-        address=ipaddress.ip_address(value)
-        return address.is_global or any(address in network for network in proxy_ranges)
-    if not addresses or any(not acceptable(a[4][0]) for a in addresses):
-        raise ValueError('research_private_network_denied')
+    from .web_search import public_addresses
+    public_addresses(url)
     return url
 
 
 def fetch(url):
-    # Only the public URL reaches Jina; no local question or authenticated session.
-    public_url(url)
-    response=subprocess.run(['/usr/bin/curl','--silent','--show-error','--fail','--max-time','25',
-        '--max-filesize','262144','--proto','=https','--noproxy','*','--header','Accept: text/plain',
-        'https://r.jina.ai/'+url],capture_output=True,timeout=30)
-    if response.returncode:
-        raise ValueError('research_public_read_failed')
-    raw=response.stdout
-    if len(raw)>256*1024:
-        raise ValueError('research_page_too_large')
-    return raw.decode('utf-8')
+    from .web_search import ExaJinaProvider
+    result=ExaJinaProvider().fetch_web(url)
+    return 'Title: '+result['title']+'\nMarkdown Content:\n'+result['excerpt']
 
 
 def search(public_query):
-    command=shutil.which('mcporter')
-    if not command:
-        raise ValueError('research_search_backend_unavailable')
-    # Fixed executable/route; no shell, no browser cookies or API-key creation.
-    response=subprocess.run([command,'call','exa.web_search_exa','--args',
-        json.dumps({'query':public_query,'numResults':5}),'--output','json'],
-        capture_output=True,timeout=35)
-    raw=response.stdout.decode('utf-8')
-    if response.returncode or '"error"' in raw or 'rate limit' in raw.lower():
-        raise ValueError('research_search_unavailable_or_rate_limited')
-    urls=re.findall(r'https://[^\s<>"\\]+',raw)
-    result=[]
-    for url in urls:
-        url=url.rstrip('.,)')
-        if url not in result:
-            result.append(url)
-    return result[:5]
+    from .web_search import ExaJinaProvider
+    return [row['url'] for row in ExaJinaProvider().search_web(public_query)['results']]
 
 
 def validate_request(value):

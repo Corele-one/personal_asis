@@ -67,7 +67,8 @@ def validate_state(home, source_home, state, channel=None):
             raise ValueError('agent_conversation_cannot_use_note_context')
     if state.get('temporal_scope'):
         from .retrieval_time import in_window
-        if any(not in_window(e.get('record_date'),state['temporal_scope']) for e in state['evidence']):
+        if any(not in_window(e.get('record_date'),state['temporal_scope']) for e in state['evidence']
+               if e.get('kind')!='public_web'):
             raise ValueError('agent_evidence_outside_requested_time')
     if 'role_plan' in state:
         from .agent_roles import validate_plan
@@ -91,6 +92,12 @@ def validate_state(home, source_home, state, channel=None):
                 not source.index or 'mimo' not in source.model_providers or
                 not (source.model_all_files or source.model_paths)):
             raise ValueError('agent_source_scope_revoked_or_changed')
+    if state.get('tools_protocol')=='agent-web-v1':
+        from .agent_web import validate_bundle
+        bundle=validate_bundle(source_home,state,channel)
+        if state.get('channel') and state['channel']!=channel:
+            bundle.revalidate(source_home,state['channel'])
+        return bundle
     bundle=ContextBundle(state['question'],'mimo',state['evidence'],state['mode'],state['degradation'])
     bundle.revalidate(source_home)
     for recipient in {state.get('channel'),channel}-{None}:
@@ -411,6 +418,9 @@ class AgentHost:
             result.update(response_kind='conversation',coverage='current_message_only',sensitivity='private')
         if self.state.get('temporal_scope'):
             result['temporal_scope']=self.state['temporal_scope']
+        if self.state.get('tools_protocol')=='agent-web-v1':
+            result['tools_protocol']=self.state['tools_protocol']
+            result['web_usage']=copy.deepcopy(self.state.get('web_usage',{}))
         self.work.progress(self.claim['id'],self.node,self.claim['epoch'],result,completed=True)
         return {'status':'completed','delegation_id':self.claim['delegation'],'run_id':self.claim['id'],
                 'cached':False,'result':result}
@@ -424,8 +434,14 @@ def _source_home(home, request_id, synthetic):
 
 
 def execute(home, query, request_id, source_ids=None, *, resume=False, provider=None,
-            synthetic=False, step_limit=None, encoder_override=None, channel=None, before_step=None, bootstrap=False, domain=None, with_history=False, mode=None, use_context=False, role_history=False):
+            synthetic=False, step_limit=None, encoder_override=None, channel=None, before_step=None, bootstrap=False, domain=None, with_history=False, mode=None, use_context=False, role_history=False,
+            web=False, public_queries=None, web_provider=None):
     home=Path(home)
+    if type(web) is not bool or (public_queries is not None and not web):
+        raise ValueError('agent_web_requires_explicit_new_protocol')
+    if web and (resume or bootstrap or synthetic or domain or with_history or use_context or role_history
+                or mode not in (None,'conversation')):
+        raise ValueError('agent_web_v1_new_direct_sessions_only')
     if channel not in (None,'pwa','feishu'):
         raise ValueError('context_channel_denied')
     if before_step:
@@ -467,25 +483,45 @@ def execute(home, query, request_id, source_ids=None, *, resume=False, provider=
                 work.control(view['id'],'resume')
         if not isinstance(query,str) or not query.strip() or len(query)>512 or exclusion_reason('',query):
             raise ValueError('agent_invalid_question')
+        web_scope=web or (resume and previous and previous.get('tools_protocol')=='agent-web-v1')
+        if not source_ids and web_scope:
+            source_ids=['public_web']
         if not source_ids:
             raise ValueError('agent_explicit_sources_required')
         source_home=_source_home(home,request_id,synthetic)
         config=load_pa1_config(source_home)
         sources={s.id:s for s in config.sources}
-        if set(source_ids)-set(sources):
+        if set(source_ids)-(set(sources)|({'public_web'} if web_scope else set())):
             raise ValueError('agent_scope_contains_unknown_source')
         did=work.create('agent:'+request_id,node,query,source_ids)
         rid=work.enqueue(did,'on-demand')
         state=work.session(rid)
+        if state and web and (state.get('tools_protocol')!='agent-web-v1'):
+            raise ValueError('agent_existing_protocol_cannot_be_upgraded')
+        if state and web:
+            from .agent_web import policy
+            if policy(public_queries or [])!=state['web_policy']:
+                raise ValueError('agent_web_policy_conflict')
         from .request_intent import response_plan
         reply_plan=(state.get('response_plan') if state else response_plan(query,mode))
+        if state is None and web and mode is None:
+            import re
+            from .request_intent import support_intent
+            if support_intent(query) or re.fullmatch(r'\s*(你好|您好|谢谢|早上好|晚安|hello|hi)[！!。 .]*',query,re.I):
+                reply_plan=response_plan(query,'conversation')
         if reply_plan and (domain is not None or with_history):
             raise ValueError('agent_conversation_cannot_use_note_context')
         initial={'version':1,'question':query,'request_id':request_id,'synthetic':synthetic,
-                 'roots':{} if reply_plan else {sid:root_identity(sources[sid].root) for sid in sorted(set(source_ids))},
+                 'roots':{} if reply_plan else {sid:root_identity(sources[sid].root) for sid in sorted(set(source_ids))
+                                              if not (web_scope and sid=='public_web')},
                  'settings':fingerprint(data),'actions':[],'evidence':[],
                  'mode':'lexical','degradation':None,
                  'usage':{'prompt_tokens':0,'completion_tokens':0,'total_tokens':0}}
+        if web or state and state.get('tools_protocol')=='agent-web-v1':
+            from .agent_web import policy,VERSION
+            initial['version']=2
+            initial['tools_protocol']=VERSION
+            initial['web_policy']=state['web_policy'] if state else policy(public_queries or [])
         if channel:
             initial['channel']=channel
         if bootstrap and not reply_plan:
@@ -531,7 +567,11 @@ def execute(home, query, request_id, source_ids=None, *, resume=False, provider=
                 if name in state:
                     initial[name]=state[name]
         # Changes to schemas, model settings, question or source roots cannot reuse a run.
-        contract=fingerprint([TOOLS,initial])
+        tools=TOOLS
+        if initial.get('tools_protocol')=='agent-web-v1':
+            from .agent_web import TOOLS as web_tools
+            tools=web_tools
+        contract=fingerprint([tools,initial])
         if state is not None:
             try:
                 validate_state(home,source_home,state,channel)
@@ -553,9 +593,14 @@ def execute(home, query, request_id, source_ids=None, *, resume=False, provider=
             state=work.start_session(rid,node,claim['epoch'],contract,initial)
             validate_state(home,source_home,state,channel)
             encoder=encoder_override
-            if not synthetic and encoder is None and not state.get('response_plan'):
+            if not synthetic and encoder is None and not state.get('response_plan') and state.get('tools_protocol')!='agent-web-v1':
                 encoder,_=pa1.encoder_for(data)
-            host=AgentHost(home,source_home,work,claim,state,provider,encoder,step_limit,before_step,channel)
+            if state.get('tools_protocol')=='agent-web-v1':
+                from .agent_web import WebAgentHost
+                host=WebAgentHost(home,source_home,work,claim,state,provider,encoder,step_limit,before_step,channel,
+                                  web_provider=web_provider)
+            else:
+                host=AgentHost(home,source_home,work,claim,state,provider,encoder,step_limit,before_step,channel)
             prompt=host.bootstrap() if state.get('bootstrap_search') else query
             if state.get('temporal_scope'):
                 prompt+='\n本次按笔记标注日期限定检索范围（日期不明的材料未纳入，不扩展到旧记录）：'+encoded(state['temporal_scope'])
@@ -568,7 +613,7 @@ def execute(home, query, request_id, source_ids=None, *, resume=False, provider=
             if 'role_plan' in state:
                 from .agent_roles import supervisor_prompt
                 prompt=supervisor_prompt(prompt,state['role_plan'],host.specialists())
-            return run_pi(prompt,[] if state.get('response_plan') else TOOLS,claim['session'],host,
+            return run_pi(prompt,[] if state.get('response_plan') else tools,claim['session'],host,
                           max_turns=1 if state.get('response_plan') else MAX_TURNS,timeout=900)
         except CheckpointReached:
             work.yield_run(rid,node,claim['epoch'])

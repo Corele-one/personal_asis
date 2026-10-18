@@ -90,7 +90,10 @@ def main(argv=None):
     commands.add_parser("audit")
     commands.add_parser("daemon")
     p = commands.add_parser('reading', help='外部阅读来源：只读拉取、本机索引与30天缓存；不启用后台工作')
-    p.add_argument('action', choices=['configure', 'activate', 'login', 'import-session', 'mcp-install', 'key', 'status', 'sync', 'fetch', 'share', 'discover', 'classify', 'clean', 'forget', 'revoke'])
+    p.add_argument('action', choices=['configure', 'activate', 'login', 'import-session', 'mcp-install', 'key', 'status', 'sync', 'fetch', 'retrieve', 'share', 'discover', 'classify', 'clean', 'forget', 'revoke'])
+    p.add_argument('--fetch-body',action='store_true',help='retrieve 前通过账户只读连接器按需读取该条目；不自动分类或增加披露许可')
+    p.add_argument('--for-model',action='store_true',help='retrieve 额外核对既有 MiMo 许可；不调用模型、不授予权限')
+    p.add_argument('--channel',choices=['local','pwa','feishu'],default='local',help='retrieve 按目标渠道核对既有阅读许可')
     p.add_argument('--source', required=True, choices=['wucai', 'folo', 'zhihu', 'xiaohongshu', 'wechat'])
     p.add_argument('--region', choices=['cn', 'eu', 'us'], default='cn')
     p.add_argument('--folo-cli', type=Path, help='已安装的官方 folo 可执行文件的绝对路径')
@@ -167,6 +170,8 @@ def main(argv=None):
     p.add_argument("--live", action="store_true", help="合成资料真实 API 联调；需显式请求编号")
     p.add_argument("--request-id")
     p = commands.add_parser('agent', help='本机按需 Pi/MiMo、持久恢复与合成验证；不启用后台委托')
+    p.add_argument('--web',action='store_true',help='新建独立 web-v1 工具会话；恢复自动沿用保存协议')
+    p.add_argument('--public-query',action='append',help='单独批准的公开查询；可重复最多三条，禁止私密片段')
     p.add_argument('action', choices=['validate','run','resume','status','self-test','provider-status'])
     p.add_argument('--probe',action='store_true',help='仅读取 /models 验证连接和模型列表，不调用生成接口')
     p.add_argument('--query')
@@ -301,6 +306,12 @@ def main(argv=None):
             elif args.action == 'sync':
                 result = reading.sync(home, args.source, args.stream, args.since, args.until,
                                       args.max_pages, args.page_size, args.resume)
+            elif args.action == 'retrieve':
+                from .reading_retrieval import snapshot
+                if not args.item_id or not args.query:
+                    raise ValueError('reading_item_and_query_required')
+                result = snapshot(home,args.source,args.item_id,args.query,fetch_body=args.fetch_body,
+                                  provider='mimo' if args.for_model else None,channel=args.channel)
             elif args.action == 'fetch':
                 if not args.item_id:
                     raise ValueError('reading_item_id_required')
@@ -343,7 +354,8 @@ def main(argv=None):
                 result=live_self_test(home,args.request_id,args.steps)
             else:
                 result=execute(home,args.query,args.request_id,args.source,
-                               resume=args.action=='resume',step_limit=args.steps,domain=args.domain,with_history=args.with_history,mode=args.mode,use_context=args.use_context,role_history=args.role_history)
+                               resume=args.action=='resume',step_limit=args.steps,domain=args.domain,with_history=args.with_history,mode=args.mode,use_context=args.use_context,role_history=args.role_history,
+                               web=args.web,public_queries=args.public_query)
         elif args.command=='domain':
             from .domain_context import DomainContexts
             if args.action!='list' and not args.domain:

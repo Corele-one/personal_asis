@@ -6,9 +6,11 @@
 
 ## 范围与控制
 
-2026-10-18 补充：独立 [Retrieval V2](retrieval-v2.md) 已在 checkout 实现并测试，但本页 AgentHost／search_notes 仍使用原 ContextBundle 与证据上限，专业角色仍不能独立检索。新 search/expand/bundle 接口没有注册进 Pi；随后增加的 `/asis retrieve-v2` 是复用加密中转的独立只读 action，不进入本页付费 Agent 执行。旧 TOOLS、PA1 settings、序列化与已付费指纹不变。未来只对新版本会话接入，并先通过检索 Quality Gate；本轮不把独立本机能力报告为 Agent 已调用。
+2026-10-18 现状：生产及默认 AgentHost／search_notes 仍使用原 ContextBundle 与证据上限，专业角色不能独立检索。`/asis retrieve-v2` 是独立只读 action。新 checkout 另有显式实验 [agent-web-v1](web-search-integration.md)，实际 Pi＋模拟 Provider 已覆盖 V2 本地检索、Exa搜索→正文→网页 Evidence→带引用回答；尚未真实联网／MiMo联调或部署，不替换旧协议。旧 TOOLS、PA1 settings、序列化与已付费指纹不变，完整质量 Gate 仍待通过。
 
-当前只有一个 `search_notes(query)` 只读领域工具。用户明确指定来源 ID；模型只能在这些来源中改变检索词，不能增加来源、提供商、预算或工具。检索使用现有 PA1 `build_bundle`，因此沿用独立的私密模型许可、根目录绑定、凭据／排除规则、原文版本和位置校验，以及可选的本机离线语义模型。工具回复只包含当前相关的编号、标题和最小正文，不外发绝对 URI、未授权条目的标题／路径／正文或全量索引。
+默认及历史协议只有一个 `search_notes(query)` 只读领域工具。用户明确指定来源 ID；模型只能在这些来源中改变检索词，不能增加来源、提供商、预算或工具。检索使用现有 PA1 `build_bundle`，因此沿用独立的私密模型许可、根目录绑定、凭据／排除规则、原文版本和位置校验，以及可选的本机离线语义模型。工具回复只包含当前相关的编号、标题和最小正文，不外发绝对 URI、未授权条目的标题／路径／正文或全量索引。
+
+显式新会话 `scripts/asis-agent run --web --public-query '可公开关键词' --query '问题' --request-id NEW_ID` 使用三工具；加 `--source study` 才允许读取该个人来源，不加时仅公开范围。公开查询必须精确匹配白名单且通过本机隐私规则，网页只能读本工作搜索所得 URL。搜索2次／正文3次／本地3次／网络90秒，沿原 MiMo预算；本地与公开证据分别校验。恢复仅用 `resume --request-id NEW_ID` 自动复用保存的工具、白名单和回执；不能把旧编号升级为新协议。该版本暂不支持领域目标、专业角色、历史或 bootstrap，普通无检索意图可用 `--mode conversation`。详细接口、限制、费用未知记录与回退见[联网集成](web-search-integration.md)。
 
 每次模型请求、工具执行、历史复用和成果返回前，都检查运行租约、当前 PA1 启用状态／配置、来源根目录及已用证据。正文变化或撤权时停止复用并清除该委托的会话、检查点和成果；已有模型／外部平台副本不声称可以撤回。PA1 撤权／核对清理入口已接入会话清理，`work show` 也先清理无效的 Agent 成果。续验发布已将该逻辑接入既有 Mac 核对服务的启动／唤醒／六小时清理路径；本机每次执行、复用或查看仍先检查，不能以核对周期代替下一次使用前的撤权检查。整机重启及新版服务无人值守休眠恢复仍未验收。
 
