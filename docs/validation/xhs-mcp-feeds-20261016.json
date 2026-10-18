@@ -1,0 +1,119 @@
+{
+  "date": "2026-10-16",
+  "release": "reading-mcp-e181642291535fcc",
+  "source_digest": "e181642291535fccace039913f746dfe21476ad4fda78e68fed3756c564f0921",
+  "active_release_matches_checkout": true,
+  "workers": {
+    "local.personal-asis.mac": true,
+    "local.personal-asis.pa1": true,
+    "local.personal-asis.xiaohongshu": true,
+    "local.personal-asis.tunnel": true
+  },
+  "independent_release_regression": {
+    "total": 395,
+    "passed": 379,
+    "skipped_optional": 16,
+    "log_verified": true
+  },
+  "source_synthetic_tests": 62,
+  "xiaohongshu": {
+    "backend": "mcp",
+    "upstream": "xpzouying/xiaohongshu-mcp v2.5.5",
+    "local_variant": "v2.5.5-asis-keychain-readonly",
+    "binary_sha256": "3e14e17dc61d2be337316a389605831d1c58eb1386b38a27012bcf7cf85ad352",
+    "build_tool": "go1.27.2 darwin-arm64",
+    "go_archive_sha256": "76812b213b1b2302c978d28fa52fa92d541704b9e7d9d5db8002c50e4018c4c5",
+    "bind": "127.0.0.1:18060",
+    "protocol": "2024-11-05",
+    "unauthenticated_mcp_http_status": 401,
+    "service_tool_list_verified": [
+      "check_login_status",
+      "get_feed_detail",
+      "get_my_profile",
+      "list_feeds",
+      "search_feeds"
+    ],
+    "rest_mutation_routes_removed": true,
+    "session_storage": "os_keychain",
+    "session_import": "owner_manual_hidden_input",
+    "browser_seed_storage": "os_keychain",
+    "plaintext_cookie_file_created": false,
+    "homepage_received": 2,
+    "saved_received": 2,
+    "note_text_detail_verified": true,
+    "local_search_verified": true,
+    "graceful_service_restart": true,
+    "session_survives_restart": true,
+    "cache": {
+      "items": 8,
+      "selected": 2,
+      "content_kinds": {
+        "metadata_only": 7,
+        "note_text": 1
+      }
+    },
+    "opencli_retained_inactive": true,
+    "automatic_backend_fallback": false,
+    "complete_history_verified": false,
+    "full_follow_timeline_implemented": false,
+    "followed_keyword_live_verified": false,
+    "full_machine_reboot_verified": false
+  },
+  "folo": {
+    "subscription_creation_authorized": true,
+    "ordinary_subscription_visibility_accepted": true,
+    "category": "研究与工程",
+    "subscriptions_before": 38,
+    "subscriptions_after": 41,
+    "targets": [
+      {
+        "title": "arXiv · 体系结构与并行计算",
+        "url": "https://rss.arxiv.org/rss/cs.AR+cs.DC",
+        "action": "added",
+        "verified": true,
+        "private": false,
+        "category_verified": true,
+        "ordinary_subscription_verified": true,
+        "timeline_read_verified": true,
+        "entries_received": 2,
+        "metadata_cached": 2
+      },
+      {
+        "title": "SIGARCH 博客",
+        "url": "https://www.sigarch.org/feed/",
+        "action": "added",
+        "verified": true,
+        "private": false,
+        "category_verified": true,
+        "ordinary_subscription_verified": true,
+        "timeline_read_verified": true,
+        "entries_received": 2,
+        "metadata_cached": 2
+      },
+      {
+        "title": "LLVM 发布更新",
+        "url": "https://github.com/llvm/llvm-project/releases.atom",
+        "action": "added",
+        "verified": true,
+        "private": false,
+        "category_verified": true,
+        "ordinary_subscription_verified": true,
+        "timeline_read_verified": true,
+        "entries_received": 2,
+        "metadata_cached": 2
+      }
+    ],
+    "cache_items_after": 9,
+    "index_refreshed": true
+  },
+  "new_model_calls": 0,
+  "new_model_or_remote_grants": false,
+  "assistant_background_fetch_enabled": false,
+  "vps_changed": false,
+  "historical_unknown_call_reservations": {
+    "calls": 2,
+    "tokens": 5688
+  },
+  "zhihu_setup_stopped_by_user": true,
+  "wechat_excluded": true
+}

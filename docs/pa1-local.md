@@ -1,5 +1,10 @@
 # PA1 本机检索与模型分析
 
+## 独立 V2 飞书实验续发
+
+当前发布 `retrieval-v2-de593bc25486b7cc` 已部署Mac／VPS；原解释器、来源／模型许可与普通搜索／Agent协议保持原值。本人飞书私聊测试：`/asis retrieve-v2 study | 缓存一致性`。这是显式词法候选阅读，返回段落与位置，0模型调用；完整质量Gate未过，普通检索未切换。实际协议／测试与回滚见[部署验收](validation/retrieval-v2-deployment-20261018.json)。真实飞书消息和界面由用户自行验证，下列较早发布编号与数量保留历史范围。
+
+
 当前交付总览见[项目完成情况](project-status.md)；本页保留该切片的范围与验收快照，最新串行角色／飞书卡片发布见[本轮记录](validation/agent-roles-20261015.json)。
 
 状态（2026-10-15）：已实现 FTS5＋实际离线语义检索、分段向量缓存、独立来源模型政策、最小 Context Bundle、MiMo 适配器、日／月 Token 预留及引用校验。用户指定 **`mimo-v2.6-flash`**，并明确授权当前 Study／Life 的全部文件，包括日记与健康资料。本人 PWA／飞书分析与按需外部研究已实现，入口及验收见 [PA1 按需探索](pa1-acceptance.md)；通用 Agent 框架仍未交付。
@@ -72,6 +77,22 @@ scripts/asis-pa1 configure --synthetic-only
 上下文最多选择 3 个当前内容版本，每个只取最多 600 字符摘录及截断标题。摘录优先正文、跳过 frontmatter，保留准确行列位置，避免标题命中掩盖实际内容。云端只收到问题、`E1` 等临时引用编号、标题和片段；绝对根目录、原文 URI、路径提示与本机身份／版本映射保留本机。调用前和结果返回前重新检查原文哈希、许可及摘录内容，拒绝过期、撤权或被替换的内容。
 
 ## 检索及降级
+
+### 独立 Retrieval V2（2026-10-18，未切换生产）
+
+既有 `pa1 retrieve/bundle/analyze` 和 Pi search_notes 保持本页 Top-3 单行协议，新能力使用独立 `retrieval-v2` 命令及 ContextBundleV2。其 sidecar 为本机 `retrieval-v2.sqlite3`：按段落／归属建 Chunk，英文词＋汉字二元词 BM25，或用现有离线 encoder 逐 Chunk 排序，再做可解释 RRF 与原始查询精确保护。同文多段可共同入池；相同作品的重复到达不计独立佐证。
+
+```sh
+scripts/asis retrieval-v2 search --source study --query '多个处理器如何维护缓存副本一致性' --mode lexical --diagnostics-only
+ASIS_PYTHON="$HOME/Library/Application Support/PersonalAsis/pa1-env/bin/python" scripts/asis retrieval-v2 search --source study --query '副本如何同步' --mode hybrid --provider mimo --diagnostics-only
+scripts/asis retrieval-v2 bundle --source study --query '协议比较' --max-bytes 6144
+```
+
+search 默认 lexical／本机范围，provider 参数只检查既有许可；bundle 强制模型许可但不调用模型。逐次 sync 拒用并清理删除、过期、撤权索引和版本不符的内容；旧 `pa1 clean` 在 sidecar 存在时清理它。缺少 encoder、模型异常或超过 10,000 获准 Chunk 时回退 lexical 并标原因，V2 不下载模型、不持久化新向量、没有新增服务或后台调度。显式 expand 支持有版本的邻段读取；Bundle 默认 6,144 字节按作品／词项覆盖选段，非固定 3 条；云端实际总提示预算仍须在后续集成时检查。
+
+39 题合成评测及真实本机 E5 比较见[完整设计和验收](retrieval-v2.md)。semantic 仍对无证据问题返回无关候选，完整 Coverage／补查／Reranker 仅为 P2；不自动替换生产。普通本机输出可能含私密正文，应留在私密终端；diagnostics-only 只给计数／模式。回滚为停用独立入口、删除可重建 sidecar；不修改工作库或已付费输入。
+
+### 现有 PA1 路径（仍在生产）
 
 未配置语义模型时使用 SQLite FTS5 与本机词项／汉字二元特征相似度排序，通过 reciprocal rank fusion 合并排名。当前已配置实际语义模型，融合全文与语义排名；相同内容版本去重，指定 `--source` 时仅检索对应来源。
 

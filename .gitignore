@@ -23,4 +23,5 @@ coordinator.json
 pwa.json
 pa1.json
 pa1-policy.json
+reading-cache/
 node_modules/

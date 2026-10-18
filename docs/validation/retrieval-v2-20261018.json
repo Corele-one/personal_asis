@@ -1,0 +1,330 @@
+{
+  "date": "2026-10-18",
+  "scope": "P0 + standalone P1 retrieval/context foundation; not production cutover",
+  "head": "b5d2d25d7b2db8eb9617cdd3a01070a5396971b5",
+  "baseline_includes_preexisting_uncommitted_reading_connectors": true,
+  "new_v2_tests": 39,
+  "tests": {
+    "before_core": {
+      "total": 395,
+      "passed": 326,
+      "skipped": 69,
+      "failed": 0,
+      "skip_reasons": {
+        "optional Pi and crypto required": 14,
+        "encrypted reader dependency required": 13,
+        "requires encrypted reader dependency": 13,
+        "run with the VPS AstrBot interpreter": 13,
+        "requires backup dependency": 5,
+        "crypto and Pi required": 3,
+        "requires reader dependency": 4,
+        "requires reader dependency and Node WebCrypto": 1,
+        "requires test-formats dependency": 1,
+        "requires Calc, Impress and system UNO": 1,
+        "requires LibreOffice and system UNO": 1
+      }
+    },
+    "after_core": {
+      "total": 434,
+      "passed": 365,
+      "skipped": 69,
+      "failed": 0,
+      "skip_reasons": {
+        "optional Pi and crypto required": 14,
+        "encrypted reader dependency required": 13,
+        "requires encrypted reader dependency": 13,
+        "run with the VPS AstrBot interpreter": 13,
+        "requires backup dependency": 5,
+        "crypto and Pi required": 3,
+        "requires reader dependency": 4,
+        "requires reader dependency and Node WebCrypto": 1,
+        "requires test-formats dependency": 1,
+        "requires Calc, Impress and system UNO": 1,
+        "requires LibreOffice and system UNO": 1
+      }
+    },
+    "after_pa1_environment": {
+      "total": 434,
+      "passed": 418,
+      "skipped": 16,
+      "failed": 0,
+      "skip_reasons": {
+        "run with the VPS AstrBot interpreter": 13,
+        "requires test-formats dependency": 1,
+        "requires Calc, Impress and system UNO": 1,
+        "requires LibreOffice and system UNO": 1
+      }
+    }
+  },
+  "evaluation": {
+    "retrieval-baseline-20261018.json": {
+      "dataset_sha256": "d199f5981b44bbf4b0e75aae1ec023a2bc3f3e3ee208bdd2667404461a153a5d",
+      "questions": 39,
+      "k": 5,
+      "evidence_recall_at_k": 0.9027777777777778,
+      "precision_at_k": 0.1794871794871795,
+      "negative_cases_passed": 2,
+      "forbidden_evidence_leaks": 0,
+      "failure_counts": {
+        "context_span_gap": 2,
+        "unexpected_evidence": 1,
+        "retrieval_ranking_gap": 1,
+        "retrieval_miss": 1
+      },
+      "duration_seconds": 0.195,
+      "offline_socket_guard": true,
+      "returned_precision_macro_nonempty": 0.6712962962962963,
+      "failed_cases": [
+        {
+          "id": "tail",
+          "failure": "context_span_gap"
+        },
+        {
+          "id": "multi-chunk",
+          "failure": "context_span_gap"
+        },
+        {
+          "id": "permission",
+          "failure": "unexpected_evidence"
+        },
+        {
+          "id": "cross-language",
+          "failure": "retrieval_ranking_gap"
+        },
+        {
+          "id": "zh-paraphrase",
+          "failure": "retrieval_miss"
+        }
+      ]
+    },
+    "retrieval-baseline-hybrid-20261018.json": {
+      "dataset_sha256": "d199f5981b44bbf4b0e75aae1ec023a2bc3f3e3ee208bdd2667404461a153a5d",
+      "questions": 39,
+      "k": 5,
+      "evidence_recall_at_k": 0.9861111111111112,
+      "precision_at_k": 0.19487179487179487,
+      "negative_cases_passed": 0,
+      "forbidden_evidence_leaks": 0,
+      "failure_counts": {
+        "context_span_gap": 1,
+        "unexpected_evidence": 3
+      },
+      "duration_seconds": 1.829,
+      "offline_socket_guard": true,
+      "returned_precision_macro_nonempty": 0.23076923076923078,
+      "failed_cases": [
+        {
+          "id": "multi-chunk",
+          "failure": "context_span_gap"
+        },
+        {
+          "id": "metadata",
+          "failure": "unexpected_evidence"
+        },
+        {
+          "id": "missing",
+          "failure": "unexpected_evidence"
+        },
+        {
+          "id": "permission",
+          "failure": "unexpected_evidence"
+        }
+      ]
+    },
+    "retrieval-v2-lexical-20261018.json": {
+      "dataset_sha256": "d199f5981b44bbf4b0e75aae1ec023a2bc3f3e3ee208bdd2667404461a153a5d",
+      "questions": 39,
+      "k": 5,
+      "evidence_recall_at_k": 0.9444444444444444,
+      "precision_at_k": 0.18974358974358976,
+      "negative_cases_passed": 2,
+      "forbidden_evidence_leaks": 0,
+      "failure_counts": {
+        "unexpected_evidence": 1,
+        "retrieval_ranking_gap": 1,
+        "retrieval_miss": 1
+      },
+      "duration_seconds": 0.196,
+      "offline_socket_guard": true,
+      "returned_precision_macro_nonempty": 0.6875,
+      "failed_cases": [
+        {
+          "id": "permission",
+          "failure": "unexpected_evidence"
+        },
+        {
+          "id": "cross-language",
+          "failure": "retrieval_ranking_gap"
+        },
+        {
+          "id": "zh-paraphrase",
+          "failure": "retrieval_miss"
+        }
+      ]
+    },
+    "retrieval-v2-semantic-20261018.json": {
+      "dataset_sha256": "d199f5981b44bbf4b0e75aae1ec023a2bc3f3e3ee208bdd2667404461a153a5d",
+      "questions": 39,
+      "k": 5,
+      "evidence_recall_at_k": 1.0,
+      "precision_at_k": 0.2,
+      "negative_cases_passed": 0,
+      "forbidden_evidence_leaks": 0,
+      "failure_counts": {
+        "unexpected_evidence": 3
+      },
+      "duration_seconds": 27.257,
+      "offline_socket_guard": true,
+      "returned_precision_macro_nonempty": 0.23589743589743592,
+      "failed_cases": [
+        {
+          "id": "metadata",
+          "failure": "unexpected_evidence"
+        },
+        {
+          "id": "missing",
+          "failure": "unexpected_evidence"
+        },
+        {
+          "id": "permission",
+          "failure": "unexpected_evidence"
+        }
+      ]
+    },
+    "retrieval-v2-hybrid-20261018.json": {
+      "dataset_sha256": "d199f5981b44bbf4b0e75aae1ec023a2bc3f3e3ee208bdd2667404461a153a5d",
+      "questions": 39,
+      "k": 5,
+      "evidence_recall_at_k": 1.0,
+      "precision_at_k": 0.2,
+      "negative_cases_passed": 0,
+      "forbidden_evidence_leaks": 0,
+      "failure_counts": {
+        "unexpected_evidence": 3
+      },
+      "duration_seconds": 27.952,
+      "offline_socket_guard": true,
+      "returned_precision_macro_nonempty": 0.23589743589743592,
+      "failed_cases": [
+        {
+          "id": "metadata",
+          "failure": "unexpected_evidence"
+        },
+        {
+          "id": "missing",
+          "failure": "unexpected_evidence"
+        },
+        {
+          "id": "permission",
+          "failure": "unexpected_evidence"
+        }
+      ]
+    }
+  },
+  "production_replacement_gate_passed": false,
+  "production_changes": {
+    "deployed": false,
+    "restarted": false,
+    "source_configuration_changed": false,
+    "model_configuration_changed": false,
+    "work_database_changed": false,
+    "model_generation_calls": 0,
+    "new_production_v2_index_created": false
+  },
+  "live_readonly_snapshot": {
+    "services": [
+      {
+        "label": "local.personal-asis.mac",
+        "running": true,
+        "pid": 11093,
+        "release": "reading-mcp-e181642291535fcc"
+      },
+      {
+        "label": "local.personal-asis.pa1",
+        "running": true,
+        "pid": 11096,
+        "release": "reading-mcp-e181642291535fcc"
+      },
+      {
+        "label": "local.personal-asis.tunnel",
+        "running": true,
+        "pid": 38230,
+        "release": null
+      },
+      {
+        "label": "local.personal-asis.xiaohongshu",
+        "running": true,
+        "pid": 11503,
+        "release": "reading-mcp-e181642291535fcc"
+      }
+    ],
+    "active_index_counts": {
+      "study": 267,
+      "life": 184,
+      "reading_wucai": 24,
+      "reading_folo": 9,
+      "reading_xiaohongshu": 8
+    },
+    "external_cache_kinds": {
+      "wucai": {
+        "highlights_only": 3,
+        "metadata_only": 21
+      },
+      "folo": {
+        "feed_content": 1,
+        "metadata_only": 8
+      },
+      "xiaohongshu": {
+        "note_text": 1,
+        "metadata_only": 7
+      }
+    },
+    "external_model_grants": false,
+    "external_remote_grants": false,
+    "authentication_reprobed": false,
+    "prior_account_read_evidence_date": "2026-10-16"
+  },
+  "unverified": [
+    "real private-source V2 retrieval quality",
+    "current external account authentication and live reads",
+    "answer faithfulness and answer relevancy",
+    "new V2 Pi/channel protocol and full UI acceptance",
+    "production corpus scale latency and resource limits",
+    "VPS AstrBot 13 optional SDK checks; production PDF reportlab fixture and legacy Office environment"
+  ],
+  "known_failures": [
+    "semantic/hybrid returns unrelated authorized evidence on all three negative questions",
+    "lexical misses or misranks two no-overlap paraphrases",
+    "byte/diversity selection and lexical-term coverage are heuristics, not semantic sufficiency",
+    "no cross-URL fuzzy work identity or native highlight-ID mapping"
+  ],
+  "rollback": "Stop using retrieval-v2; remove only disposable local retrieval-v2.sqlite3 while idle. No PA0 schema/work/paid-state rollback required. Preserve preexisting reading changes.",
+  "upstream_update_check": "agent-reach 1.5.0; update check unavailable due GitHub API rate limit",
+  "additional_checks": {
+    "git_diff_check": true,
+    "modified_document_links_and_fences": true,
+    "validation_json_parse_and_private_source_path_scan": true,
+    "fresh_fixture_lexical_baseline_and_v2_metrics_reproduce": true,
+    "recorded_implementation_hashes_match_final_code": true
+  },
+  "changed_code_this_slice": [
+    "src/personal_asis/retrieval_v2.py",
+    "src/personal_asis/retrieval_eval.py",
+    "src/personal_asis/cli.py",
+    "src/personal_asis/pa1_maintenance.py",
+    "tests/test_retrieval_v2.py"
+  ],
+  "changed_docs_this_slice": [
+    "README.md",
+    "SPECIFICATION.md",
+    "docs/README.md",
+    "docs/agent-architecture.md",
+    "docs/agent-architecture-review.md",
+    "docs/information-sources.md",
+    "docs/implementation-plan.md",
+    "docs/project-status.md",
+    "docs/pa1-local.md",
+    "docs/agent-on-demand.md",
+    "docs/retrieval-v2.md"
+  ]
+}

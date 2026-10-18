@@ -1,0 +1,70 @@
+{
+  "date": "2026-10-16",
+  "release": "reading-wucai-14c1e0e0dc57194e",
+  "source_digest": "14c1e0e0dc57194e4f29990c6c7553b934527ce79d6dab169b3d82a2b03965aa",
+  "scope": "WUCAI CN credential supplied by owner; bounded real reads, protocol repair and local cache/search integration",
+  "validation": {
+    "independent_mac_release": {"total": 374, "passed": 358, "skipped": 16},
+    "reading_synthetic_tests": {"total": 41, "passed": 41, "new": 2},
+    "real_read_only_api_requests": 8,
+    "model_generation_calls": 0,
+    "platform_mutations": 0
+  },
+  "historical_probe": {
+    "requested_range": "2026-07-05:2026-07-18",
+    "returned": 12,
+    "created_date_min": "2026-07-05",
+    "created_date_max": "2026-07-13",
+    "all_returned_created_dates_within_requested_window": true,
+    "old_item_details_succeeded": true,
+    "limitation": "Demonstrates older-than-15-day records, not complete account history or clipped full text"
+  },
+  "observed_protocol_repairs": [
+    "page_title, page_url and page_note map to title, original URL and user page note",
+    "highlights may be null; content and annonation retain author/user separation",
+    "get_article_details returns a detail wrapper",
+    "next_cursor drives pagination without a separate has_more flag",
+    "is_clipped does not establish availability of clipped full text",
+    "created_at is database creation time, not original publication time"
+  ],
+  "live_cache_probe": {
+    "checked_at": "2026-10-16T10:19:13+08:00",
+    "requested_range": "2026-10-03:2026-10-16",
+    "pages": 2,
+    "first_page_received_and_stored": 12,
+    "second_page_received_and_stored": 12,
+    "second_page_new_distinct_items": 12,
+    "cached_items": 24,
+    "coverage_status": "partial_page_limit",
+    "local_index_current": true,
+    "local_search_returns_cached_item": true,
+    "model_calls_and_tokens_unchanged": true,
+    "complete_account_history": false
+  },
+  "deployment": {
+    "status": "active",
+    "mac_index_running": true,
+    "mac_pa1_running": true,
+    "loaded_release_matches": true,
+    "rollback_retained": true,
+    "original_interpreters_retained": true,
+    "source_configuration_changed": false,
+    "model_policy_unchanged": true,
+    "vps_updated": false,
+    "historical_unknown_reservations": {"count_before": 2, "count_after": 2, "tokens_before": 5688, "tokens_after": 5688}
+  },
+  "boundaries": {
+    "new_model_or_remote_grants": false,
+    "source_data_in_git": false,
+    "raw_responses_or_tokens_in_logs": false,
+    "background_work_enabled": false,
+    "other_source_logins_started": false,
+    "wechat_requested": false
+  },
+  "remaining": [
+    "Backfill and measure all accessible personal-selection history from an explicit start date",
+    "Verify terminal cursor behavior across full query windows",
+    "Clipped full-text availability, source deletion and selection-removal synchronization",
+    "Sequential Folo, Zhihu and XiaoHongShu account configuration"
+  ]
+}

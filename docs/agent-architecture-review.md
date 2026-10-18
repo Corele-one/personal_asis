@@ -4,6 +4,12 @@
 
 ## 整体责任
 
+2026-10-18 补充：[Retrieval V2 审计与设计](retrieval-v2.md)固定了统一 Retrieval & Context Layer 的目标和独立基础实现。本轮选择 SQLite Chunk sidecar、汉字二元词 BM25、独立三模式、可解释 RRF、原文邻段展开与预算选择；保持旧 PA0／PA1／Pi 协议，不引入服务器、图数据库、reranker 模型或新常驻进程。目标层的 Query Planner、Live 路由、语义覆盖与专业角色补查仍未交付。
+
+上游已核对实际代码、提交与许可，见[核查清单](validation/retrieval-upstream-20261018.json)：QMD 借鉴模式与融合但避开其按文档最佳 Chunk 的限制；Onyx 借鉴 connector/checkpoint/ACL/federated 边界，不复制企业部署或 ee 代码；PageIndex 留作长文树导航候选；Khoj 借鉴 notes/online 分路，AGPL 代码不复制；GraphRAG 的 Local/Global/DRIFT 只在后续复杂主题需求明确时再评估；Ragas 借鉴分层质量定义，本轮只做确定性检索 oracle，不宣称已测答案忠实性。相关 MIT／Apache 许可与 Onyx Enterprise 区域分别列明，不沿用上游性能数字。
+
+质量优先意味着不把 Recall 提升单独当作生产替换许可：本轮 semantic 对无支持证据问题仍返回无关候选，拒答／噪声控制、真实语料与端到端新工具验收未过。可逆 sidecar 无须新增难逆转 ADR；保留 ADR 0034 的已付费序列化边界。
+
 我们构建并保有个人助手的业务权威：目标、持续委托、用户行动任务、资料政策、确认、预算、记忆规则和成果；Agent 执行框架通过适配接口负责模型与工具循环及可复用的运行机制。当前按需工具循环使用已验证的 Pi agent-core 1.2.0；通用执行与持续工作框架仍须另行验收。
 
 ```mermaid

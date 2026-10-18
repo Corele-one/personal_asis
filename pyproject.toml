@@ -23,4 +23,4 @@ asis = "personal_asis.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-personal_asis = ["web/*", "wincred.ps1"]
+personal_asis = ["web/*", "wincred.ps1", "*.mjs", "*.go"]

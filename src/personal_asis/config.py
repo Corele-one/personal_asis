@@ -35,6 +35,7 @@ class Source:
     private_model_providers: tuple[str, ...] = ()
     model_all_files: bool = False
     private_remote_evidence: bool = False
+    reading_cache: bool = False
 
     def allows_model(self, provider: str, private: bool, relative: str) -> bool:
         return (self.index and (not (private or self.policy == 'private')
@@ -127,7 +128,7 @@ def parse_config(data) -> Config:
         policy = item["policy"]
         if policy not in {"normal", "private"}:
             raise ValueError("policy 仅支持 normal/private")
-        for key in ("index", "remote_metadata", "private_remote_metadata", "remote_evidence", "model_all_files", "private_remote_evidence"):
+        for key in ("index", "remote_metadata", "private_remote_metadata", "remote_evidence", "model_all_files", "private_remote_evidence", "reading_cache"):
             if type(item.get(key, False)) is not bool:
                 raise ValueError(f"{key} 必须是布尔值")
         if (policy == "private" and item.get("remote_metadata", False)
@@ -162,7 +163,7 @@ def parse_config(data) -> Config:
                               tuple(dict.fromkeys(formats)), item.get("remote_evidence", False),
                               tuple(item.get("model_providers", [])), tuple(item.get("model_paths", [])),
                               tuple(item.get('private_model_providers', [])), item.get('model_all_files',False),
-                              item.get('private_remote_evidence',False)))
+                              item.get('private_remote_evidence',False), item.get('reading_cache',False)))
     if not sources:
         raise ValueError("至少配置一个来源")
     # Overlapping roots could bypass a private source's classification.

@@ -16,6 +16,9 @@ from .coordinator import Coordinator, ProtocolError
 
 def summary(view, pwa_origin=None):
     """Render a fixed whitelist, even if a future evidence result contains text."""
+    if view.get('kind')=='retrieval_receipt':
+        return ('V2 只读检索已接收，等待 Mac 核对权限并返回候选段落；不调用模型。'
+                if view['submitted'] else 'V2 检索传输结果未知，不会自动重复提交，请稍后用新消息发起只读查询。')
     if view.get('kind')=='agent_receipt':
         if not view.get('submitted',True):
             return (f"Agent 工作编号：{view['target_id']}。指令传输结果未知，不会自动重复执行。"

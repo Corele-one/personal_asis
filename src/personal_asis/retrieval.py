@@ -22,6 +22,16 @@ def features(text):
     return Counter(terms)
 
 
+def reading_attribution(text, evidence):
+    line = text.splitlines()[evidence['line_start'] - 1]
+    for prefix, attribution in (('[作者原文', 'author_original'),
+            ('[用户划线', 'user_highlight_of_author'), ('[用户批注', 'user_annotation'),
+            ('[用户页面笔记', 'user_annotation')):
+        if line.startswith(prefix):
+            return attribution
+    return 'source_metadata'
+
+
 def cosine(a, b):
     if len(a) != len(b) or not a or not all(math.isfinite(v) for v in [*a, *b]):
         raise ValueError("invalid_embedding")
@@ -54,6 +64,8 @@ def context_excerpt(text, query, max_chars=600, window=None):
                 break
     candidates = [i for i in range(start, len(lines)) if lines[i].strip()]
     body = [i for i in candidates if not re.match(r'^\s{0,3}#{1,6}\s', lines[i])]
+    if 'reading_cache: true' in lines[:start]:
+        body = [i for i in body if lines[i].startswith(('[作者原文', '[用户划线', '[用户批注', '[用户页面笔记'))]
     candidates = body or candidates
     if not candidates:
         return {'line_start':1, 'line_end':1, 'excerpt':'', 'column_start':1}
@@ -104,6 +116,14 @@ def retrieve(index, query, limit=5, provider=None, encoder=None, source_ids=None
                     "title":row["title"], "index_version":row["index_version"],
                     "original_uri":path.as_uri(), **selection}
         evidence['sensitivity']='private' if private else 'normal'
+        if source.reading_cache:
+            from .reading import cache_metadata
+            provenance = cache_metadata(source.root, row['path'])
+            if provenance is None:
+                continue
+            if provider and provenance['content_kind'] == 'metadata_only':
+                continue
+            evidence['reading_provenance'] = provenance
         if recorded:
             evidence.update(record_date=recorded,record_date_basis=basis)
         documents.append((evidence, text))
@@ -145,10 +165,15 @@ def retrieve(index, query, limit=5, provider=None, encoder=None, source_ids=None
         for position,doc in enumerate(ranking):
             fused[doc] += 1/(60+position+1)
     hits, versions = [], set()
+    texts = {e['document_id']: text for e, text in documents}
     for doc,_ in sorted(fused.items(), key=lambda p:(-p[1],p[0])):
         hit = by_id[doc]
-        if hit["content_hash"] not in versions:
-            versions.add(hit["content_hash"])
+        provenance = hit.get('reading_provenance', {})
+        if provenance:
+            hit['reading_attribution'] = reading_attribution(texts[doc], hit)
+        version_key = ('origin:' + provenance['origin_key']) if provenance.get('origin_key') else hit['content_hash']
+        if version_key not in versions:
+            versions.add(version_key)
             hits.append(hit)
         if len(hits) == limit:
             break
@@ -167,7 +192,10 @@ class ContextBundle:
 
     def cloud_input(self):
         return {"question":self.query, "evidence":[{"id":f"E{i+1}","title":e["title"],
-            "text":e["excerpt"],**({'note_date':e['record_date']} if 'record_date' in e else {})}
+            "text":e["excerpt"],**({'note_date':e['record_date']} if 'record_date' in e else {}),
+            **({'reading_source': {key:e['reading_provenance'][key] for key in
+                ('url','author','published_at','content_kind','selected')},
+               'reading_attribution': e['reading_attribution']} if 'reading_provenance' in e else {})}
             for i,e in enumerate(self.evidence)]}
 
     def fingerprint(self):
@@ -188,6 +216,11 @@ class ContextBundle:
                 if current is None:
                     raise ValueError("context_evidence_stale")
                 source,path,text,private = current
+                if source.reading_cache:
+                    from .reading import cache_metadata
+                    if (evidence.get('reading_provenance') != cache_metadata(source.root, row['path'])
+                            or evidence.get('reading_attribution') != reading_attribution(text, evidence)):
+                        raise ValueError('context_reading_provenance_mismatch')
                 if 'record_date' in evidence:
                     from .retrieval_time import note_date
                     recorded,basis=note_date(row['path'],text)

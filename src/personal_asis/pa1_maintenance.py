@@ -12,6 +12,8 @@ from .index import Index
 
 def clean(home, clock=time.time):
     home=Path(home)
+    from .reading import purge_expired
+    expired_reading = purge_expired(home)
     config=load_pa1_config(home)
     current={}
     with Index(home/'index.sqlite3',config) as index:
@@ -39,7 +41,12 @@ def clean(home, clock=time.time):
                 and bool(result['evidence']) and isinstance(result.get('provider'),str)
                 and all(isinstance(e,dict) and evidence_allowed(e) for e in result['evidence']))
 
-    report={'vectors_removed':0,'model_results_cleared':0,'validation_files_removed':0}
+    report={'vectors_removed':0,'model_results_cleared':0,'validation_files_removed':0,
+            'reading_cache_files_removed':expired_reading}
+    if (home/'retrieval-v2.sqlite3').exists():
+        from .retrieval_v2 import RetrievalV2
+        with Index(home/'index.sqlite3',config) as index, RetrievalV2(index) as v2:
+            report['retrieval_v2_cleanup']=v2.sync()
     path=home/'semantic.sqlite3'
     if path.exists():
         with closing(sqlite3.connect(path,timeout=30)) as db,db:

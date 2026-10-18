@@ -89,6 +89,30 @@ def main(argv=None):
     commands.add_parser("catalog")
     commands.add_parser("audit")
     commands.add_parser("daemon")
+    p = commands.add_parser('reading', help='外部阅读来源：只读拉取、本机索引与30天缓存；不启用后台工作')
+    p.add_argument('action', choices=['configure', 'activate', 'login', 'import-session', 'mcp-install', 'key', 'status', 'sync', 'fetch', 'share', 'discover', 'classify', 'clean', 'forget', 'revoke'])
+    p.add_argument('--source', required=True, choices=['wucai', 'folo', 'zhihu', 'xiaohongshu', 'wechat'])
+    p.add_argument('--region', choices=['cn', 'eu', 'us'], default='cn')
+    p.add_argument('--folo-cli', type=Path, help='已安装的官方 folo 可执行文件的绝对路径')
+    p.add_argument('--zhihu-cli', type=Path)
+    p.add_argument('--xhs-binary', type=Path)
+    p.add_argument('--xhs-opencli', type=Path, help='复用本人现有Chrome会话的OpenCLI入口')
+    p.add_argument('--xhs-node', type=Path)
+    p.add_argument('--xhs-backend', choices=['mcp','opencli'])
+    p.add_argument('--xhs-endpoint', help='仅允许本机127.0.0.1的MCP地址；默认不启动服务')
+    p.add_argument('--collection-id', help='知乎已确认的收藏夹URL Token')
+    p.add_argument('--defer-auth', action='store_true', help='暂缓凭据及平台访问，状态检查也不读取凭据')
+    p.add_argument('--url', help='用户明确提供的公众号公开分享链接')
+    p.add_argument('--query', help='用户明确提供的小红书搜索词')
+    p.add_argument('--followed-only', action='store_true')
+    p.add_argument('--stream', choices=['subscriptions', 'selections'])
+    p.add_argument('--since', help='WUCAI 起始日期 YYYY-MM-DD，自动分成最多14天的窗口')
+    p.add_argument('--until', help='WUCAI 结束日期 YYYY-MM-DD；默认最近七天')
+    p.add_argument('--max-pages', type=int, default=3)
+    p.add_argument('--page-size', type=int, default=20)
+    p.add_argument('--resume', action='store_true', help='沿用相同日期窗口／流的分页检查点')
+    p.add_argument('--item-id')
+    p.add_argument('--classification', choices=['normal', 'private'])
     p = commands.add_parser("backup", help="加密备份／恢复本机状态；不含原文和系统凭据")
     p.add_argument("action", choices=["create", "restore", "recovery-key"])
     p.add_argument("--target", type=Path)
@@ -176,11 +200,130 @@ def main(argv=None):
     p.add_argument('--priority', choices=['foreground', 'background'], default='foreground')
     p.add_argument('--execution-key')
     p.add_argument('--outcome', choices=['done', 'rejected'])
+    p = commands.add_parser('retrieval-v2', help='独立本机实验协议；不切换 PA1/Agent 或调用模型')
+    p.add_argument('action', choices=['rebuild', 'search', 'bundle', 'expand'])
+    p.add_argument('--query')
+    p.add_argument('--source', action='append')
+    p.add_argument('--mode', choices=['lexical', 'semantic', 'hybrid'], default='lexical')
+    p.add_argument('--provider', choices=['mimo'], help='仅过滤已有模型许可，不授予权限或调用模型')
+    p.add_argument('--limit', type=int, default=20)
+    p.add_argument('--max-bytes', type=int, default=6144)
+    p.add_argument('--chunk-id')
+    p.add_argument('--document-id')
+    p.add_argument('--content-hash')
+    p.add_argument('--neighbors', type=int, default=1)
+    p.add_argument('--diagnostics-only', action='store_true', help='只输出计数、模式及降级原因，不输出问题、身份或正文')
     args = parser.parse_args(argv)
     home = args.home.expanduser().absolute()
     try:
         if args.command == "doctor":
             result = doctor()
+        elif args.command == 'retrieval-v2':
+            from .config import load_pa1_config
+            from .retrieval_v2 import RetrievalV2, build_bundle_v2
+            encoder = None
+            if args.mode != 'lexical' and args.action in ('search', 'bundle'):
+                from .pa1 import settings, encoder_for
+                encoder, _ = encoder_for(settings(home))
+            if args.action == 'bundle':
+                if not args.query:
+                    raise ValueError('v2_query_required')
+                bundle = build_bundle_v2(home, args.query, provider=args.provider or 'mimo',
+                    encoder=encoder, source_ids=args.source, mode=args.mode, max_bytes=args.max_bytes)
+                result = ({'protocol': 'retrieval-v2.1', 'mode': bundle.retrieval_mode, 'coverage': bundle.coverage}
+                          if args.diagnostics_only else {'cloud_input': bundle.cloud_input(home),
+                              'local_evidence': bundle.evidence, 'coverage': bundle.coverage,
+                              'fingerprint': bundle.fingerprint()})
+            else:
+                with Index(home / 'index.sqlite3', load_pa1_config(home)) as index, RetrievalV2(index) as v2:
+                    if args.action == 'rebuild':
+                        result = v2.sync()
+                    elif args.action == 'search':
+                        result = v2.search(args.query, mode=args.mode, limit=args.limit, provider=args.provider,
+                                           encoder=encoder, source_ids=args.source)
+                        if args.diagnostics_only:
+                            result = {k: result[k] for k in ('protocol', 'mode', 'requested_mode', 'degradation', 'diagnostics')}
+                    else:
+                        if not all((args.chunk_id, args.document_id, args.content_hash)):
+                            raise ValueError('v2_expansion_requires_versioned_identity')
+                        evidence = v2.expand(args.chunk_id, args.document_id, args.content_hash,
+                            neighbors=args.neighbors, max_bytes=args.max_bytes,
+                            provider=args.provider, source_ids=args.source)
+                        result = {'segments': len(evidence)} if args.diagnostics_only else {'evidence': evidence}
+        elif args.command == 'reading':
+            from . import reading
+            home = home.resolve()
+            if args.action == 'configure':
+                result = reading.configure(home, args.source, args.region, args.folo_cli,
+                    zhihu_cli=args.zhihu_cli, xhs_binary=args.xhs_binary, xhs_endpoint=args.xhs_endpoint,
+                    xhs_opencli=args.xhs_opencli, xhs_node=args.xhs_node, xhs_backend=args.xhs_backend,
+                    collection_id=args.collection_id, defer_auth=args.defer_auth)
+            elif args.action == 'activate':
+                result = reading.activate(home, args.source)
+            elif args.action == 'status':
+                result = reading.status(home, args.source)
+            elif args.action == 'import-session':
+                if args.source != 'xiaohongshu' or not sys.stdin.isatty():
+                    raise ValueError('reading_session_requires_owner_terminal')
+                from .xhs_credentials import import_export
+                raw = getpass.getpass('小红书 Cookie-Editor Header String（不回显，仅存系统钥匙串）: ')
+                result = import_export(raw)
+            elif args.action == 'mcp-install':
+                if args.source != 'xiaohongshu' or args.xhs_binary is None:
+                    raise ValueError('reading_xhs_mcp_binary_required')
+                from .xhs_service import install
+                result = install(home, args.xhs_binary)
+            elif args.action == 'login':
+                if args.source != 'folo':
+                    raise ValueError('reading_browser_login_folo_only')
+                with reading.ReadingCache(home, args.source) as cache:
+                    if not cache.enabled():
+                        raise ValueError('reading_configure_before_login')
+                from .folo_login import login
+                result = login(notify=lambda message: print(message, file=sys.stderr, flush=True))
+                result['access'] = reading.activate(home, args.source)
+            elif args.action == 'key':
+                from .credentials import CredentialStore
+                if args.source == 'wechat':
+                    raise ValueError('reading_wechat_no_account_credentials')
+                if not sys.stdin.isatty():
+                    raise ValueError('reading_key_requires_interactive_terminal')
+                with reading.ReadingCache(home, args.source) as cache:
+                    if not cache.enabled():
+                        raise ValueError('reading_configure_before_key')
+                    row = cache.db.execute("SELECT value FROM meta WHERE key='region'").fetchone()
+                    account = 'wucai:' + row[0] if args.source == 'wucai' else 'xiaohongshu-mcp' if args.source == 'xiaohongshu' else args.source
+                    secret = getpass.getpass('来源专用 Token（不回显，仅存系统凭据库）: ').strip()
+                    if not secret or any(c.isspace() for c in secret) or (args.source == 'wucai' and not secret.startswith('wct-')):
+                        raise ValueError('reading_invalid_token')
+                    CredentialStore(account, 'local.personal-asis.reading').set(secret)
+                result = {'credential_stored': True, 'source': args.source}
+            elif args.action == 'sync':
+                result = reading.sync(home, args.source, args.stream, args.since, args.until,
+                                      args.max_pages, args.page_size, args.resume)
+            elif args.action == 'fetch':
+                if not args.item_id:
+                    raise ValueError('reading_item_id_required')
+                result = reading.fetch(home, args.source, args.item_id)
+            elif args.action == 'share':
+                if not args.url:
+                    raise ValueError('reading_share_url_required')
+                result = reading.share(home, args.source, args.url)
+            elif args.action == 'discover':
+                if not args.query:
+                    raise ValueError('reading_discovery_query_required')
+                result = reading.discover(home, args.source, args.query, args.followed_only, args.page_size)
+            elif args.action == 'classify':
+                if not args.item_id or not args.classification:
+                    raise ValueError('reading_item_and_classification_required')
+                result = reading.classify(home, args.source, args.item_id, args.classification)
+            else:
+                if args.action == 'forget' and not args.item_id:
+                    raise ValueError('reading_item_id_required')
+                result = reading.clean(home, args.source, args.action == 'revoke',
+                                       args.item_id if args.action == 'forget' else None)
+            emit(result)
+            return 1 if result.get('status') == 'failed' else 0
         elif args.command == 'agent':
             if args.action=='validate':
                 from .runtime_validation import validate

@@ -1,0 +1,203 @@
+{
+  "date": "2026-10-18",
+  "release": "retrieval-v2-de593bc25486b7cc",
+  "scope": "Deploy independent V2 foundation and explicit owner Feishu lexical experiment; normal PA0/PA1/Pi paid protocols unchanged",
+  "user_authorized_deployment": true,
+  "deployment": {
+    "vps_ssh": "mac@35.209.202.207:22",
+    "mac_services_updated": [
+      "local.personal-asis.mac",
+      "local.personal-asis.pa1"
+    ],
+    "vps_services_restarted": [
+      "personal-asis-coordinator",
+      "personal-asis-pwa",
+      "astrbot"
+    ],
+    "plugin_version": "0.8.0",
+    "original_mac_interpreters_retained": true,
+    "source_and_pa1_configuration_hashes_unchanged": true,
+    "rollback_materials_saved": true,
+    "release_archive_sha256": "d0fd40d73ab80cfe766082b207d069cdb306dd619529f0b52c162589e5a026ec",
+    "code_hashes": {
+      "integrations/astrbot_plugin_personal_asis/main.py": "c8368acf9106308bb247e1b967c9b178f133a845265866c1e0116e5b793a1dd2",
+      "integrations/astrbot_plugin_personal_asis/metadata.yaml": "0d2c6f451db368118185705d52b21514f360e55c6e580da31311e0aa92c696e1",
+      "runtime/pi/bridge.mjs": "2ce1743f92743f363e56e0f1fd2f899bf7d73740e3621e5f027f4fb71fc504d7",
+      "runtime/pi/package-lock.json": "802f17faf6ca43b858b9dba09c64e09ee8f45b079d8b672ce96a13ea66e513fc",
+      "runtime/pi/package.json": "64926ad292fd0166d421d898b82fc1aabe35550bd43c8b2d2e250a76ad6d50f5",
+      "src/personal_asis/__init__.py": "89fff7b16e72256ef36676ed0791f64dcc9aecf977b76be62292db75b39cba3d",
+      "src/personal_asis/__main__.py": "935a1c1166b0c1ea35a82256345000bf2c73ded718d77773bc27a71ecce28f7d",
+      "src/personal_asis/agent.py": "033aefd81822dcfc54b45f816b13028a2f19dc4277a599cf82e1db9b3a3a1646",
+      "src/personal_asis/agent_channel.py": "e720068dcb988ebbdec477ad4718a39617359883991bbdfeb84e2ed1f9ab722d",
+      "src/personal_asis/agent_feishu.py": "1326174d6e790f326836ae4bb62fcbf54bd825466dd953cafaa76c9365653001",
+      "src/personal_asis/agent_model.py": "2415308507a4add6b44fd1ffc8caff5017576e0f8cfe22df97159c8130550632",
+      "src/personal_asis/agent_roles.py": "83a2ce72f08ff095e08870953d422340c0090bd6cfa42aa8cfd772761bbb95f4",
+      "src/personal_asis/analysis_channel.py": "647078ba89c4c07c899af8d15ba4a7112c170456dbac0c2dd10c69f123047b34",
+      "src/personal_asis/backup.py": "4d63fc62ee4469ffef407b7dcc10b971ebbbdb38cef3ab81531cf52e57ecce3a",
+      "src/personal_asis/cli.py": "26e565efcb29af781acac7db12466626598dffe860ffbc8fbf9f2d80def9ad2e",
+      "src/personal_asis/config.py": "323627af9a8fe2975c45870bd897e50b82ba3a8b94e63a554d2052b565834bc7",
+      "src/personal_asis/context_commands.py": "b21440eef8af82d9deabf50f85bdd3c357011b977b24d1030b56b77d8cbf1f4e",
+      "src/personal_asis/coordinator.py": "a401f9c28d84423382c672a6df334c71087edeb67e8df6a6e344767b51e7ff97",
+      "src/personal_asis/credentials.py": "9a85cad2d2033b49cb1ff9e96d689c9340bb92cebde88f640aa43f7ba88ea0c8",
+      "src/personal_asis/data_policy.py": "3d927ae6771412483979517c9126a5b7845a3365c291fef6d65b8a32a9be59ea",
+      "src/personal_asis/domain_context.py": "0fc783c5000eb84a5fe1d3a9c65a0120a1099b6c03c7ccec5569165472fc48b3",
+      "src/personal_asis/evidence.py": "b976795e5bacd0767d7d1bf36d6be81110b7d35f966970b4d7b36ef44f9b7de0",
+      "src/personal_asis/extractors.py": "33772951bb70b7404c5469478f7d7b495fe81246a76e575b198436daccb668f8",
+      "src/personal_asis/feishu.py": "fc72cfc76c81ad983d33cdc8d0675bc62a256fbaa0ba37801a1307c28357b32f",
+      "src/personal_asis/feishu_cards.py": "b13d62fec21ee3e4acc859feecdc8b9d4f3f9c07d78e24a2408e82254de62074",
+      "src/personal_asis/folo_login.py": "053c90ac9553321325108a7372d9c2247f11a51be04bb8cf63433891f51a3b60",
+      "src/personal_asis/index.py": "17899644720096041e35aa1ca4b18c64ce265f74ab65aed6bd5d3a115fc01350",
+      "src/personal_asis/legacy_office.py": "14b847c6b818a6b09107eb6eaee948eacc4eb5b57191396bb15e4e5f66fe0bf9",
+      "src/personal_asis/markdown.py": "f86cac53cd8269e74aecf6ea17067864c88d1eafb142e3040f6506e1aa7904fe",
+      "src/personal_asis/model_budget.py": "44bd06a3270b4f6ec5dc2887db2759137945d7425574fd85b6ab184e57e77202",
+      "src/personal_asis/model_provider.py": "b4d3791e5b1b762aba98f4fd975f335f93fe59f71b6f98a9146cef2d0bf27015",
+      "src/personal_asis/node.py": "9f96e8fc26d47e0355a751110c067125489e0c0e820a6af12b6edb0e59042f8a",
+      "src/personal_asis/opencli_read.mjs": "82fc79ca12132f90e36ceeedb7b6fee19559e3e71cc4b18c8abfb9c3cc9fe9bd",
+      "src/personal_asis/pa1.py": "bcbbf28e4bf9b5104e408157752f914244cd538d48e20296b426c3fecfc116ce",
+      "src/personal_asis/pa1_maintenance.py": "b507107502a8e19419a68250ecb9e26602adcac8d9b8fc1eebf2fc9a3ad63133",
+      "src/personal_asis/provider_diagnostics.py": "01a5921891d039bcbbd2ad55bd1e09f755b424bf248016d78b737bd8126a1d03",
+      "src/personal_asis/pwa.py": "1771ab0303813e1a0e94e6eb9f1323b5c42c6b737a2f15d7d708b715df22bab1",
+      "src/personal_asis/reading.py": "3c8a3301d777c430d8e532ac02f4723e7e681b122a8b6c1f562e474a3e47942f",
+      "src/personal_asis/reading_sources.py": "831b59a60e3069c8b5ff6dfb23040de5cc97d844aee77ae44c3ba48758105322",
+      "src/personal_asis/request_intent.py": "86c0516581bc980d527013f103179fb6d249d01063e31390c445517dea5571f0",
+      "src/personal_asis/research.py": "ecf1cb73111e1310e3059c9517a6ccbb09d54568650bf72d2ccf029027ebf27e",
+      "src/personal_asis/retrieval.py": "fbf4d654d6803227d5ccd49b5ae3a12043ddc5822e73faeeed7ba4fc574d9b6e",
+      "src/personal_asis/retrieval_channel.py": "4286eca3b09a82fa7c81e3e6c134b92fe11f2091ec33a4af698292c1919960eb",
+      "src/personal_asis/retrieval_eval.py": "e6cc5f42acf89fa5a43027268e0825f15d5db2df71d9fb2e33933adfaf9a11c8",
+      "src/personal_asis/retrieval_time.py": "3ddff29448dff8f4cf166d7586e6d74feb601ab4c9c8c9fd7670b085acec242f",
+      "src/personal_asis/retrieval_v2.py": "fcdae6f23eae03a3a93dc7d11e8561abbd25f60ef2cee2c6e713f0d28c6387e9",
+      "src/personal_asis/role_context.py": "ca46479cb2d662c3f224a4b6b1b0ccc86afbbc3eff3664030bac2932aaf18bfe",
+      "src/personal_asis/runtime_adapter.py": "5588d078d54ca8e69895e7091d933fdd0088da97994699d8b34d2cc826a3822c",
+      "src/personal_asis/runtime_validation.py": "15ac6cf67fed9719aabbc24d6b0c953e102735aceab311294e652bac2a04dc3f",
+      "src/personal_asis/semantic.py": "a53d4ed413eeea08acb70e3dd41c20fb0143d061334a7081ac90b344e94ff02a",
+      "src/personal_asis/semantic_acceptance.py": "b9d8ca8a7b057904d748734541a62b704d0cbecf30728248d906b0f97f673efd",
+      "src/personal_asis/service.py": "54b86efa7cb47bdbd4d2a537c05eb401768b03430343a87719323f966ece1651",
+      "src/personal_asis/social_reading.py": "209b63963e3184820a69f2855814cb823a3abcba3afb59143c8af6c653273436",
+      "src/personal_asis/transport.py": "0cd3ae2a233e7592f960b8b5bfcc847798aa4d24fe49eaed6a195d77ebb5f654",
+      "src/personal_asis/web_auth.py": "13b985b4926228c18c5bd42fc6028fb6ce3e15f0bd5ff0fe1a7aa0eb927d7dd3",
+      "src/personal_asis/work.py": "4a460ea46032a04ba2ecee63691b7ec90121f0d0d88710082e78e91bca34d052",
+      "src/personal_asis/work_history.py": "16ff9aa9062cdabc65ea1bdfbe0ebaec8be60f4d96617a1f26963b2d5a3fde30",
+      "src/personal_asis/xhs_credentials.py": "c391316597e86741de083ca94099603354a8bc20b402c0f06733dad86040d6a5",
+      "src/personal_asis/xhs_keychain.go": "c1bdcc0ad5d4eb286d428919e251975c70c1528141cfa4f0eecf8966c3b69546",
+      "src/personal_asis/xhs_service.py": "58819dedd2ff044d02e7f7a2baa3edbc23119bcb5561df4936fd2355b1094018"
+    }
+  },
+  "tests": {
+    "mac_checkout": {
+      "total": 441,
+      "passed": 424,
+      "skipped": 17,
+      "failed": 0,
+      "skip_reasons": {
+        "run with the VPS AstrBot interpreter": 14,
+        "requires test-formats dependency": 1,
+        "requires Calc, Impress and system UNO": 1,
+        "requires LibreOffice and system UNO": 1
+      }
+    },
+    "mac_independent_release": {
+      "total": 441,
+      "passed": 424,
+      "skipped": 17,
+      "failed": 0,
+      "skip_reasons": {
+        "run with the VPS AstrBot interpreter": 14,
+        "requires test-formats dependency": 1,
+        "requires Calc, Impress and system UNO": 1,
+        "requires LibreOffice and system UNO": 1
+      }
+    },
+    "vps_core": {
+      "total": 441,
+      "passed": 302,
+      "skipped": 139,
+      "failed": 0,
+      "note": "optional crypto/Pi/format/platform SDK dependencies unavailable in /usr/bin/python3"
+    },
+    "vps_actual_astrbot_lark_sdk": {
+      "total": 14,
+      "passed": 14,
+      "skipped": 0,
+      "failed": 0,
+      "real_platform_sends": 0,
+      "warning": "test interpreter reported an unclosed asyncio event loop ResourceWarning"
+    },
+    "vps_actual_crypto_retrieval_channel": {
+      "total": 6,
+      "passed": 6,
+      "skipped": 0,
+      "failed": 0
+    },
+    "new_channel_regression_cases": 7
+  },
+  "runtime_verification": {
+    "mac_code_hashes_match": true,
+    "mac_services": {
+      "local.personal-asis.mac": {
+        "running": true,
+        "release": "retrieval-v2-de593bc25486b7cc",
+        "pid": 20756
+      },
+      "local.personal-asis.pa1": {
+        "running": true,
+        "release": "retrieval-v2-de593bc25486b7cc",
+        "pid": 20748
+      },
+      "local.personal-asis.tunnel": {
+        "running": true,
+        "release": null,
+        "pid": 38230
+      },
+      "local.personal-asis.xiaohongshu": {
+        "running": true,
+        "release": "reading-mcp-e181642291535fcc",
+        "pid": 11503
+      }
+    },
+    "vps": {
+      "code_hashes_match": true,
+      "plugin_hashes_match": true,
+      "services": {
+        "personal-asis-coordinator": true,
+        "personal-asis-pwa": true,
+        "astrbot": true,
+        "nginx": true
+      }
+    }
+  },
+  "https_public_root_status": 200,
+  "untrusted_loopback_host_status": 403,
+  "production_encrypted_probe": {
+    "encrypted_production_roundtrip": true,
+    "channel": "feishu",
+    "mode": "lexical",
+    "evidence_count": 11,
+    "source_ids": [
+      "study"
+    ],
+    "model_calls": 0,
+    "model_call_ledger_unchanged": true,
+    "private_text_or_titles_logged": false,
+    "platform_message_sent": false,
+    "duration_seconds": 19.03
+  },
+  "feishu_test_command": "/asis retrieve-v2 study | 缓存一致性",
+  "scope_and_limits": {
+    "lexical_only": true,
+    "explicit_sources_required": true,
+    "model_permission_and_channel_permission_both_checked": true,
+    "reply_is_candidate_text_not_generated_answer": true,
+    "max_bundle_utf8_bytes": 6144,
+    "old_paid_tools_or_serialization_changed": false,
+    "new_scheduler_or_live_fetching_enabled": false,
+    "external_source_grants_added": false,
+    "ordinary_production_retrieval_replacement_gate_passed": false,
+    "real_feishu_message_or_phone_ui_verified": false
+  },
+  "rollback": {
+    "mac": "Restore original mac/pa1 plists from private deployment-rollbacks/retrieval-v2-de593bc25486b7cc and reload services; keep original interpreters and databases",
+    "vps": "Use private personal-asis-rollbacks/retrieval-v2-de593bc25486b7cc/deployment.json previous_code and plugin backups, restore code link/plugin and restart the same three services",
+    "source_or_work_database_rollback_required": false
+  },
+  "git_scope": "Includes previously deployed but uncommitted read-only reading connectors required by the V2 working tree; no credentials, cookies, private source bodies, indexes, databases or node_modules"
+}

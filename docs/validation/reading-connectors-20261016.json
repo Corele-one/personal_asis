@@ -1,0 +1,91 @@
+{
+  "date": "2026-10-16",
+  "release": "reading-connectors-181945e7fb11c8d1",
+  "source_digest": "181945e7fb11c8d123cbd4bc3beedf2fe477d1193827552cac984cb5a6202cfa",
+  "scope": "Configure remaining reading sources; defer all authorization, login and account verification per user instruction",
+  "validation": {
+    "independent_mac_release": {"total": 372, "passed": 356, "skipped": 16},
+    "reading_synthetic_tests": {"total": 39, "passed": 39, "new": 15},
+    "platform_payloads_and_mcp_transport": "synthetic replacements; not real-account acceptance",
+    "model_generation_calls": 0,
+    "real_platform_reads": 0,
+    "account_verifications": 0
+  },
+  "installed_tools": {
+    "folo": {
+      "version": "0.0.5",
+      "registry": "https://registry.npmjs.org/folocli",
+      "registry_integrity_matches_lock": true,
+      "install_scripts_disabled": true,
+      "offline_help_passed": true
+    },
+    "zhihu": {
+      "cli_version": "0.6.1",
+      "official_documentation_version": "0.7.3",
+      "official_manifest_size_and_sha256_verified": true,
+      "artifact_sha256": "e12872711d218facdb944cb9e6ef1225df9e1f53104a3451ff437fa1a8fb0d71",
+      "offline_checks": ["version", "capabilities", "me favorites items --help"],
+      "auth_status_or_verify_executed": false
+    },
+    "xiaohongshu": {
+      "version": "v2.5.5",
+      "server_and_login_binaries_installed": true,
+      "official_https_fixed_release": true,
+      "server_local_sha256": "fad3633fda4a8060e66e2941bc8fc5460326c7cb4e58a32485a9e2c9408e95a8",
+      "login_local_sha256": "0cd6ae3ae395521ee417652dd82366b42deb96611f462b1fbba6129f4a9bd92e",
+      "independent_upstream_checksum_available": false,
+      "offline_server_help_passed": true,
+      "server_started": false,
+      "browser_started": false,
+      "login_tool_executed": false,
+      "cookies_read": false
+    }
+  },
+  "synthetic_checks": [
+    "Deferred source status never reads credentials; sync/fetch stop before credential or platform access",
+    "Explicit activation is local and does not imply account verification",
+    "Zhihu favorite summaries and server NextOffset, recent endpoint without history paging",
+    "Zhihu backward/missing offsets and business failures rejected; no writes or hidden model commands",
+    "XiaoHongShu loopback-only endpoint, MCP handshake/session and read-only tool allowlist",
+    "XiaoHongShu notifications, login checks, publishing, likes and favorite writes denied",
+    "Visible followed-keyword search is not full follow timeline; note tokens kept outside evidence",
+    "No extra comment scrolling or media interpretation; public media locators separated",
+    "WeChat explicit public article URLs, no login parameters, redirects or cookie use",
+    "WeChat article-body parsing rejects unavailable/login pages; existing local index and permissions reused"
+  ],
+  "deployment": {
+    "status": "active",
+    "mac_index_running": true,
+    "mac_pa1_running": true,
+    "tunnel_running": true,
+    "loaded_release_matches": true,
+    "original_interpreters_retained": true,
+    "rollback_retained": true,
+    "vps_updated": false,
+    "study_life_wucai_source_records_unchanged": true,
+    "model_policy_unchanged": true,
+    "historical_unknown_reservations": {"count_before": 2, "count_after": 2, "tokens_before": 5688, "tokens_after": 5688}
+  },
+  "production_configuration_probe": {
+    "checked_at": "2026-10-16T03:42:04+08:00",
+    "folo": {"configured": true, "installed_cli": true, "account_access": "deferred", "credential": "not_checked", "items": 0},
+    "zhihu": {"configured": true, "installed_cli": true, "account_access": "deferred", "credential": "not_checked", "items": 0},
+    "xiaohongshu": {"configured": true, "installed_cli": true, "account_access": "deferred", "credential": "not_checked", "items": 0, "endpoint": "http://127.0.0.1:18060/mcp"},
+    "wechat": {"configured": true, "entry": "explicit public share links or existing WUCAI/Folo upstream", "items": 0},
+    "new_source_model_grants": false,
+    "new_source_remote_grants": false,
+    "background_work_enabled": false
+  },
+  "deferred_by_user": [
+    "Credential input, login, QR scan and account validation for all pending sources",
+    "XiaoHongShu dedicated cookie session, MCP authentication and explicit loopback startup",
+    "Real Zhihu/Folo/XiaoHongShu response-field, paging, quota and coverage verification"
+  ],
+  "pending_user_input": ["Explicit public WeChat article link before actual reading"],
+  "remaining_capabilities": [
+    "Complete follow timelines and accessible-history coverage beyond current endpoint contracts",
+    "Platform deletion and selection-removal synchronization",
+    "Configured continuing schedules and approved automatic selection",
+    "Remote source-management UI and per-source disclosure policies"
+  ]
+}

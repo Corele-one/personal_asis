@@ -40,7 +40,7 @@ class AgentRelay(AnalysisRelay):
 
     def request(self, data):
         exact({k:v for k,v in data.items() if k not in ('mode','use_context','role_history','context')}, ('request_id','target_id','action','query','source_ids','channel','client_nonce','public_key'))
-        if data['channel'] not in ('pwa','feishu') or data['action'] not in ('run','status','pause','resume','cancel','context'):
+        if data['channel'] not in ('pwa','feishu') or data['action'] not in ('run','status','pause','resume','cancel','context','retrieve'):
             raise ProtocolError('invalid_agent_action')
         try:
             if str(uuid.UUID(data['target_id']))!=data['target_id']:
@@ -59,9 +59,11 @@ class AgentRelay(AnalysisRelay):
                     or type(data.get('use_context',False)) is not bool or type(data.get('role_history',False)) is not bool
                     or (data.get('role_history') and not data.get('use_context'))):
                 raise ProtocolError('agent_invalid_role_context_options')
-        if data['action']=='run':
+        if data['action'] in ('run','retrieve'):
             if not data['source_ids']:
                 raise ProtocolError('agent_explicit_sources_required')
+            if data['action']=='retrieve' and ('mode' in data or data['channel']!='feishu'):
+                raise ProtocolError('invalid_retrieval_experiment')
             if 'mode' in data:
                 from .agent_roles import MODES
                 if data['mode'] not in MODES:
@@ -71,7 +73,7 @@ class AgentRelay(AnalysisRelay):
         elif 'mode' in data:
             raise ProtocolError('agent_control_uses_saved_role_plan')
         validate_request({**{k:data[k] for k in ('request_id','channel','source_ids','client_nonce','public_key')},
-                          'query':data['query'] if data['action']=='run' else 'Agent control', 'research':None})
+                          'query':data['query'] if data['action'] in ('run','retrieve') else 'Agent control', 'research':None})
         digest=hashlib.sha256(json.dumps(data,sort_keys=True).encode()).hexdigest()
         with self.lock:
             self._prune()
@@ -116,6 +118,8 @@ class AgentRelay(AnalysisRelay):
         result['plan']='Mac 核对来源和权限 → 最多三次检索 → 共享预算内分析；支持暂停、恢复和取消'
         with self.lock:
             job=self.jobs.get(request_id)
+            if job and job['action']=='retrieve':
+                result['plan']='Mac V2 词法检索 → 权限与原文位置复核 → 加密返回候选段落；不调用模型。'
             if job and job['action']=='context':
                 result['plan']='Mac 核对并管理你明确保存的领域目标；不调用模型。'
             if job and 'mode' in job:
@@ -218,11 +222,16 @@ class AgentWorker:
         after=self.stamp()
         if before!=after:
             value=self.failure(ValueError('agent_result_changed_before_disclosure'))
+        if job['action']=='retrieve' and 'error' in value:
+            value={**value,'kind':'retrieval_v2'}
         self.client.authenticated('/v1/agent/complete',{'request_id':job['request_id'],
             'lease':job['lease'],'status':'ready','envelope':encrypt(value,job,aad(job)),
             'policy_hash':after})
 
     def _snapshot(self,job):
+        if job['action']=='retrieve':
+            from .retrieval_channel import snapshot as retrieval_snapshot
+            return retrieval_snapshot(self.home,job)
         if job['action']=='context':
             from .context_commands import snapshot as context_snapshot
             return context_snapshot(self.home,job['context']['domain'])
@@ -249,7 +258,7 @@ class AgentWorker:
     @staticmethod
     def failure(error):
         code=str(error)
-        if not re.fullmatch(r'(?:agent_|context_|pa1_|model_|delegation_|inactive_|cancelled_|optional_pi_|mimo_|domain_context_)[a-z_]+(?::[a-z_]+)?',code) or len(code)>120:
+        if not re.fullmatch(r'(?:agent_|context_|pa1_|model_|delegation_|inactive_|cancelled_|optional_pi_|mimo_|domain_context_|v2_)[a-z_]+(?::[a-z_]+)?',code) or len(code)>120:
             code='agent_execution_failed'
         return {'error':code,'automatic_retry':False}
 
@@ -296,6 +305,9 @@ class AgentWorker:
                 'lease':job['lease'],'status':'failed','envelope':None})
             return {'claimed':True}
         try:
+            if job['action']=='retrieve':
+                self._complete(job,{})
+                return {'claimed':True}
             if not self._receipt(job):
                 self._complete(job,self._snapshot(job))
                 return {'claimed':True}

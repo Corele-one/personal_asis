@@ -1,5 +1,18 @@
 # PA0 Mac 单节点运行
 
+## 2026-10-18 Retrieval V2 续发
+
+当前发布 `retrieval-v2-de593bc25486b7cc` 已部署Mac／VPS；原解释器、来源／模型许可与普通搜索／Agent协议保持原值。本人飞书私聊测试：`/asis retrieve-v2 study | 缓存一致性`。这是显式词法候选阅读，返回段落与位置，0模型调用；完整质量Gate未过，普通检索未切换。实际协议／测试与回滚见[部署验收](validation/retrieval-v2-deployment-20261018.json)。真实飞书消息和界面由用户自行验证，下列较早发布编号与数量保留历史范围。
+
+
+2026-10-16最新接入：小红书已切换到独立MCP，使用系统钥匙串保存会话与服务鉴权；首页2条、收藏2条、单篇正文、本机搜索和服务重启后会话复用均通过真实验证，缓存共8条（精选2条）。Folo已按用户选择新增arXiv cs.AR＋cs.DC、SIGARCH博客、LLVM发布三条普通订阅，均归“研究与工程”，订阅总数38→41，各读取2条元数据并入本机索引，Folo缓存共9条。Mac发布 `reading-mcp-e181642291535fcc`，395项回归379通过、16跳过；PA0、PA1、独立MCP和隧道运行正常。没有新增模型／远程许可或助手后台抓取；完整历史、完整关注流及平台删除同步未完成。知乎官方CLI停止推进，公众号不接。见[小红书说明](xiaohongshu-setup.md)、[研究信源](source-recommendations.md)和[本轮验收](validation/xhs-mcp-feeds-20261016.json)。
+
+当前最新发布为 `reading-mcp-e181642291535fcc`（2026-10-16），Mac PA0／PA1／独立MCP及隧道running、各自原解释器和回退材料保留。新增Folo安全浏览器登录（钥匙串凭据、回环回调），真实只读验证通过，来源配置和模型政策保留；见[Folo现场验收](validation/folo-live-20261016.json)。下文发布为各自历史快照。
+
+最新续发（2026-10-16）：Mac PA0／PA1现均使用 `reading-connectors-181945e7fb11c8d1`，原解释器保留，VPS未更新。Folo／知乎／小红书工具安装与公众号分享入口已准备，账户访问为暂缓；没有登录或启动小红书服务。见[当前信源配置](external-reading-setup.md)与[验收](validation/reading-connectors-20261016.json)。后续段落中的版本为历史快照。
+
+当前代码续发（2026-10-15）：Mac PA0／PA1现均使用 `reading-sources-311c9f3870b96a0f`，各自原解释器和旧包／plist回退材料保留。新增WUCAI中国区／Folo本机只读配置，均无凭据、条目0、无模型或远程展示许可；未启用后台或更新VPS。见[使用及边界](external-reading.md)与[验收](validation/reading-sources-20261015.json)。下文各发布编号保留为其日期的历史记录。
+
 PA0 已于 2026-10-14 完成当前范围验收，见 [最终记录](pa0-acceptance.md)。日常只维护 Mac 资料；VPS 负责协调，飞书与 [PWA](https://35.209.202.207/) 提供入口。
 
 ## 当前范围

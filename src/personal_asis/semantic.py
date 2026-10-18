@@ -40,12 +40,15 @@ def body_start(text):
 def chunks(text):
     """Bounded overlapping windows cover the entire body, with original offsets."""
     start = body_start(text)
+    reading = 'reading_cache: true' in text[:start].splitlines()
     boundaries = [*re.finditer(r'\r?\n[ \t]*\r?\n', text[start:]), None]
     paragraph_start = start
     for boundary in boundaries:
         end = start + boundary.start() if boundary else len(text)
         paragraph = text[paragraph_start:end]
-        positions = () if re.fullmatch(r'\s{0,3}#{1,6}\s+[^\r\n]*(?:\r?\n)?', paragraph) else range(paragraph_start, end, 320)
+        metadata_only = reading and not any(line.startswith(('[作者原文', '[用户划线', '[用户批注', '[用户页面笔记'))
+                                            for line in paragraph.splitlines())
+        positions = () if metadata_only or re.fullmatch(r'\s{0,3}#{1,6}\s+[^\r\n]*(?:\r?\n)?', paragraph) else range(paragraph_start, end, 320)
         for position in positions:
             fragment = text[position:min(position + 400, end)]
             if fragment.strip():

@@ -1,0 +1,107 @@
+{
+  "date": "2026-10-16",
+  "release": "reading-xhs-b30942b3bb2b28c3",
+  "source_digest": "b30942b3bb2b28c3753376c9129834fb64529ab36bd94813ec760eebed5c2ffa",
+  "scope": "Owner manually signed into Chrome; reuse owner-controlled session with allowlisted OpenCLI reads and local index integration",
+  "validation": {
+    "independent_mac_release": {
+      "total": 386,
+      "passed": 370,
+      "skipped": 16
+    },
+    "reading_synthetic_tests": {
+      "total": 53,
+      "passed": 53,
+      "new_opencli_tests": 6
+    },
+    "model_generation_calls": 0,
+    "platform_writes": 0
+  },
+  "backend": {
+    "selected": "opencli",
+    "cli_version": "1.8.6",
+    "extension_version": "1.0.24",
+    "owner_manual_login_confirmed": true,
+    "browser_bridge_connectivity_verified": true,
+    "browser_cookies_read_or_exported": false,
+    "independent_mcp_installed_version": "v2.5.5",
+    "independent_mcp_started": false,
+    "independent_mcp_login_tool_run": false,
+    "independent_mcp_auth_configured": false
+  },
+  "protocol": {
+    "operations": [
+      "feed",
+      "saved",
+      "search",
+      "note"
+    ],
+    "trace": "off",
+    "signed_note_locators": "OS keychain; anonymous stdin bridge; never OS argv or evidence",
+    "signed_profile_note_path_supported": true,
+    "retains_author_attribution": true,
+    "metadata_first_body_on_demand": true,
+    "visible_window_only": true,
+    "complete_follow_timeline": false,
+    "followed_only_search_supported": false,
+    "ocr_or_video_understanding": false
+  },
+  "live_acceptance": {
+    "homepage_preview_received": 2,
+    "collection_preview_received": 2,
+    "keyword_search_received": 2,
+    "single_selected_note_text_succeeded": true,
+    "cached_items": 6,
+    "selected": 2,
+    "content_kinds": {
+      "metadata_only": 5,
+      "note_text": 1
+    },
+    "specific_item_local_search": true,
+    "pagination": "unverified; reported partial rather than complete",
+    "complete_account_history": false
+  },
+  "deployment": {
+    "mac_index_running": true,
+    "mac_pa1_running": true,
+    "original_interpreters_retained": true,
+    "rollback_retained": true,
+    "source_configuration_unchanged": true,
+    "source_manifest_backend_selected": "opencli",
+    "model_policy_unchanged": true,
+    "vps_updated": false,
+    "historical_unknown_reservations": {
+      "count": 2,
+      "tokens": 5688
+    }
+  },
+  "boundaries": {
+    "new_model_grants": false,
+    "new_remote_metadata_or_evidence_grants": false,
+    "background_work_enabled": false,
+    "sensitive_data_in_git": false,
+    "raw_platform_responses_logged": false,
+    "zhihu_setup_discontinued_per_owner": true,
+    "wechat_requested": false
+  },
+  "remaining": [
+    "Complete follow timeline and author list/update collection are not implemented",
+    "No historical paging or platform deletion/unfavorite synchronization",
+    "Chrome and browser extension must remain connected with valid owner login",
+    "Independent MCP session is not configured; switching is separate work",
+    "Readability is note text only; images/video not interpreted"
+  ],
+  "other_source_recommendations": {
+    "subscriptions_created": false,
+    "public_feeds_verified": [
+      "arXiv cs.AR",
+      "arXiv cs.DC",
+      "LLVM release Atom"
+    ],
+    "additional_candidates": [
+      "SIGARCH",
+      "CMU CSD PhD Blog",
+      "selected Bilibili/YouTube creators"
+    ]
+  }
+}

@@ -167,6 +167,10 @@ class Index:
                 rel = path.relative_to(source.root).as_posix()
                 if path.suffix.lower().lstrip(".") not in source.formats or path.is_symlink() or source.excludes(rel):
                     continue
+                if source.reading_cache:
+                    from .reading import cache_metadata
+                    if cache_metadata(source.root, rel) is None:
+                        continue
                 stat = path.stat()
                 found[rel] = (path, stat)
         return found
@@ -358,6 +362,10 @@ class Index:
             if any(p.is_symlink() for p in [path, *list(path.parents)[:len(Path(row["path"]).parts) - 1]]):
                 return None
             raw, _ = self._read(path, root=source.root)
+            if source.reading_cache:
+                from .reading import cache_metadata
+                if cache_metadata(source.root, row['path'], raw) is None:
+                    return None
             if digest(raw) != row["content_hash"]:
                 return None
             if path.suffix.lower() == ".md":

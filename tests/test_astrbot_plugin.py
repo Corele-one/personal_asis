@@ -109,6 +109,22 @@ class AstrBotPluginTests(unittest.TestCase):
         asyncio.run(self.plugin.on_message(Event('/asis status synthetic-id')))
         self.assertIn('结果已回复此私聊',self.sent[0][2])
 
+    def test_explicit_retrieval_v2_command_is_readonly_and_deduplicated(self):
+        self.bind()
+        request=str(uuid.uuid4());target=str(uuid.uuid4())
+        self.plugin.bridge.agent.submit=Mock(return_value={'request_id':request,'target_id':target,'submitted':True})
+        event=Event('/asis retrieve-v2 study,life | 缓存一致性')
+        asyncio.run(self.plugin.on_message(event))
+        asyncio.run(self.plugin.on_message(event))
+        self.assertFalse(event.call_llm)
+        self.assertTrue(event.stopped)
+        self.assertEqual(len(self.sent),1)
+        call=self.plugin.bridge.agent.submit.call_args
+        self.assertEqual(call.args[3],'retrieve')
+        self.assertEqual(call.kwargs['source_ids'],['study','life'])
+        self.assertEqual(call.kwargs['query'],'缓存一致性')
+        self.assertIn('不调用模型',self.sent[0][2])
+
     def test_agent_scope_controls_and_duplicate_ack_never_use_default_model(self):
         self.bind()
         request=str(uuid.uuid4());target=str(uuid.uuid4())

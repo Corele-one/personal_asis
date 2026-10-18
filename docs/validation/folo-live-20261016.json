@@ -1,0 +1,86 @@
+{
+  "date": "2026-10-16",
+  "release": "reading-folo-5450f19d0ed1dc1c",
+  "source_digest": "5450f19d0ed1dc1ca90ddf4d8e33ef5995e4b10ab2e12909b68975ca588048a9",
+  "scope": "Owner-requested Folo browser login, OS-keychain session storage and bounded real read-only acceptance",
+  "validation": {
+    "independent_mac_release": {
+      "total": 380,
+      "passed": 364,
+      "skipped": 16
+    },
+    "reading_synthetic_tests": {
+      "total": 47,
+      "passed": 47,
+      "new_login_tests": 6
+    },
+    "real_read_only_cli_operations": 6,
+    "model_generation_calls": 0,
+    "platform_content_mutations": 0
+  },
+  "login": {
+    "official_protocol": "folocli 0.0.5 browser-login.ts and client.ts",
+    "official_web_origin": "https://app.folo.is",
+    "official_api_origin": "https://api.folo.is",
+    "loopback_ephemeral_callback": true,
+    "nonce_host_and_single_callback_checks": true,
+    "session_verified": true,
+    "credential_storage": "OS keychain",
+    "plaintext_cli_config_read_or_written": false,
+    "browser_cookies_extracted": false,
+    "initial_failures": "Default Python User-Agent received HTTP 403; explicit PersonalAsis User-Agent restored HTTP 200. Official percent-decoding normalization retained. Failed flows did not save credentials."
+  },
+  "live_reads": {
+    "subscription_list_returned": 38,
+    "timeline_visible_page_received": 3,
+    "collection_visible_page_received": 0,
+    "cached_items": 3,
+    "cached_content_kinds": {
+      "metadata_only": 2,
+      "feed_content": 1
+    },
+    "single_entry_detail_succeeded": true,
+    "cursor_resume": {
+      "first_page_received": 1,
+      "second_page_received": 1,
+      "cursor_advanced": true,
+      "duplicate_cache_items_created": false
+    },
+    "specific_cached_item_found_in_local_search": true,
+    "complete_account_history": false,
+    "full_original_text_guaranteed": false
+  },
+  "deployment": {
+    "status": "active",
+    "mac_index_running": true,
+    "mac_pa1_running": true,
+    "tunnel_running": true,
+    "original_interpreters_retained": true,
+    "rollback_retained": true,
+    "source_configuration_unchanged": true,
+    "model_policy_unchanged": true,
+    "vps_updated": false,
+    "historical_unknown_reservations": {
+      "count": 2,
+      "tokens": 5688
+    }
+  },
+  "boundaries": {
+    "folo_account_access": "enabled",
+    "zhihu_account_access": "deferred",
+    "xiaohongshu_account_access": "deferred",
+    "other_source_items": 0,
+    "wechat_requested": false,
+    "new_model_or_remote_grants": false,
+    "source_data_in_git": false,
+    "raw_responses_or_tokens_in_logs": false,
+    "background_work_enabled": false
+  },
+  "remaining": [
+    "Collection endpoint returned no items; populated-collection paging is not live-verified",
+    "Timeline visible results do not establish complete account history",
+    "Feed content may be a summary; no full-original guarantee",
+    "Model/remote source grants and channel selection remain separate and unconfigured",
+    "Zhihu and XiaoHongShu login remain subsequent steps"
+  ]
+}

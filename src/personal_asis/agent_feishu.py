@@ -13,6 +13,9 @@ from .work import encoded, fingerprint
 
 def summary(view):
     value=view['result']
+    if value.get('kind')=='retrieval_v2':
+        from .retrieval_channel import summary as retrieval_summary
+        return retrieval_summary(value)
     if value.get('kind')=='domain_context':
         from .agent_roles import LABELS
         return LABELS[value['domain']]+' · 已保存的领域目标\n'+(value.get('goal') or '尚未保存目标。')+'\n约束：'+(value.get('constraints') or '无')+'\n未调用模型。'
@@ -60,7 +63,7 @@ class AgentInbox:
         if not b.authorized(platform,owner):
             raise ProtocolError('unauthorized',403)
         task=str(uuid.uuid5(uuid.NAMESPACE_URL,f'asis-agent-command:{platform}:{owner}:{message}'))
-        if action in ('run','context'):
+        if action in ('run','context','retrieve'):
             target_id=str(uuid.uuid5(uuid.NAMESPACE_URL,f'asis-agent-work:{platform}:{owner}:{message}'))
         digest=fingerprint([platform,owner,message,action,target_id,query,source_ids])
         if mode is not None:

@@ -1,0 +1,83 @@
+{
+  "date": "2026-10-18",
+  "method": "agent-reach GitHub route via gh api; pinned tree and actual source/license reads",
+  "code_copied": false,
+  "repositories": [
+    {
+      "repository": "VectifyAI/PageIndex",
+      "commit": "f0db746b661d6f514e9d76c9eca6c4a8abe9c05b",
+      "branch": "main",
+      "license": "MIT",
+      "read_files_sha256": {
+        "LICENSE": "bca9c3d401fdfd0965a2a2224f7dcf9945b512eaf5802b91d312ba739dbe9584",
+        "pageindex/page_index_classic.py": "59743a138b818e435ba4d6c31cc9b7101a78dc61e627eb63c5b6b8ee67823090",
+        "pageindex/page_index_md.py": "62c8d3acfb51476e7dc1226f4346fec201a31cb64c47fe922593c06b4dc30b27"
+      }
+    },
+    {
+      "repository": "khoj-ai/khoj",
+      "commit": "ae229ca894c0b80ad84664afcfdde523b5e87057",
+      "branch": "master",
+      "license": "AGPL-3.0",
+      "read_files_sha256": {
+        "LICENSE": "8486a10c4393cee1c25392769ddd3b2d6c242d6ec7928e1414efff7dfb2f07ef",
+        "src/khoj/processor/conversation/utils.py": "4cf3c97669088a4fb6ea8b81c117fc9ebb052eac4d7fb031b0f6713009a4bb12",
+        "src/khoj/search_type/text_search.py": "c1bbd0804b39b456e467065eb321eaa7e822e3a8f718d41aedd8bab30857308a"
+      }
+    },
+    {
+      "repository": "microsoft/graphrag",
+      "commit": "5faaaf4f5685fa2056fa8c3bf9342cb089f2942f",
+      "branch": "main",
+      "license": "MIT",
+      "read_files_sha256": {
+        "LICENSE": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+        "packages/graphrag/graphrag/query/structured_search/drift_search/search.py": "32870526eb655235a656b33bb954004c81c49b8146189d3d8bd627ec6a702416",
+        "packages/graphrag/graphrag/query/structured_search/global_search/search.py": "c201e86aa401452ab4b5eee25f439283b572e7148ab3d823bf555f68c495cd30",
+        "packages/graphrag/graphrag/query/structured_search/local_search/search.py": "bf83cd5154b93be491a3b6cde0813f8b29b52f75214b1b4f1d64f1a424041b7c"
+      }
+    },
+    {
+      "repository": "onyx-dot-app/onyx",
+      "commit": "40238683c9c77188087e66bf048bd9784b4a7d15",
+      "branch": "main",
+      "license": "MIT Expat outside ee; Onyx Enterprise License under ee",
+      "read_files_sha256": {
+        "LICENSE": "d4847240794058c7ac3cfdf8e5d528fe8b0edf15b32a96612ecb9b3e182092b7",
+        "backend/ee/LICENSE": "38099c15fbd2f7f63245cb24a147f8f4b51e84b17a79560b9f74e7bdd4211edd",
+        "backend/onyx/connectors/interfaces.py": "ba7a311320005d0475dca2a64e6c1cbd2bb0951e4f3ee997859face92eaa38a3",
+        "backend/onyx/connectors/models.py": "431b08dcd3dd8cbe8e9014adf8e394280a8b55ee7f19f6b36897b9adb4545715",
+        "backend/onyx/context/search/pipeline.py": "0b862107c72fdd06bede43c1d362e4c5a6c61f42dfcfc0f86ce73f78a887a2bd",
+        "backend/onyx/context/search/preprocessing/access_filters.py": "5b8b6b441787a36b40c21b5254097100a44f48f2d5ba69b74cfd53d231540935",
+        "backend/onyx/federated_connectors/federated_retrieval.py": "4cc8e7458df2b6c106b9495aefed4c88f8bea57f70ddff57fd0392c119cdcbfe",
+        "backend/onyx/indexing/chunking/document_chunker.py": "ebeaf21ae779d75977955c8f4d30a7476df086920688c6898f2b406eda2295ab",
+        "backend/onyx/tools/tool_implementations/search/search_tool.py": "2ce3e3a3420c03010035b27ff871b65c82ae097e7f8067633121b79fe7fa2ed4"
+      }
+    },
+    {
+      "repository": "tobi/qmd",
+      "commit": "86d2365d17fc682e491c2c53d1e4a884aee8682a",
+      "branch": "main",
+      "license": "MIT",
+      "read_files_sha256": {
+        "DESIGN.md": "6604b36061b81df9dd636f29608b642688e8f021f9b65f73297ff181e45053f9",
+        "LICENSE": "24c446836e7e2cdea13a914de10c88c553e6297366061ba24013b8ce73c8f7fa",
+        "src/llm.ts": "3a06fe70cc6c6a56c12aa711af4b17fef207fad1b268b9761376b2d55db4bada",
+        "src/store.ts": "8260c1b639b874dc3aba247e862c954e76d31c7f0363f8b84f285e40ec14cf41"
+      }
+    },
+    {
+      "repository": "vibrantlabsai/ragas",
+      "commit": "298b68274234c060deacab3cf5fb52aa3a20e885",
+      "branch": "main",
+      "license": "Apache-2.0",
+      "read_files_sha256": {
+        "LICENSE": "664b930830f291c2936ab30bcd6ef9ca6c9c7384cc475ae0c526156a27d5a6c6",
+        "src/ragas/metrics/_answer_relevance.py": "f7d515ec78522ab48d5aa3212e875e15e1fb3163bae7c0f31637262fd3ef3c25",
+        "src/ragas/metrics/_context_precision.py": "baaf3981986602754ccbaef2936b6ac8e6d6551cab86477e64170683d74a4716",
+        "src/ragas/metrics/_context_recall.py": "154a260678839c3f3d7dcf15f38820e36a3514b492245fdc899e93b946554ada",
+        "src/ragas/metrics/_faithfulness.py": "5370b57f3df537a1619f7c6ddeeb5fd67e392821a5dee30eb5e0830f3a75cdc9"
+      }
+    }
+  ]
+}

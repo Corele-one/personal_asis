@@ -1,0 +1,66 @@
+{
+  "date": "2026-10-15",
+  "release": "reading-sources-311c9f3870b96a0f",
+  "source_digest": "311c9f3870b96a0fb4bbc11c70dc75b5d98234386300adff959cca676f208f23",
+  "scope": "First WUCAI/Folo read-only protocol adapters and local cache/index integration; real accounts not connected",
+  "validation": {
+    "independent_mac_release": {"total": 357, "passed": 341, "skipped": 16},
+    "reading_synthetic_tests": {"total": 24, "passed": 24},
+    "initial_sandbox_run": "14 loopback-bind PermissionErrors; rerun with existing production interpreter and local-port permission passed",
+    "official_wucai_api_code_read": true,
+    "official_folo_cli_source_read": true,
+    "folo_source_package_version": "0.0.5",
+    "folo_published_npm_version_verified": false,
+    "folo_cli_installed": false,
+    "folo_registry_failure": "ECONNRESET / TLS connection failure",
+    "protocol_payloads": "synthetic; actual WUCAI response field mappings and Folo SDK output remain unverified",
+    "model_generation_calls": 0
+  },
+  "synthetic_checks": [
+    "Read-only operation allowlist; fixed official hosts; token absent from argv and output",
+    "Separate author text, user highlights and annotations, with excerpt attribution",
+    "WUCAI inclusive 14-day date windows and bounded historical continuation",
+    "Folo collection cursor retained rather than derived from publication date",
+    "Page limits, duplicate/stuck/unknown cursors, failures and durable continuation",
+    "Metadata discovery does not cache feed bodies or erase/refill a fetched-body lease",
+    "Unclassified data remains private; local classification does not grant cloud or remote permissions",
+    "PA1 groups matching original URLs as one evidence source",
+    "Expiry denies stale indexed evidence before cleanup; personal selections remain eligible",
+    "Credential content exclusion invalidates old cached content",
+    "Local forget prevents silent refetch; revoke removes cached files and denies reuse",
+    "Explicit file-scoped model grant, provenance revalidation and stale-bundle rejection",
+    "Semantic chunks exclude generated source/link metadata"
+  ],
+  "deployment": {
+    "status": "active",
+    "mac_pa0": "reading-sources-311c9f3870b96a0f",
+    "mac_pa1": "reading-sources-311c9f3870b96a0f",
+    "original_interpreters_retained": true,
+    "rollback_retained": true,
+    "vps_updated": false,
+    "mac_index_running": true,
+    "mac_pa1_running": true,
+    "first_attempt": "launchctl bootstrap failed after bootout; original source configuration and plists restored; original services recovered",
+    "retry": "same independently validated release; existing installer-style bootstrap retries and running-state polling; succeeded",
+    "model_policy_unchanged": true,
+    "historical_unknown_reservations": {"count_before": 2, "count_after": 2, "tokens_before": 5688, "tokens_after": 5688}
+  },
+  "production_metadata_probe": {
+    "checked_at": "2026-10-15T15:19Z",
+    "wucai": {"region": "cn", "configured": true, "credential": "missing", "items": 0, "syncs": 0},
+    "folo": {"configured": true, "credential": "missing", "items": 0, "syncs": 0},
+    "existing_sources": {"study": {"ready": true, "documents": 267}, "life": {"ready": true, "documents": 182}},
+    "live_external_account_requests": 0,
+    "source_remote_permissions_granted": false,
+    "source_model_permissions_granted": false,
+    "background_work_enabled": false
+  },
+  "remaining": [
+    "User enters WUCAI CN token locally; verify real schema, membership errors, page cursors and bounded coverage",
+    "Install official Folo CLI, user authentication and actual timeline/collection/detail verification",
+    "Explicit per-item classification and applicable provider/channel policies before real model or remote use",
+    "Zhihu, XiaoHongShu and independent WeChat source adapters",
+    "Platform deletion/selection-removal synchronization, continuing schedules and approved automatic selection",
+    "New worker unattended sleep/reboot and real domain quality acceptance"
+  ]
+}

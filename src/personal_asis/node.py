@@ -40,7 +40,7 @@ def policy_hash(config):
     # Includes roots/exclusions and source enable flags so revocations invalidate caches.
     data = [(s.id, str(s.root), s.policy, s.index, s.remote_metadata, s.private_remote_metadata,
              s.exclude, s.private_paths, s.remote_metadata_paths, s.formats, s.remote_evidence,
-             s.private_remote_evidence) for s in config.sources]
+             s.private_remote_evidence, s.reading_cache) for s in config.sources]
     return hashlib.sha256(json.dumps(data, sort_keys=True).encode()).hexdigest()
 
 

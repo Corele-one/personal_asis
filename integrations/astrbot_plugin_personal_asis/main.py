@@ -18,7 +18,7 @@ from personal_asis.coordinator import ProtocolError
 from personal_asis.pwa import settings
 
 
-@register("personal_asis", "Personal Asis", "资料搜索、证据分析与卡片助手", "0.7.0")
+@register("personal_asis", "Personal Asis", "资料搜索、证据分析与卡片助手", "0.8.0")
 class PersonalAsis(Star):
     def __init__(self, context: Context):
         super().__init__(context)
@@ -199,6 +199,19 @@ class PersonalAsis(Star):
                     for route, view, digest in self.bridge.pending():
                         if route["task_id"] == task_id:
                             await self.bridge.deliver(route, view, digest, self.send)
+            elif action=='retrieve-v2':
+                source,separator,query=argument.partition('|')
+                sources=source.strip().split(',')
+                if not separator or not source.strip() or any(not s or s.strip()!=s for s in sources) or not query.strip():
+                    await self.reply(event,'用法：/asis retrieve-v2 study | 缓存一致性。只读词法实验，不调用模型；来源可为 study、life 或 study,life。')
+                    return
+                receipt=self.bridge.agent.submit(platform,sender,event.message_obj.message_id,'retrieve',
+                    query=query.strip(),source_ids=sources)
+                route={'task_id':str(uuid.uuid5(uuid.NAMESPACE_URL,'asis-retrieval-ack:'+receipt['request_id'])),
+                       'platform_id':platform,'open_id':sender,'message_id':event.message_obj.message_id}
+                view={'kind':'retrieval_receipt','submitted':receipt['submitted']}
+                async with self.lock:
+                    await self.bridge.deliver(route,view,receipt['request_id'],self.send)
             elif action in {'agent','助手','agent-status','助手状态','pause','暂停','stop','停止','resume','恢复','cancel','取消'}:
                 operation={'agent':'run','助手':'run','agent-status':'status','助手状态':'status',
                            'pause':'pause','暂停':'pause','stop':'pause','停止':'pause',
