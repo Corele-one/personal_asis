@@ -4,6 +4,8 @@
 
 ## 项目目标与当前状态
 
+2026-10-18最新运行续验：Mac PA0／PA1与VPS已发布 `web-live-cfb5d209d8b32103`。显式本人 `/asis web-deepseek 公开词 | 问题` 使用用户选定DeepSeek公开搜索／正文快照、本机HTTPS／DNS／跳转校验和原MiMo一次JSON生成；普通角色、PA0／PA1默认检索和旧付费输入不变。Exa真实路径与DeepSeek→MiMo引用通过，Jina匿名401未通过且保留静态降级；无新增账户模型／渠道披露或后台调度。Mac501项＝482通过＋19跳过，VPS核心501项＝334通过＋167跳过，实际SDK／加密通道／DeepSeek31项通过。新v3纯公开由Host预检索，旧v1/v2按保存协议恢复，不依赖MiMo不支持的强制工具选择。详见[当前联网发布](docs/web-search-live-deployment.md)。下文较早发布、数量与验证限制保留其日期范围。
+
 构建基于个人资料、能够跨设备持续工作的个人助手，覆盖资料检索、研究生申请与职业选择、饮食、作息和心理状态复盘。以“记录 → 复盘 → 用户选择行动 → 反馈”形成持续改进。
 
 PA0 已于 2026-10-14 按 Mac 单节点范围完成七项功能验收及真实休眠／自动恢复验证，见 [最终验收](docs/pa0-acceptance.md)。当前为 Mac 本机索引、VPS 协调、飞书及 IP HTTPS PWA；验收快照为 Study 267、Life 181，共 448 个 Markdown。正文按独立许可经加密中转，私密阅读使用另有的 `private_remote_evidence` 检查；实际发布与验收见 [持续授权](docs/private-data-authority.md)。ROG 已退出运行及维护范围，旧索引、原文件与备份保留。

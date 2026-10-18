@@ -77,6 +77,26 @@ class AstrBotPluginTests(unittest.TestCase):
         self.assertTrue(event.call_llm)
         self.assertEqual(self.sent, [])
 
+    def test_public_web_command_passes_only_explicit_public_scope(self):
+        self.bind()
+        self.plugin.bridge.agent.submit=Mock(return_value={'request_id':'request','target_id':'target','submitted':True})
+        event=Event('/asis web SQLite WAL official documentation | 简述读写并发并引用原文')
+        asyncio.run(self.plugin.on_message(event))
+        call=self.plugin.bridge.agent.submit.call_args
+        self.assertEqual(call.kwargs['source_ids'],['public_web'])
+        self.assertEqual(call.kwargs['public_queries'],['SQLite WAL official documentation'])
+        self.assertTrue(call.kwargs['web'])
+        self.assertEqual(len(self.sent),1)
+
+    def test_deepseek_web_command_selects_backend_without_model_switch(self):
+        self.bind()
+        self.plugin.bridge.agent.submit=Mock(return_value={'request_id':'request','target_id':'target','submitted':True})
+        asyncio.run(self.plugin.on_message(Event('/asis web-deepseek SQLite WAL | 说明公开概念并引用')))
+        call=self.plugin.bridge.agent.submit.call_args
+        self.assertEqual(call.kwargs['web_backend'],'deepseek')
+        self.assertEqual(call.kwargs['source_ids'],['public_web'])
+        self.assertNotIn('mode',call.kwargs)
+
     def test_authorized_search_is_persisted_without_model_or_duplicate_send(self):
         self.bind()
         event = Event("/asis search 芯片")

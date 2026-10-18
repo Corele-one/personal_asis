@@ -1,5 +1,7 @@
 # 信息来源接入讨论
 
+2026-10-18联网续验：用户选择并本机录入DeepSeek Key，公开Search＋正文快照／本机校验＋MiMo引用已通过，发布 `web-live-cfb5d209d8b32103`；Exa真实查询可用，Jina匿名401仍未通过。仅公开查询与公开目标域名发送给搜索／DoH，不发个人原问题；Key在Mac钥匙串，不上VPS。此Provider不增加WUCAI/Folo/小红书的模型／远程许可，三账户仍未分类、仍按原边界。任意URL的DeepSeek Fetch未启用。当前记录见[真实联网续验](web-search-live-deployment.md)。
+
 ## 2026-10-18 分层状态核对
 
 同日联网增量核对（未部署）：三账户仍 enabled，Keychain 凭据可取，仅说明凭据存在；未重读真实私人正文或重验登录有效性。WUCAI/Folo/小红书缓存仍24／9／8，MiMo providers与远程元数据／正文许可均为空。新[账户按需正文入口与 Web Provider](web-search-integration.md)已经在 checkout 串接：明确 item 经现有只读 detail→缓存／索引→V2归属正确 Chunk；模型、渠道分别过滤，默认不自动分类或新增许可。纯只读 V2 渠道不再额外要求 MiMo许可，实际展示仍须渠道与私密阅读授权；未部署，不能当作当前飞书已通。知乎不推进。

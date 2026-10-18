@@ -148,7 +148,7 @@ class AnalysisRelay(Relay):
 
 def validate_result(home,result,channel='pwa'):
     """Revalidate actual evidence before disclosure, independently of cached model output."""
-    if result.get('tools_protocol')=='agent-web-v1':
+    if result.get('tools_protocol') in ('agent-web-v1','agent-web-v2','agent-web-v3'):
         if channel not in ('pwa','feishu'):
             raise ValueError('context_channel_denied')
         from .agent_web import MixedBundle

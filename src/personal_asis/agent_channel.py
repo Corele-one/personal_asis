@@ -39,9 +39,17 @@ class AgentRelay(AnalysisRelay):
             del self.jobs[key]
 
     def request(self, data):
-        exact({k:v for k,v in data.items() if k not in ('mode','use_context','role_history','context')}, ('request_id','target_id','action','query','source_ids','channel','client_nonce','public_key'))
+        exact({k:v for k,v in data.items() if k not in ('mode','use_context','role_history','context','web','public_queries','web_backend')}, ('request_id','target_id','action','query','source_ids','channel','client_nonce','public_key'))
         if data['channel'] not in ('pwa','feishu') or data['action'] not in ('run','status','pause','resume','cancel','context','retrieve'):
             raise ProtocolError('invalid_agent_action')
+        if set(data)&{'web','public_queries','web_backend'}:
+            if data['action']!='run' or data.get('web') is not True or not isinstance(data.get('public_queries'),list) or set(data)&{'mode','use_context','role_history','context'}:
+                raise ProtocolError('agent_invalid_web_options')
+            try:
+                from .agent_web import policy
+                policy(data['public_queries'],data.get('web_backend','exa'))
+            except ValueError:
+                raise ProtocolError('agent_invalid_web_public_queries') from None
         try:
             if str(uuid.UUID(data['target_id']))!=data['target_id']:
                 raise ValueError()
@@ -109,7 +117,7 @@ class AgentRelay(AnalysisRelay):
                     keys=('request_id','target_id','action','query','source_ids','channel',
                           'client_nonce','public_key','lease')
                     return {'job':{**{k:value[k] for k in keys},
-                        **{k:value[k] for k in ('mode','use_context','role_history','context') if k in value},
+                        **{k:value[k] for k in ('mode','use_context','role_history','context','web','public_queries','web_backend') if k in value},
                         'remaining_seconds':max(0,value['expires']-self.clock())}}
             return {'job':None}
 
@@ -269,8 +277,8 @@ class AgentWorker:
         try:
             if job['action']=='run':
                 self.executor(self.home,job['query'],job['target_id'],job['source_ids'],
-                              channel=job['channel'],before_step=check_deadline,bootstrap=True,
-                              **{k:job[k] for k in ('mode','use_context','role_history') if k in job})
+                              channel=job['channel'],before_step=check_deadline,bootstrap=not job.get('web',False),
+                              **{k:job[k] for k in ('mode','use_context','role_history','web','public_queries','web_backend') if k in job})
             else:
                 self.executor(self.home,None,job['target_id'],resume=True,
                               channel=job['channel'],before_step=check_deadline,bootstrap=True)

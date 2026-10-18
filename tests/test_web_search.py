@@ -7,7 +7,8 @@ import unittest
 from unittest.mock import patch
 
 from personal_asis.web_search import (ExaJinaProvider, InertHTML, PublicHTTP, WebError,
-                                     bounded_process, parse_exa, public_addresses, public_query, url_shape)
+                                     bounded_process, parse_exa, public_addresses, public_query, url_shape, resolve)
+from personal_asis.credentials import CredentialNotFound
 
 
 class Response:
@@ -34,6 +35,33 @@ class Connection:
 
 
 class WebSearchTests(unittest.TestCase):
+    def setUp(self):
+        p=patch('personal_asis.credentials.CredentialStore.get',side_effect=CredentialNotFound())
+        p.start();self.addCleanup(p.stop)
+
+    def test_only_proxy_benchmark_answers_use_pinned_public_doh(self):
+        answer={'Status':0,'Question':[{'name':'example.org.','type':1}],
+                'Answer':[{'type':1,'data':'8.8.4.4'}]}
+        with patch('personal_asis.web_search.bounded_process',side_effect=[b'["198.18.0.1","2001:2::1"]',json.dumps(answer).encode()]) as run:
+            self.assertEqual(resolve('example.org'),['8.8.4.4'])
+            self.assertIn('dns.google:443:8.8.8.8',run.call_args.args[0])
+        with patch('personal_asis.web_search.bounded_process',return_value=b'["127.0.0.1","198.18.0.1"]') as run:
+            with self.assertRaises(WebError):public_addresses('https://example.org/')
+            self.assertEqual(run.call_count,1)
+
+    def test_doh_question_mismatch_or_private_answer_rejected(self):
+        for name,ip in [('evil.example','8.8.8.8'),('example.org.','127.0.0.1')]:
+            answer={'Status':0,'Question':[{'name':name,'type':1}], 'Answer':[{'type':1,'data':ip}]}
+            with patch('personal_asis.web_search.bounded_process',side_effect=[b'["198.18.0.1"]',json.dumps(answer).encode()]):
+                with self.assertRaises(WebError):public_addresses('https://example.org/')
+
+    def test_reader_credential_stays_at_fixed_post_endpoint_and_no_redirect(self):
+        for url,body in [('https://example.org/',b'{}'),('https://r.jina.ai/',None)]:
+            with self.assertRaises(WebError):PublicHTTP().request(url,body=body,credential='SYNTHETIC')
+        http,calls=self.http([Response(307,{'Location':'https://example.org/'})])
+        with self.assertRaises(WebError):http.request('https://r.jina.ai/',body=b'{}',credential='SYNTHETIC')
+        self.assertEqual(len(calls),2)
+        self.assertEqual(calls[1][1]['headers']['Authorization'],'Bearer SYNTHETIC')
     def http(self, responses, resolver=lambda h: ['8.8.8.8']):
         calls = []
         def connect(*args):

@@ -35,6 +35,8 @@
 
 ## 既有约束与当前事实
 
+2026-10-18真实联网续发：已部署[公开v3路径](web-search-live-deployment.md)到Mac／VPS。明确纯公开工作先由Host按批准词搜索／本机校验正文，再调用一次MiMo；本地／联合实验仍可走三工具循环，普通专业角色和历史payload不变。DeepSeek为用户选定的公开检索Provider，不替换MiMo；Jina匿名401仍降级。VPS仍不持有API Key或工作数据库，未增加常驻服务。完整检索Gate、账户自主Live、角色联网仍未交付。
+
 2026-10-18 检索审计：生产 PA1／Pi 仍沿用文档融合、Top-3 单行 Bundle 与 `search_notes`；外部连接器在工作区及现有发布中已接入，不能把下列 2026-10-13 候选描述当作当前未接入结论。分层状态见[信息来源](information-sources.md)。
 
 新增的 [Retrieval & Context Layer](retrieval-v2.md) 是独立本机实验路径：当前实现来源／版本过滤 → Chunk lexical/semantic → RRF 与原始精确保护 → 可控邻段展开／预算 Bundle → 归属、位置与权限重核。它不修改 Pi 工具声明、历史输入序列化、付费指纹、MiMo 预算或 work.sqlite3。来源仍是权威，VPS 不持有该索引。

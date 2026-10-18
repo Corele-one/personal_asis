@@ -1,5 +1,15 @@
 # 个人助手完成情况
 
+## 2026-10-18 真实联网续验与发布
+
+已发布 `web-live-cfb5d209d8b32103` 到现有Mac／VPS，Mac PA0／PA1和VPS协调／PWA／AstrBot运行。新增本人纯公开 `/asis web-deepseek 公开词 | 问题` 与 `/asis web 公开词 | 问题`；MiMo仍为原模型与预算。DeepSeek只发批准查询、不发个人原问题；正文快照须本机HTTPS／DNS／跳转校验后才能引用；未启用远端任意URL Fetch。v3纯公开由宿主先检索阅读再一次JSON生成，普通角色／旧会话不切换。
+
+真实Exa查询、Exa＋静态正文＋MiMo引用通过（3,561 Token，原付费结果格式归一化恢复新增0）；Jina真实401未通过，用户改选已有Key的DeepSeek。DeepSeek＋正文＋本机校验＋MiMo通过（1,362 Token，重复0），局限明确为论坛片段而非完整官方文档。未调用工具而伪造E1、输出到顶、HTTP锚点过滤等负例与计费均保留，不自动重做失败工作。Source／模型配置未变，DeepSeek Key只存Mac钥匙串，旧两笔未知模型预留不动。
+
+Mac checkout／独立包501项＝482通过＋19跳过；VPS核心501项＝334通过＋167跳过；实际SDK／加密检索／DeepSeek专项31项通过。生产加密v3结果探针通过，0新增Token；真实飞书消息／手机UI仍待用户验证。没有新增账户模型／渠道披露、私密来源联网、后台调度或完整检索Quality Gate验收。详见[真实联调部署](web-search-live-deployment.md)及[本轮记录](validation/web-search-live-20261018.json)。以下初始切片的“未部署”保留原验收范围。
+
+部署后生产通道新建真实公开工作也通过：DeepSeek搜索／阅读各1次、MiMo1次、supported引用[E1]，1,395 Token；本轮总计9,469 Token包含已知失败收费，旧未知预留2笔不动。没有发飞书测试消息。
+
 ## 2026-10-18 联网增量：checkout 已实现，未部署
 
 新显式 `agent-web-v1` 支持 V2 `search_notes`、Exa结构化 `search_web`、本机安全读取＋Jina惰性HTML `fetch_web`、独立公开 Evidence 与原预算 MiMo 引用校验。旧工具、付费恢复、默认会话、预算及生产包不变。公开查询白名单、DNS固定／重定向限制、读搜与网络耗时上限、网络费用未知回执及防重已实现。实际 Pi＋模拟 Provider 闭环通过；真实 Exa 搜索、Jina转换、MiMo新协议、质量和飞书 UI 尚未验收。完整数量与环境跳过见[本轮记录](validation/web-search-20261018.json)。

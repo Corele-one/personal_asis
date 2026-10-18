@@ -169,9 +169,13 @@ def main(argv=None):
     p.add_argument("--synthetic-only", action="store_true", help="恢复仅合成资料限制")
     p.add_argument("--live", action="store_true", help="合成资料真实 API 联调；需显式请求编号")
     p.add_argument("--request-id")
+    p = commands.add_parser('web',help='公开Reader凭据，仅在本机终端隐藏输入')
+    p.add_argument('action',choices=['key'])
+    p.add_argument('--provider',choices=['jina','deepseek'],default='jina')
     p = commands.add_parser('agent', help='本机按需 Pi/MiMo、持久恢复与合成验证；不启用后台委托')
     p.add_argument('--web',action='store_true',help='新建独立 web-v1 工具会话；恢复自动沿用保存协议')
     p.add_argument('--public-query',action='append',help='单独批准的公开查询；可重复最多三条，禁止私密片段')
+    p.add_argument('--web-backend',choices=['exa','deepseek'],help='仅新建 --web 会话选择检索Provider，MiMo生成模型不变')
     p.add_argument('action', choices=['validate','run','resume','status','self-test','provider-status'])
     p.add_argument('--probe',action='store_true',help='仅读取 /models 验证连接和模型列表，不调用生成接口')
     p.add_argument('--query')
@@ -335,6 +339,15 @@ def main(argv=None):
                                        args.item_id if args.action == 'forget' else None)
             emit(result)
             return 1 if result.get('status') == 'failed' else 0
+        elif args.command == 'web':
+            if not sys.stdin.isatty():
+                raise ValueError('web_key_requires_owner_terminal')
+            from .credentials import CredentialStore
+            secret=getpass.getpass(args.provider+' API Key（隐藏输入，仅存Mac系统钥匙串）: ').strip()
+            if not secret or not secret.isascii() or any(ord(c)<33 or ord(c)>126 for c in secret):
+                raise ValueError('web_invalid_key')
+            CredentialStore(args.provider,'local.personal-asis.web').set(secret)
+            result={'provider':args.provider,'key_stored':True,'credential_location':'os_keychain'}
         elif args.command == 'agent':
             if args.action=='validate':
                 from .runtime_validation import validate
@@ -355,7 +368,7 @@ def main(argv=None):
             else:
                 result=execute(home,args.query,args.request_id,args.source,
                                resume=args.action=='resume',step_limit=args.steps,domain=args.domain,with_history=args.with_history,mode=args.mode,use_context=args.use_context,role_history=args.role_history,
-                               web=args.web,public_queries=args.public_query)
+                               web=args.web,public_queries=args.public_query,web_backend=args.web_backend)
         elif args.command=='domain':
             from .domain_context import DomainContexts
             if args.action!='list' and not args.domain:

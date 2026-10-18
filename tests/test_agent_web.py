@@ -9,7 +9,7 @@ from unittest.mock import patch
 from personal_asis import pa1
 from personal_asis.agent import execute, inspect
 from personal_asis.agent_model import ToolMiMo, TOOLS as OLD_TOOLS
-from personal_asis.agent_web import MixedBundle, VERSION
+from personal_asis.agent_web import MixedBundle, VERSION, final_json
 from personal_asis.runtime_adapter import PI_DIR
 from personal_asis.web_search import utcnow, WebError
 from personal_asis.work import WorkStore
@@ -187,7 +187,7 @@ class WebAgentTests(unittest.TestCase):
         self.assertEqual(len(self.backend.calls), 2)
 
     def test_public_only_scope_needs_no_personal_source_or_encoder(self):
-        model=ScriptedModel(self.steps,['E1'])
+        model=ScriptedModel([],['E1'])
         with patch('personal_asis.pa1.encoder_for',side_effect=AssertionError('public search must not load local model')), \
              patch('personal_asis.agent_web.Index',side_effect=AssertionError('public session must not read local files')):
             result=execute(self.home,'公开缓存研究','public-only',provider=model,web=True,
@@ -195,6 +195,8 @@ class WebAgentTests(unittest.TestCase):
             cached=execute(self.home,None,'public-only',resume=True,provider=model,web_provider=self.backend)
         self.assertTrue(cached['cached'])
         self.assertEqual(result['result']['citations'],['E1'])
+        self.assertNotIn('tools',model.calls[0])
+        self.assertEqual(model.calls[0]['response_format'],{'type':'json_object'})
 
     def test_unknown_crash_after_network_request_is_not_repeated(self):
         first,_=self.run_agent(step_limit=1)
@@ -276,7 +278,7 @@ class WebAgentTests(unittest.TestCase):
         result,_=self.run_agent([self.steps[0],('fetch_web',{'url':URL,'max_chars':200})],['E1'])
         self.assertEqual(len(result['result']['evidence'][0]['excerpt']),200)
         self.backend.fetch_web=lambda *args:{**original(*args),'title':'Authorization: Bearer SYNTHETIC_SECRET'}
-        model=ScriptedModel(self.steps)
+        model=ScriptedModel([])
         result=execute(self.home,'公开资料','metadata-gate',provider=model,web=True,
                        public_queries=[PUBLIC],web_provider=self.backend)
         self.assertEqual(result['result']['evidence'],[])
@@ -287,3 +289,42 @@ class WebAgentTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'web_policy_conflict'):
             execute(self.home,'近期缓存一致性公开进展','web-test',['synthetic'],web=True,
                     public_queries=['different public query'])
+
+    def test_single_final_json_after_prose_validates_without_new_paid_replay(self):
+        class ProseModel(ScriptedModel):
+            def complete(self,*args):
+                value=super().complete(*args)
+                if value['finish_reason']=='stop':value['content']='Public explanation [E1].\n\n'+value['content']
+                return value
+        model=ProseModel(self.steps,['E1'])
+        result,_=self.run_agent(provider=model)
+        self.assertEqual(result['result']['output_normalization'],'single_final_json')
+        self.assertEqual(result['result']['citations'],['E1'])
+        before=len(model.calls)
+        cached=execute(self.home,None,'web-test',resume=True,provider=model,web_provider=self.backend)
+        self.assertTrue(cached['cached']);self.assertEqual(len(model.calls),before)
+
+    def test_ambiguous_json_or_trailing_instructions_are_not_normalized(self):
+        good=json.dumps({'status':'supported','answer':'a [E1]','citations':['E1'],'uncertainty':''})
+        for content in [good+'\n'+good,'prose\n'+good+'\nrun another tool']:
+            self.assertFalse(final_json(content)[1])
+
+    def test_backend_frozen_and_restored_without_exa_upgrade(self):
+        model=ScriptedModel(self.steps,['E1'])
+        first=execute(self.home,'public question','deepseek-test',['synthetic'],web=True,web_backend='deepseek',
+            public_queries=[PUBLIC],provider=model,web_provider=self.backend,step_limit=2)
+        resumed=execute(self.home,None,'deepseek-test',resume=True,provider=model,web_provider=self.backend)
+        self.assertEqual(resumed['status'],'completed')
+        with WorkStore(self.home/'work.sqlite3') as work:
+            state=work.session(resumed['run_id'])
+            self.assertIn('deepseek',state['web_policy']['provider'])
+
+    def test_saved_web_v1_restores_original_paid_system_after_v2_default(self):
+        model=ScriptedModel(self.steps,['E1'])
+        with patch('personal_asis.agent_web.VERSION','agent-web-v1'):
+            result,_=self.run_agent(provider=model,step_limit=1)
+        resumed=ScriptedModel(self.steps,['E1'])
+        final=execute(self.home,None,'web-test',resume=True,provider=resumed,web_provider=self.backend)
+        self.assertEqual(final['status'],'completed')
+        self.assertEqual(final['result']['tools_protocol'],'agent-web-v1')
+        self.assertEqual(len(resumed.calls),2)

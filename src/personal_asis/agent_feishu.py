@@ -58,7 +58,7 @@ class AgentInbox:
         with bridge.db:
             bridge.db.execute('DELETE FROM agent_routes WHERE created<?',(bridge.clock()-180*86400,))
 
-    def submit(self, platform, owner, message, action, *, target_id=None, query=None, source_ids=None, mode=None, reply_message_id=None, defer_transport=False, use_context=None, role_history=None, context=None):
+    def submit(self, platform, owner, message, action, *, target_id=None, query=None, source_ids=None, mode=None, reply_message_id=None, defer_transport=False, use_context=None, role_history=None, context=None, web=None, public_queries=None, web_backend=None):
         b=self.bridge
         if not b.authorized(platform,owner):
             raise ProtocolError('unauthorized',403)
@@ -68,7 +68,8 @@ class AgentInbox:
         digest=fingerprint([platform,owner,message,action,target_id,query,source_ids])
         if mode is not None:
             digest=fingerprint([digest,mode])
-        options={k:v for k,v in {'use_context':use_context,'role_history':role_history,'context':context}.items() if v is not None}
+        options={k:v for k,v in {'use_context':use_context,'role_history':role_history,'context':context,
+                                'web':web,'public_queries':public_queries,'web_backend':web_backend}.items() if v is not None}
         if options:digest=fingerprint([digest,options])
         if reply_message_id is not None:
             if not isinstance(reply_message_id,str) or not 1<=len(reply_message_id)<=128:

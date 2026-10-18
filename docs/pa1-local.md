@@ -1,5 +1,9 @@
 # PA1 本机检索与模型分析
 
+## 当前真实联网发布
+
+现为 `web-live-cfb5d209d8b32103`。[真实续验](web-search-live-deployment.md)已覆盖Exa查询、可选DeepSeek Search正文、本机目标验证、MiMo引用及旧付费复用；Jina匿名401仍未通过。新纯公开 `agent-web-v3` 由Host按批准词先检索阅读，再一次JSON生成；不读旧笔记、不加Token上限。`scripts/asis web key --provider deepseek` 仅隐藏录入Mac钥匙串；`scripts/asis-agent run --web --web-backend deepseek ...` 或本人飞书 `/asis web-deepseek 公开词 | 问题` 显式使用。旧v1/v2、角色和默认PA1路径保持。下文未部署描述属于最初checkout阶段。
+
 ## 新联网实验与账户正文（2026-10-18，未部署）
 
 checkout 的 `scripts/asis-agent run --web --public-query '公开关键词' --query '问题' --request-id NEW_ID` 新建三工具版本；可选 `--source study` 做本地／公开联合检索，不加来源时仅公开。搜索白名单和 Provider 冻结在会话，恢复只加原 `--request-id`，不以新工具重放旧付费请求。本地检索懒加载既有 Embedding、不可用则词法；公开搜索失败返回缺口，Jina失败静态降级，严格非公网 DNS 拒绝，不回退到宽松代理放行。

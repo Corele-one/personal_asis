@@ -53,6 +53,15 @@ class AgentRelayTests(unittest.TestCase):
             with self.assertRaises(ProtocolError):
                 self.relay.request({**self.data,**change})
 
+    def test_new_web_options_are_explicit_frozen_and_not_valid_on_controls(self):
+        data={**self.data,'web':True,'public_queries':['SQLite WAL official documentation'],'source_ids':['public_web']}
+        self.relay.request(data)
+        job=self.relay.poll('mac','a'*64)['job']
+        self.assertTrue(job['web']);self.assertEqual(job['public_queries'],data['public_queries'])
+        for change in ({'web':False},{'public_queries':['我的私密日记']},{'mode':'research'},
+                       {'action':'resume','query':None,'source_ids':None}):
+            with self.assertRaises(ProtocolError):AgentRelay().request({**data,**change})
+
     def test_busy_node_accepts_controls_but_not_second_run_and_only_mac(self):
         self.relay.request(self.data)
         self.assertIsNone(self.relay.poll('rog','a'*64)['job'])
@@ -144,6 +153,19 @@ class AgentChannelTests(unittest.TestCase):
         self.assertEqual(len(self.provider.calls),2)
         self.assertEqual(self.send(self.command('status'))['state'],'completed')
         self.assertEqual(len(self.provider.calls),2)
+
+    def test_explicit_public_web_encrypted_path_has_no_local_bootstrap(self):
+        from test_agent_web import ScriptedModel,FakeWeb,PUBLIC,URL
+        self.provider=ScriptedModel([],['E1'])
+        backend=FakeWeb()
+        self.worker.executor=lambda *args,**kw:execute(*args,provider=self.provider,web_provider=backend,**kw)
+        data={**self.data,'source_ids':['public_web'],'web':True,'public_queries':[PUBLIC],
+              'query':'公开缓存一致性资料'}
+        result=self.send(data)
+        self.assertEqual(result['state'],'completed')
+        self.assertEqual(result['result']['evidence'][0]['kind'],'public_web')
+        self.assertEqual(result['result']['evidence'][0]['url'],URL)
+        self.assertEqual(result['result']['web_usage']['local_searches'],0)
 
     def test_domain_update_and_payload_cleanup_revoke_ready_ciphertext_on_next_poll(self):
         from personal_asis.domain_context import DomainContexts

@@ -1,5 +1,7 @@
 # 本机按需 Agent 与恢复
 
+2026-10-18当前发布 `web-live-cfb5d209d8b32103`：新增显式公开命令、DeepSeek可选Provider及[真实续验](web-search-live-deployment.md)。默认新联网会话为v3；纯公开先由Host执行批准词的发现／阅读，再一次MiMo JSON生成，规避实际观察到的auto工具跳过；混合来源仍可用三工具循环。旧web-v1/v2及原search_notes会话按保存字段／系统提示恢复。没有把真实输出失败当作未计费，也不重做未知调用；模型／Token上限未变。下列早期未部署／单工具说明按各自协议理解。
+
 当前交付总览见[项目完成情况](project-status.md)；本页保留该切片的范围与验收快照，最新串行角色／飞书卡片发布见[本轮记录](validation/agent-roles-20261015.json)。
 
 状态（2026-10-15 续验）：本机受控按需 CLI 已完成实际 MiMo Flash 合成工具闭环、跨进程恢复和零新增调用的重复结果验证；真实 Study 流程完成一次混合检索，在三条材料不足以支持结论时明确拒答。Mac 索引与 PA1 分析服务已发布 `agent-local-51e8faaa94990dbb`，保留原解释器与回退配置。本页验收时本人 PWA／飞书继续使用原按需分析路径；随后本人 PWA／飞书新增受控 Agent 和暂停／恢复／取消，见 [后续切片](agent-channels.md)。未启用后台委托。当前事实见 [续验记录](validation/agent-acceptance-20261015.json)，[早期失败](validation/agent-mimo-20261015.json)保留历史。

@@ -18,7 +18,7 @@ from personal_asis.coordinator import ProtocolError
 from personal_asis.pwa import settings
 
 
-@register("personal_asis", "Personal Asis", "资料搜索、证据分析与卡片助手", "0.8.0")
+@register("personal_asis", "Personal Asis", "资料搜索、证据分析与卡片助手", "0.9.0")
 class PersonalAsis(Star):
     def __init__(self, context: Context):
         super().__init__(context)
@@ -199,6 +199,18 @@ class PersonalAsis(Star):
                     for route, view, digest in self.bridge.pending():
                         if route["task_id"] == task_id:
                             await self.bridge.deliver(route, view, digest, self.send)
+            elif action in ('web','web-deepseek'):
+                public_query,separator,query=argument.partition('|')
+                if not separator or not public_query.strip() or not query.strip():
+                    await self.reply(event,'用法：/asis web 可公开的搜索词 | 问题；DeepSeek用 /asis web-deepseek。仅公开网页，不读取个人笔记；搜索词会发送给所选搜索提供商。')
+                    return
+                receipt=self.bridge.agent.submit(platform,sender,event.message_obj.message_id,'run',
+                    query=query.strip(),source_ids=['public_web'],web=True,public_queries=[public_query.strip()],
+                    **({'web_backend':'deepseek'} if action=='web-deepseek' else {}))
+                route={'task_id':str(uuid.uuid5(uuid.NAMESPACE_URL,'asis-agent-ack:'+receipt['request_id'])),
+                       'platform_id':platform,'open_id':sender,'message_id':event.message_obj.message_id}
+                async with self.lock:
+                    await self.bridge.deliver(route,{'kind':'agent_receipt',**receipt},receipt['request_id'],self.send)
             elif action=='retrieve-v2':
                 source,separator,query=argument.partition('|')
                 sources=source.strip().split(',')

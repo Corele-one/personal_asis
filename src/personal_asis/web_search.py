@@ -19,7 +19,7 @@ import sys
 import threading
 import time
 from typing import Protocol
-from urllib.parse import urlsplit, urljoin, parse_qsl
+from urllib.parse import urlsplit, urljoin, parse_qsl, quote
 
 
 MAX_RESPONSE = 262144
@@ -109,8 +109,23 @@ def resolve(host):
     # libc DNS has no portable deadline; isolate it in a disposable child.
     raw = bounded_process([sys.executable, '-c',
         'import socket,json,sys; print(json.dumps(sorted({a[4][0] for a in socket.getaddrinfo(sys.argv[1],443,type=socket.SOCK_STREAM)})))',
-        host], timeout=4, limit=8192)
-    return json.loads(raw)
+        host], timeout=1.5, limit=8192)
+    values=json.loads(raw)
+    # macOS proxy DNS may return only RFC2544/RFC5180 placeholders. Never
+    # connect to them: ask a fixed, TLS-verified public resolver instead.
+    # Private/loopback/mixed responses still fail closed, without fallback.
+    benchmarks=[ipaddress.ip_network('198.18.0.0/15'),ipaddress.ip_network('2001:2::/48')]
+    if values and all(any(ipaddress.ip_address(v) in n for n in benchmarks) for v in values):
+        raw=bounded_process(['/usr/bin/curl','--silent','--show-error','--fail',
+            '--max-time','2','--max-filesize','16384','--proto','=https','--noproxy','*',
+            '--resolve','dns.google:443:8.8.8.8',
+            'https://dns.google/resolve?name='+quote(host,safe='')+'&type=A&edns_client_subnet=0.0.0.0/0'],timeout=2.25,limit=16384)
+        answer=json.loads(raw)
+        questions=answer.get('Question',[])
+        if answer.get('Status')!=0 or len(questions)!=1 or questions[0].get('name','').rstrip('.').lower()!=host.lower() or questions[0].get('type')!=1:
+            raise WebError('web_dns_response_invalid')
+        values=sorted({a['data'] for a in answer.get('Answer',[]) if a.get('type')==1})
+    return values
 
 
 def public_addresses(url, resolver=None):
@@ -144,7 +159,11 @@ class PublicHTTP:
     def __init__(self, resolver=resolve, connection=PinnedHTTPS):
         self.resolver, self.connection = resolver, connection
 
-    def request(self, url, *, body=None, timeout=12):
+    def request(self, url, *, body=None, timeout=12, credential=None):
+        if credential is not None and (url not in ('https://r.jina.ai/','https://api.deepseek.com/v1/tools/search') or body is None
+                or not isinstance(credential,str) or not credential or not credential.isascii()
+                or any(ord(c)<33 or ord(c)>126 for c in credential)):
+            raise WebError('web_credential_target_denied')
         deadline = time.monotonic() + timeout
         current = [None]
         def interrupt():
@@ -162,11 +181,11 @@ class PublicHTTP:
         timer.daemon = True
         timer.start()
         try:
-            return self._request(url, body, deadline, current)
+            return self._request(url, body, deadline, current, credential)
         finally:
             timer.cancel()
 
-    def _request(self, url, body, deadline, current):
+    def _request(self, url, body, deadline, current, credential):
         for hop in range(4):
             addresses = public_addresses(url, self.resolver)
             p = urlsplit(url)
@@ -184,6 +203,8 @@ class PublicHTTP:
                     if len(body) > MAX_RESPONSE:
                         raise WebError('web_request_too_large')
                     headers['Content-Type'] = 'application/json'
+                if credential is not None:
+                    headers['Authorization']='Bearer '+credential
                 connection.request('POST' if body is not None else 'GET',
                                    p.path or '/' if not p.query else (p.path or '/') + '?' + p.query,
                                    body=body, headers=headers)
@@ -197,6 +218,10 @@ class PublicHTTP:
                     continue
                 if response.status == 429:
                     raise WebError('web_rate_limited_no_retry')
+                if response.status in (401,403):
+                    raise WebError('web_authentication_or_policy_rejected')
+                if response.status==402:
+                    raise WebError('web_balance_insufficient')
                 if response.status != 200:
                     raise WebError('web_http_unavailable_no_retry')
                 if response.getheader('Content-Encoding', 'identity') not in ('identity', ''):
@@ -350,7 +375,13 @@ class ExaJinaProvider:
         body = json.dumps({'html': inert}).encode()
         reader_status = 'jina_inert_html'
         try:
-            _, output, _ = self.http.request('https://r.jina.ai/', body=body)
+            from .credentials import CredentialStore,CredentialNotFound
+            try:
+                secret=CredentialStore('jina','local.personal-asis.web').get()
+            except (CredentialNotFound,OSError):
+                secret=None
+            _, output, _ = self.http.request('https://r.jina.ai/', body=body,
+                                            **({'credential':secret} if secret else {}))
             value = json.loads(output)
             converted = value['data']['content']
             if not isinstance(converted, str) or len(converted.strip()) < 40:

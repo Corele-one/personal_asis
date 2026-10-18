@@ -1,0 +1,224 @@
+{
+  "date": "2026-10-18",
+  "scope": "Real public search, bounded body evidence, MiMo, versioned Agent and Mac/VPS deployment; no Feishu platform sends",
+  "release": "web-live-cfb5d209d8b32103",
+  "archive_sha256": "05c2e95c0d676f0b2b0a6d42e27848fabab1dd871151fd248e14d8e327f56531",
+  "packaged_file_count": 137,
+  "previous_release": "retrieval-v2-de593bc25486b7cc",
+  "tests": {
+    "mac_checkout": {
+      "total": 501,
+      "passed": 482,
+      "skipped": 19,
+      "failed": 0,
+      "duration_seconds": 66.695,
+      "skip_reasons": {
+        "run with the VPS AstrBot interpreter": 16,
+        "requires test-formats dependency": 1,
+        "requires Calc, Impress and system UNO": 1,
+        "requires LibreOffice and system UNO": 1
+      },
+      "sqlite_resource_warnings": 5,
+      "event_loop_resource_warnings": 0
+    },
+    "mac_independent_release": {
+      "total": 501,
+      "passed": 482,
+      "skipped": 19,
+      "failed": 0,
+      "duration_seconds": 66.205,
+      "skip_reasons": {
+        "run with the VPS AstrBot interpreter": 16,
+        "requires test-formats dependency": 1,
+        "requires Calc, Impress and system UNO": 1,
+        "requires LibreOffice and system UNO": 1
+      },
+      "sqlite_resource_warnings": 5,
+      "event_loop_resource_warnings": 0
+    },
+    "vps_core": {
+      "total": 501,
+      "passed": 334,
+      "skipped": 167,
+      "failed": 0,
+      "duration_seconds": 41.399,
+      "skip_reasons": {
+        "optional Pi packages and Node required": 46,
+        "optional Pi and crypto required": 15,
+        "encrypted reader dependency required": 20,
+        "optional Pi runtime required": 24,
+        "requires encrypted reader dependency": 13,
+        "run with the VPS AstrBot interpreter": 16,
+        "requires backup dependency": 5,
+        "crypto and Pi required": 3,
+        "Node required for shipped UI WebCrypto validation": 1,
+        "requires reader dependency": 4,
+        "requires reader dependency and Node WebCrypto": 1,
+        "requires test-formats dependency": 1,
+        "requires Calc, Impress and system UNO": 1,
+        "requires LibreOffice and system UNO": 1,
+        "Pi required": 12,
+        "optional pinned Pi packages and Node required": 4
+      },
+      "sqlite_resource_warnings": 5,
+      "event_loop_resource_warnings": 0
+    },
+    "vps_actual_sdk_crypto_deepseek": {
+      "total": 31,
+      "passed": 31,
+      "skipped": 0,
+      "failed": 0,
+      "duration_seconds": 118.303,
+      "skip_reasons": {},
+      "sqlite_resource_warnings": 0,
+      "event_loop_resource_warnings": 1
+    }
+  },
+  "live": {
+    "exa": {
+      "successful_searches": 2,
+      "unknown_timeouts": 1,
+      "unknown_retried": false,
+      "agent_completed_with_citation": true,
+      "agent_tokens": 3561,
+      "paid_result_resume_new_tokens": 0
+    },
+    "jina": {
+      "conversion_passed": false,
+      "http_status": 401,
+      "reason": "Anonymous exit IP reputation restriction; no Jina key configured",
+      "fallback": "bounded local static body"
+    },
+    "deepseek": {
+      "successful_searches": 6,
+      "fetch_api_calls": 0,
+      "provider": "deepseek-search-body+local-verified-v1",
+      "search_body_local_https_validation_passed": true,
+      "standalone_agent_final_tokens": 1362,
+      "same_work_cached_new_tokens": 0,
+      "public_body_semantics": "partial public author material; publication unverified; no original offsets"
+    },
+    "negative_experiments": [
+      "MiMo output cap reached; retained paid receipt, no automatic paid retry",
+      "MiMo fabricated citation without tools; rejected by Host",
+      "HTTP and fragment discovery filtering produced explicit evidence gaps before HTTPS normalization fix"
+    ],
+    "production_status_probe": {
+      "production_encrypted_roundtrip": true,
+      "action": "status",
+      "state": "completed",
+      "error": null,
+      "protocol": "agent-web-v3",
+      "citations": [
+        "E1"
+      ],
+      "evidence_count": 1,
+      "new_model_tokens": 0,
+      "duration_seconds": 13.74,
+      "platform_message_sent": false
+    },
+    "production_run_probe": {
+      "production_encrypted_roundtrip": true,
+      "action": "run",
+      "state": "completed",
+      "error": null,
+      "protocol": "agent-web-v3",
+      "answer_status": "supported",
+      "usage": {
+        "completion_tokens": 119,
+        "prompt_tokens": 1276,
+        "total_tokens": 1395
+      },
+      "web_usage": {
+        "local_searches": 0,
+        "network_seconds": 4.1530000000000005,
+        "provider_cost": "unknown",
+        "reads": 1,
+        "requests": [
+          "9623df612550cfa614faf6f9b79ff3c527741719d43ed909ef7b97b558e369fd",
+          "dc5a2ed24d2f825584ccb50a3ab874c12c9e154352a2bed8f392c588f56b908f"
+        ],
+        "searches": 1
+      },
+      "citations": [
+        "E1"
+      ],
+      "evidence_count": 1,
+      "new_model_tokens": 1395,
+      "duration_seconds": 28.95,
+      "platform_message_sent": false
+    }
+  },
+  "costs": {
+    "mimo_new_tokens_total_including_failed_experiments": 9469,
+    "mimo_known_generation_calls": 9,
+    "mimo_unknown_reservations_before": 2,
+    "mimo_unknown_reservations_after": 2,
+    "day_tokens_after": 9469,
+    "month_tokens_after": 59102,
+    "day_limit_unchanged": 100000,
+    "month_limit_unchanged": 1000000,
+    "completion_cap_unchanged": 512,
+    "deepseek_estimated_cny": 0.03,
+    "deepseek_price_source": "https://api-docs.deepseek.com/zh-cn/guides/search/",
+    "deepseek_estimate_basis": "6 successful Search responses at CNY 5 per 1000; no Fetch API; not invoice verified",
+    "exa_currency_cost": "unknown; includes one non-retried timeout",
+    "mimo_currency_cost": "not invoice verified"
+  },
+  "deployment": {
+    "mac_services_running": [
+      "local.personal-asis.mac",
+      "local.personal-asis.pa1",
+      "tunnel",
+      "xiaohongshu"
+    ],
+    "vps_services_active": [
+      "personal-asis-coordinator",
+      "personal-asis-pwa",
+      "astrbot",
+      "nginx"
+    ],
+    "mac_and_vps_packaged_hashes_match": true,
+    "plugin_hashes_match": true,
+    "source_model_config_hashes_unchanged": true,
+    "public_https_root_http_status": 200,
+    "https_probe_note": "curl -k availability check; not TLS identity acceptance",
+    "direct_pwa_untrusted_host_http_status": 403,
+    "production_work_active_leases_after": 0,
+    "source_database_migration": false,
+    "credentials_only_mac_keychain": true
+  },
+  "compatibility": {
+    "new_protocol": "agent-web-v3",
+    "saved_protocols_preserved": [
+      "agent-web-v1",
+      "agent-web-v2",
+      "legacy Agent"
+    ],
+    "old_paid_input_serialization_unchanged": true,
+    "pure_public_host_bootstrap": "one approved search and first-result read, then JSON MiMo; no forced tool choice",
+    "local_or_mixed": "controlled model tool loop; real mixed private-source analysis not revalidated"
+  },
+  "rollback": {
+    "mac": "Restore original plists from private deployment-rollbacks/<release>, retain original interpreters and prior code",
+    "vps": "Restore previous-code symlink and plugin from personal-asis-rollbacks/<release>, restart same services",
+    "paid_state": "Do not delete or roll back work/budget databases; pause v3 work and retain markers before older code fallback"
+  },
+  "not_verified": [
+    "Real Feishu message delivery and mobile UI",
+    "Authenticated Jina conversion",
+    "Private account content to model/Feishu; no new grants",
+    "Full multi-source retrieval quality gate",
+    "Unattended reboot and source deletion synchronization",
+    "Provider invoice reconciliation"
+  ],
+  "privacy": {
+    "approved_public_queries_only": true,
+    "ori_question_sent": false,
+    "private_notes_sent_to_search": false,
+    "background_network_enabled": false,
+    "remote_deepseek_arbitrary_url_fetch_exposed": false,
+    "source_or_channel_grants_added": false,
+    "new_dns_disclosure": "Public destination hostnames only to fixed TLS-pinned Google DoH on benchmark-only proxy DNS responses"
+  }
+}
