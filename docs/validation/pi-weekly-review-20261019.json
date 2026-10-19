@@ -1,0 +1,177 @@
+{
+  "date": "2026-10-19",
+  "scope": "Mac native terminal weekly review and safe failure diagnostics",
+  "release": "pi-week-review-6e7dc2f9d55e4e11",
+  "previous_mac_release": "pi-terminal-f35a3859fc4834d1",
+  "vps_release_unchanged": "retrieval-context-3fa59e109dd0af73",
+  "package": {
+    "content_sha256": "6e7dc2f9d55e4e11bc74d18ac7234308491f1365b421235822ae0c8c334710ab",
+    "archive_sha256": "78029905efe2ea9ce0580c2792ae4d0e2faae10ca234a7e6b2aa22c6a25b23b8",
+    "private_model_or_source_files_packaged": false
+  },
+  "root_cause": {
+    "relative_time_optional_particle_unrecognized": true,
+    "auto_route_was_research": true,
+    "known_provider_response_invalid_json_unescaped_quotes": true,
+    "citation_id_failure_proven": false,
+    "output_cutoff_proven": false,
+    "status_null_result_exception": true,
+    "earlier_hello_acceptance_was_insufficient": true
+  },
+  "behavior": {
+    "protocol": "local-dated-review-v1",
+    "new_local_auto_life_only": true,
+    "authorized_life_scope_preferred_without_expansion": true,
+    "model_json_mode_for_new_text_calls": true,
+    "date_selection_without_similarity_or_semantic_load": true,
+    "no_old_record_fallback": true,
+    "empty_window_model_calls": 0,
+    "review_max_evidence": 7,
+    "ordinary_max_evidence_unchanged": 6,
+    "review_context_byte_cap": 5400,
+    "full_prompt_byte_cap_unchanged": 8192,
+    "completion_token_cap_unchanged": 512,
+    "daily_token_limit_unchanged": 100000,
+    "monthly_token_limit_unchanged": 1000000,
+    "legacy_paid_serialization_preserved": true,
+    "automatic_paid_retry": false,
+    "partial_excerpt_coverage_disclosed": true
+  },
+  "validation": {
+    "checkout": {
+      "tests": 553,
+      "passed": 534,
+      "skipped": 19,
+      "log_sha256": "f68c7f14a58a6457ddb91041a939efe1283e81142dffd66121671efb6a168945"
+    },
+    "isolated_release": {
+      "tests": 553,
+      "passed": 534,
+      "skipped": 19,
+      "log_sha256": "89212aa902e738df1b1537d78e39eed4d37cba1a8c575ec5bd3494d460f94505"
+    },
+    "actual_native_sdk_synthetic_host": {
+      "passed": 2,
+      "failed": 0,
+      "log_sha256": "15742337db0597c84da274b0d458920a0a9142eeeb072629d2f0f0243e0be6bf"
+    },
+    "new_unique_python_tests": 9,
+    "real_source_preflight_only": {
+      "real_eligible_records": 7,
+      "real_selected_dates": [
+        "2026-10-13",
+        "2026-10-14",
+        "2026-10-15",
+        "2026-10-16",
+        "2026-10-17",
+        "2026-10-18",
+        "2026-10-19"
+      ],
+      "real_selected_passages": 7,
+      "real_context_bytes": 2273,
+      "real_preflight_cloud_calls": 0
+    },
+    "synthetic_records_real_mimo": {
+      "status": "completed",
+      "answer_status": "supported",
+      "usage": {
+        "prompt_tokens": 648,
+        "completion_tokens": 201,
+        "total_tokens": 849
+      },
+      "model_turns": 1,
+      "selected_dates": [
+        "2026-10-13",
+        "2026-10-14",
+        "2026-10-15",
+        "2026-10-16",
+        "2026-10-17",
+        "2026-10-18",
+        "2026-10-19"
+      ],
+      "citations": [
+        "E1",
+        "E2",
+        "E3",
+        "E4",
+        "E5",
+        "E6",
+        "E7"
+      ],
+      "cached_resume_offline": true,
+      "source": "fabricated_test_records",
+      "production_shared_budget": true,
+      "original_failed_request_retried": false,
+      "json_schema_and_citations_validated": true,
+      "human_semantic_review_passed": false,
+      "human_review_issue": "one plan was attributed to a different note date",
+      "additional_paid_attempts_after_issue": 0
+    },
+    "original_failure_preserved": {
+      "original_request_calls": 1,
+      "original_request_tokens": 623,
+      "original_request_provider_states": [
+        "succeeded"
+      ],
+      "status_and_failure_resume_diagnostic": true
+    },
+    "actual_installed_tty": {
+      "installed_native_tty_exit_code": 0,
+      "model_ledger_unchanged": true,
+      "new_model_calls": 0,
+      "original_failed_chat_restored": true,
+      "status_visible_chinese_format_diagnostic": true,
+      "resume_known_format_failure_diagnostic_only": true
+    },
+    "encrypted_retrieval": {
+      "production_encrypted_roundtrip": true,
+      "action": "retrieve",
+      "protocol": "retrieval-v2.1",
+      "error": null,
+      "evidence_count": 11,
+      "model_ledger_unchanged": true,
+      "model_calls": 0,
+      "heartbeat_age_seconds": 18120.987096071243,
+      "duration_seconds": 10.49,
+      "platform_message_sent": false,
+      "private_text_or_titles_logged": false,
+      "initial_probe_not_ready": true,
+      "initial_cause": "existing SSH tunnel had exited after timeout",
+      "existing_tunnel_restarted_without_configuration_change": true,
+      "final_mac_heartbeat_age_seconds": 29.66,
+      "final_mac_node_enabled": true
+    }
+  },
+  "deployment": {
+    "release": "pi-week-review-6e7dc2f9d55e4e11",
+    "scope": "Mac local terminal and existing Mac maintenance code only",
+    "mac_services": {
+      "local.personal-asis.mac": {
+        "running": true,
+        "release_matches": true
+      },
+      "local.personal-asis.pa1": {
+        "running": true,
+        "release_matches": true
+      }
+    },
+    "launcher_installed": true,
+    "launcher_uses_pinned_node": true,
+    "source_model_channel_configuration_unchanged": true,
+    "vps_or_feishu_service_changed": false,
+    "prior_plists_and_code_retained": true,
+    "rollback_id": "pi-week-review-6e7dc2f9d55e4e11",
+    "new_background_work_enabled": false,
+    "platform_messages_sent": 0
+  },
+  "not_validated": [
+    "real user weekly answer generation after fix",
+    "semantic date attribution quality gate",
+    "full personal domain quality gate",
+    "full retrieval quality gate",
+    "unattended restart"
+  ],
+  "next_slice": "Evaluate and prevent incorrect date attributions; test plans, negation and other people before claiming domain quality.",
+  "private_note_text_queries_paths_ids_credentials_in_report": false,
+  "commit_or_push_performed": false
+}

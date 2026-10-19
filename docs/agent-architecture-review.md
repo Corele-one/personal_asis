@@ -1,5 +1,15 @@
 # Personal Agent 架构审阅稿
 
+P1实施续作（2026-10-19）：默认单主Agent对话已接有界工具、查询范围预览／确认、公开发现→本机正文→证据，以及可选一次专业工作；核心状态／权限／预算继续在本机。没有改动长期委托职责、资料驻留或外部写权限，故不新增难逆转ADR；沿用0034及0035的协议与组织边界。检索排序不切换，完整质量Gate仍待验；见[P1范围](conversation-tools-p1.md)。
+
+## 当前共识修订（2026-10-19）
+
+用户明确将产品调整为Local-first、Channel-agnostic、Conversation-first Personal Agent。默认一个主Agent持续对话，模型在授权工具集合内自主选择直接回答／检索；专业角色、领域目标和工作历史保留为按需能力。Conversation与Work Delegation分别管理，普通聊天不自动建立委托或后台许可。
+
+已核对真实代码：`agent.py`不依赖AstrBot或VPS，Pi仅执行本次循环；旧渠道主要适配工作请求，确有聊天／Work与角色默认路径的耦合。P0新增独立Conversation Engine／本机CLI，复用现有MiMo、Pi、来源核查、预算和防重，不大规模迁目录或改旧付费恢复。详细[审计、API、验收与回滚](local-first-agent-roadmap.md)。
+
+[ADR 0035](adr/0035-prefer-local-conversations-and-opt-in-specialists.md)公开修订0022默认多角色与0025适用范围；原文保留历史事实。下图及后文为此前确认的专业协作／渠道设计，不再表示所有普通问题的默认路径。后续实施顺序为P0本地Chat、P1工具与质量、P2Web Chat/API、P3有限持续工作、P4多渠道；原PA0–PA5验收不改写。
+
 状态（2026-10-15）：整体架构共识已确认；PA0 已按 Mac 单节点范围完成验收，见 [最终结果](pa0-acceptance.md)。ROG 停用，独立备份／恢复密钥暂缓。MiMo 本机及本人渠道分析已交付；本机委托状态和 Pi 核心合成适配已通过 [第一切片验证](agent-runtime-local.md)。本机受控按需执行已通过 MiMo 实际闭环／恢复续验，见 [最新记录](agent-on-demand.md)；本人 PWA／飞书的受控 Agent 见 [后续切片](agent-channels.md)，其后已交付[串行专业角色协作](agent-roles.md)与[飞书卡片](feishu-cards.md)，统一当前状态见[完成情况](project-status.md)。完整领域上下文、角色并行和持续委托尚未上线；后续路线见 [实施计划](implementation-plan.md)。详细依据见 [架构](agent-architecture.md)、[来源](information-sources.md)与[总规格](../SPECIFICATION.md)。
 
 ## 整体责任

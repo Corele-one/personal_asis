@@ -27,10 +27,26 @@ def safe_error(error):
     return value if re.fullmatch(r'[a-z][a-z0-9_:.-]{0,160}',value) else 'terminal_request_failed_check_local_status'
 
 
+def explain_error(code):
+    if code.startswith('chat_') or code.startswith('model_request_') or code=='model_budget_exhausted':
+        from .chat_cli import error_text
+        return error_text(code)
+    if code=='model_output_has_invalid_evidence_references:json':
+        return '模型返回的回答格式错误，未能完成。这不是引用编号错误；原调用记录保留，不会自动重新付费执行。'
+    if code.startswith('model_output_has_invalid_evidence_references:'):
+        return '模型回答未通过证据校验，已停止显示未经验证的结论；不会自动重新执行。'
+    return {'agent_context_exceeds_prompt_limit':'本次上下文超过原提示大小限制，已在新调用前停止。',
+            'terminal_previous_turn_unfinished_use_status_or_new':'上一项工作尚未完成，请先查看 /status；不会自动重做。',
+            'terminal_chat_has_no_work':'当前聊天还没有提交工作。'}.get(code,code)
+
+
 def render(value):
     result = value.get('result')
     if not result:
-        return '工作状态：'+value['status']+'。未自动重试。'
+        if value.get('failure'):return explain_error(value['failure']['code'])
+        label={'waiting_node':'上次工作未完成','paused':'已暂停','cancelled':'已取消',
+               'running':'正在执行','queued':'尚未执行'}.get(value['status'],value['status'])
+        return '工作状态：'+label+'。未自动重试。'
     text = result['answer']
     if result.get('uncertainty'):
         text += '\n\n资料局限：'+result['uncertainty']
@@ -117,6 +133,11 @@ class Chats:
 
 
 def handle(home, request, emit=lambda value:None):
+    if request.get('engine')=='conversation':
+        from .conversation_terminal import handle as converse
+        return converse(home,request,emit)
+    if request.get('engine') not in (None,'legacy'):
+        raise ValueError('terminal_unknown_engine')
     home=Path(home)
     action=request.get('action')
     chats=Chats(home)
@@ -147,22 +168,31 @@ def handle(home, request, emit=lambda value:None):
             mode=chat['mode']
             if mode=='auto' and re.fullmatch(r'\s*(你好|您好|谢谢|早上好|晚安|hello|hi)[！!。 .]*',query,re.I):
                 mode='conversation'
-            value=agent.execute(home,query,rid,json.loads(chat['sources']),mode=mode,
-                                terminal_history=prior[-2:],on_event=emit)
+            from .local_review import plan
+            sources=json.loads(chat['sources'])
+            review=plan(query,sources,mode)
+            selected=review['sources'] if review else sources
+            value=agent.execute(home,query,rid,selected,mode=mode,
+                                terminal_history=[] if review else prior[-2:],on_event=emit,
+                                local_text_json=True,review_plan=review)
         else:
             if not ids:raise ValueError('terminal_chat_has_no_work')
             rid=ids[-1]
-            if action=='resume':value=agent.execute(home,None,rid,resume=True,on_event=emit)
+            if action=='resume':
+                value=agent.inspect(home,rid)
+                if not value.get('failure'):
+                    value=agent.execute(home,None,rid,resume=True,on_event=emit)
             else:
                 value=agent.inspect(home,rid)
                 if action in ('pause','cancel'):
                     with WorkStore(home/'work.sqlite3') as work:
                         work.control(value['delegation_id'],action)
                     value=agent.inspect(home,rid)
+        result=value.get('result') or {}
         return {'thread':cid,'request_id':rid,'status':value['status'],'text':render(value),
-                'cached':value.get('cached',False),'usage':value.get('result',{}).get('usage'),
-                'model_turns':value.get('result',{}).get('model_turns'),
-                'searches':value.get('result',{}).get('searches')}
+                'cached':value.get('cached',False),'usage':result.get('usage'),
+                'failure':value.get('failure'),'model_turns':result.get('model_turns'),
+                'searches':result.get('searches')}
     finally:chats.close()
 
 
@@ -181,7 +211,8 @@ def worker():
             {'kind':'progress','stage':event['kind'],**{k:v for k,v in event.items() if k!='kind'}}))
         output({'kind':'result','value':result})
     except BaseException as error:
-        output({'kind':'error','error':safe_error(error)})
+        code=safe_error(error)
+        output({'kind':'error','error':code,'message':explain_error(code)})
         return 1
     return 0
 
@@ -190,9 +221,10 @@ def main(argv=None):
     parser=argparse.ArgumentParser(description='Mac 本机 Pi 原生终端个人助手')
     parser.add_argument('--home',type=Path,default=Path.home()/'Library/Application Support/PersonalAsis')
     parser.add_argument('--source',action='append')
-    parser.add_argument('--mode',choices=MODES,default='auto')
+    parser.add_argument('--mode',choices=MODES,help='显式选择旧工作模式；默认使用持续对话')
+    parser.add_argument('--engine',choices=('conversation','legacy'),help='默认持续对话，legacy保留旧工作／角色会话')
     parser.add_argument('--continue',dest='continued',action='store_true')
-    parser.add_argument('--chat')
+    parser.add_argument('--chat','--session',dest='chat')
     parser.add_argument('--check',action='store_true')
     parser.add_argument('--worker',action='store_true',help=argparse.SUPPRESS)
     args=parser.parse_args(argv)
@@ -202,12 +234,17 @@ def main(argv=None):
         data=pa1.settings(home);node=shutil.which('node')
         if not node or not (RUNTIME/'node_modules/@earendil-works/pi-coding-agent').is_dir():
             raise ValueError('optional_pi_terminal_not_installed')
-        sources=args.source or ['study','life']
+        engine=args.engine or ('legacy' if args.source or args.mode else 'conversation')
+        if engine=='conversation' and (args.source or args.mode):
+            raise ValueError('terminal_conversation_uses_authorized_tools_not_role_flags')
+        sources=(args.source or ['study','life']) if engine=='legacy' else []
+        mode=(args.mode or 'auto') if engine=='legacy' else 'conversation-v1'
         config=load_pa1_config(home)
         if set(sources)-{s.id for s in config.sources}:raise ValueError('terminal_unknown_source')
         if args.check:
             print(json.dumps({'native_pi_terminal':True,'pi_version':'1.2.0','model':data['model'],
-                'enabled':data['enabled'],'sources':sources,'default_mode':args.mode,
+                'enabled':data['enabled'],'sources':sources,'default_mode':mode,'engine':engine,
+                'tools_protocol':'chat-tools-v1' if engine=='conversation' else None,
                 'feishu_or_vps_required':False,'model_generation_calls':0}))
             return 0
         if not sys.stdin.isatty() or not sys.stdout.isatty():raise ValueError('terminal_requires_interactive_tty')
@@ -218,7 +255,7 @@ def main(argv=None):
             env.update(HOME=tmp,TMPDIR=tmp,PATH=os.pathsep.join(dict.fromkeys((str(Path(node).parent),*tools,'/usr/bin','/bin','/usr/sbin','/sbin'))),
                 PI_OFFLINE='1',PI_SKIP_VERSION_CHECK='1',DO_NOT_TRACK='1')
             cfg={'home':str(home),'owner_home':str(Path.home()),'python':sys.executable,'model':data['model'],
-                 'pythonpath':str(Path(__file__).resolve().parents[1]),'sources':sources,'mode':args.mode,
+                 'pythonpath':str(Path(__file__).resolve().parents[1]),'sources':sources,'mode':mode,'engine':engine,
                  'thread':args.chat,'continue':args.continued,'temporary':tmp}
             path=Path(tmp)/'config.json';path.write_text(json.dumps(cfg));path.chmod(0o600)
             return subprocess.run([node,str(RUNTIME/'terminal.mjs'),str(path)],cwd=tmp,env=env).returncode

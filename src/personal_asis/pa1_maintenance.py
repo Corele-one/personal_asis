@@ -88,4 +88,10 @@ def clean(home, clock=time.time):
                 report['validation_files_removed']+=1
     from .agent import clean_sessions
     report['agent_sessions_cleared']=clean_sessions(home)
+    if (home/'conversation.sqlite3').exists():
+        from .conversation import ConversationStore
+        with ConversationStore(home) as conversations:
+            report['conversation_turns_invalidated'] = sum(
+                len(conversations.clean(row['id'])) for row in
+                conversations.db.execute('SELECT id FROM conversation_sessions').fetchall())
     return report

@@ -1,5 +1,27 @@
 # Personal Assistant Specification
 
+## P1 conversational tools (2026-10-19 checkout)
+
+Native Pi and text chat now call `conversation_tools.submit`. New turns use `chat-tools-v1` with a frozen `conversation-tools-v1` registry; P0 `chat-json-actions-v1`, legacy Agent and web-v1/v2/v3 paid steps retain their saved implementations. Core interprets only explicit replies to a concrete pending tool preview; models cannot grant permissions.
+
+Tools are authorized local note search, authorized WUCAI/Folo/XiaoHongShu cache search, exact-query-approved public search, capability-scoped public body reading, and an explicitly approved one-shot specialist Work. Public discovery is not numbered evidence. HTTPS/DNS/redirect checks, source attribution, model grants, snapshot expiry, transitive invalidation and the shared billing ledger remain host-owned. No live account fetch, new source/model grant, platform write or background schedule follows from tool registration.
+
+P1 limits are 6 parent model steps, 6 tool actions, 2 local searches, 2 public searches, 2 public reads and 1 specialist Work with at most 2 child generations per turn. The original Token limits remain unchanged. Exact-query/Work approval lasts 15 minutes; new network reads require valid scope. External started markers and confirmation event IDs prevent duplicate requests after crashes or replay. The existing retrieval ranking is retained; original-question time scope and author attribution are enforced without claiming the full Retrieval Quality Gate passed. See [P1 protocol, validation and remaining gates](docs/conversation-tools-p1.md). No production deployment or service restart in this slice.
+
+## Current product direction — local conversations (2026-10-19)
+
+Personal Asis is a **Local-first, Channel-agnostic, Conversation-first Personal Agent**. The default interaction is a persistent conversation with one main agent. Simple questions use a lightweight model response; personal retrieval is model-selected within a deterministic authorized tool set. Specialists and explicit Work Delegations remain available through existing interfaces, and do not define every conversational turn. Local-first permits later VPS access without transferring private state authority.
+
+The new `conversation-v1` Core API (with versioned `chat-json-actions-v1` model-to-Pi tool actions) runs without VPS/AstrBot. The default native Pi UI (`pi` / `scripts/asis-pi`) and the simpler `scripts/asis chat` client share this Core. No role, source selection or request code is required for normal conversation; `--engine legacy` retains the earlier work-based terminal. Sessions, turns and runs have independent stable IDs; same-turn retries reuse committed results. The host revalidates source evidence and transitive history dependencies, owns the shared PA1 budget and blocks unknown paid results. Session messages, tool outputs and source citations remain distinct. Context selects at most four recent completed turns / 2800 UTF-8 bytes and can trim oldest pairs to the existing prompt limit; summaries and selective older-history recall remain P1/P2 work. Messages, checkpoints and results expire after 30 days; billing/idempotency tombstones remain.
+
+P0 uses the existing Pi loop and MiMo, up to four model steps / two searches / six evidence excerpts (160 characters each). It exposes complete responses and actual model/tool step events; provider text streaming is not implemented. Public web tools are reserved for P1 with explicit public-query disclosure controls. No new background work, source grants, model budget or channel deployment is implied. Existing PWA/Feishu request and paid replay contracts remain unchanged.
+
+Acceptance requires at least three conversational turns with reference resolution, zero retrieval for simple chat, model-selected authorized retrieval, tool-error feedback, interrupt/resume, revocation and source-change invalidation, duplicate-request zero added paid calls, independent local execution and regression coverage of existing channels. Automated synthetic checks, actual Pi, real MiMo with synthetic data, private-answer quality and UI acceptance must be reported separately.
+
+The product milestone order is P0 audit/local chat → P1 tools/retrieval/web → P2 streaming Web Chat/Session API → P3 permission-bounded proactive work → P4 channel integration/reliability. PA0–PA5 capability IDs and their historical acceptance remain intact. See [roadmap and API boundaries](docs/local-first-agent-roadmap.md), [ADR 0035](docs/adr/0035-prefer-local-conversations-and-opt-in-specialists.md), and [P0 validation](docs/validation/local-chat-p0-20261019.json). This checkout slice does not deploy or restart production services. Following dated and PA0 channel-specific descriptions retain their original scope.
+
+2026-10-19本机周复盘修复：原生Pi的auto／life个人时间复盘使用已获准Life日期记录，最多七段、上下文5400字节，仍受原完整提示8192字节／生成512 Token和共享预算约束。没有日期记录时本机明确不足且不调用模型；显示记录范围和片段覆盖，不把计划写成已完成或把缺记录写成无活动。新纯文本调用启用JSON模式，历史付费协议不升级／不自动重做。实现与未通过的语义日期质量见[本轮说明](docs/pi-weekly-review-fix.md)。
+
 ## 1. Purpose
 
 This project is a personal work and development system. It helps the user locate their own material, connect it to an external question when requested, and turn reviewed work into auditable tasks and reusable rules. Its long-term scope includes health observations, sleep, diet, and future career choices, connected through a record–review–action–feedback loop.

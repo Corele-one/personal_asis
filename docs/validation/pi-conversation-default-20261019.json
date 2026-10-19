@@ -1,0 +1,32 @@
+{
+  "date": "2026-10-19",
+  "scope": "native Pi defaults to persistent conversation",
+  "entry": "pi or scripts/asis-pi",
+  "user_launcher": "~/.local/bin/pi -> checkout scripts/asis-pi",
+  "default_engine": "conversation-v1",
+  "legacy_opt_in": "--engine legacy or explicit --mode/--source",
+  "new_python_adapter_tests": 4,
+  "native_sdk_tests": 3,
+  "full_regression": {
+    "total": 588,
+    "passed": 569,
+    "skipped": 19
+  },
+  "real_tty": {
+    "entry": "pi",
+    "startup_label": "持续对话 · 直接输入你的问题",
+    "scope_command": true,
+    "normal_exit": true,
+    "data": "isolated synthetic config with model disabled",
+    "model_calls": 0
+  },
+  "new_model_calls": 0,
+  "production_service_deployed_or_restarted": false,
+  "private_data_committed": false,
+  "compatibility": "old work state unchanged, explicit legacy entry; no old paid checkpoint conversion",
+  "limitations": [
+    "full responses and tool steps only; no text deltas",
+    "existing installed release/Finder launcher unchanged",
+    "public web tools still reserved for P1"
+  ]
+}

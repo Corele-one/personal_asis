@@ -35,7 +35,7 @@ export function worker(config, request, onProgress, signal) {
         const event=JSON.parse(line);
         if (event.kind==='progress') onProgress?.(event);
         else if (event.kind==='result') { settled=true;resolve(event.value); }
-        else if (event.kind==='error') { settled=true;reject(new Error(event.error)); }
+        else if (event.kind==='error') { settled=true;reject(new Error(event.message??event.error)); }
       } catch { settled=true;abort();reject(new Error('terminal_worker_protocol_error')); }
     });
     child.on('error',()=>{if(!settled){settled=true;reject(new Error('terminal_worker_start_failed'));}});
@@ -44,11 +44,12 @@ export function worker(config, request, onProgress, signal) {
       if(!settled)reject(new Error('terminal_worker_interrupted_check_status_no_retry'));
     });
     child.stdin.on('error',()=>{});
-    child.stdin.end(JSON.stringify({home:config.home,request})+'\n');
+    child.stdin.end(JSON.stringify({home:config.home,request:{...request,engine:config.engine??'legacy'}})+'\n');
   });
 }
 
 const contentText = content => typeof content==='string' ? content : (content??[]).filter(c=>c.type==='text').map(c=>c.text).join('');
+const statusLine = text => ({render:width=>[text.slice(0,Math.max(0,Math.floor(width/2)))],invalidate(){}});
 const emptyUsage = () => ({input:0,output:0,cacheRead:0,cacheWrite:0,totalTokens:0,cost:{input:0,output:0,cacheRead:0,cacheWrite:0,total:0}});
 export function hostStream(model, context) {
   const stream=new AssistantMessageEventStream();
@@ -58,7 +59,7 @@ export function hostStream(model, context) {
     // Tool output is host-assembled, never a fresh model generation.
     const details=last.details??{};
     content=[{type:'text',text:contentText(last.content)}];
-    if(details.usage) usage={...usage,input:details.usage.prompt_tokens,output:details.usage.completion_tokens,totalTokens:details.usage.total_tokens};
+    if(details.usage) usage={...usage,input:details.usage.prompt_tokens??0,output:details.usage.completion_tokens??0,totalTokens:details.usage.total_tokens};
   } else {
     const user=[...context.messages].reverse().find(m=>m.role==='user');
     const query=contentText(user?.content);
@@ -72,6 +73,7 @@ export function hostStream(model, context) {
 }
 
 export async function createTerminal(config, invoke=worker) {
+  const conversation=config.engine==='conversation';
   let selected=config.thread??null;
   if(config.continue && !selected) selected=(await invoke(config,{action:'list'})).chats[0]?.id??null;
   let thread,ui,scope=config.sources,role=config.mode;
@@ -83,7 +85,8 @@ export async function createTerminal(config, invoke=worker) {
       contextWindow:16000,maxTokens:512,cost:{input:0,output:0,cacheRead:0,cacheWrite:0}}]});
   const model=modelRuntime.getModel('asis-local',config.model??'mimo-v2.6-flash');
   const factory=async()=>{
-    const loaded=await invoke(config,selected ? {action:'load',thread:selected} : {action:'new',sources:config.sources,mode:config.mode});
+    const loaded=await invoke(config,selected ? {action:'load',thread:selected} :
+      (conversation?{action:'new'}:{action:'new',sources:config.sources,mode:config.mode}));
     thread=loaded.thread;selected=thread;
     scope=loaded.sources??config.sources;role=loaded.mode??config.mode;
     const settingsManager=SettingsManager.inMemory({compaction:{enabled:false},retry:{enabled:false,maxRetries:0,provider:{maxRetries:0}},
@@ -102,6 +105,10 @@ export async function createTerminal(config, invoke=worker) {
     manager.appendSessionInfo('Personal Asis · '+thread.slice(0,8));
     const tools=[{name:'personal_assistant',label:'个人助手',description:'本机获准资料、角色与共享预算',
       parameters:Type.Object({query:Type.String(),request_id:Type.String()}),
+      renderCall:()=>statusLine('正在处理消息…'),
+      renderResult:(result,{isPartial})=>statusLine(isPartial ? contentText(result.content) :
+        (result.details?.status==='waiting_permission' ? '等待确认工具动作' :
+          result.details?.failed || (result.details?.status && result.details.status!=='completed') ? '本轮已停止' : '本轮已完成')),
       execute:async(_id,args,signal,onUpdate)=>{
         const active=thread;
         const update=text=>onUpdate?.({content:[{type:'text',text}],details:{}});
@@ -127,7 +134,7 @@ export async function createTerminal(config, invoke=worker) {
   const runtime=await createAgentSessionRuntime(factory,{cwd:config.temporary,agentDir:config.temporary,
     sessionManager:SessionManager.inMemory(config.temporary)});
   ui=new InteractiveMode(runtime,{tuiMode:'fullscreen',startupDiagnostics:[{type:'info',message:
-    'Personal Asis · 本机直连 · '+scope.join(' / ')+' · '+role+'\n/new 新聊天 · /chats 列表 · /open ID 恢复 · /status 状态 · /quit 退出'}]});
+    'Personal Asis · '+(conversation?'持续对话 · 直接输入你的问题':('本机直连 · '+scope.join(' / ')+' · '+role))+'\n/new 新聊天 · /chats 列表 · /open ID 恢复 · /status 状态 · /quit 退出'}]});
   // The UI's synthetic transport has no price rate. Never display its $0 as actual cloud cost.
   ui.footer.render=width=>{
     const tokens=runtime.session.agent.state.messages.filter(m=>m.role==='assistant')
@@ -143,7 +150,7 @@ export async function createTerminal(config, invoke=worker) {
         try {
           if(command==='/quit' || command==='/exit') {await ui.shutdown();return;}
           if(command==='/help' || command==='/hotkeys') {
-            ui.showStatus('/new 新聊天 · /chats 列表 · /open ID 恢复 · /scope 范围 · /status 状态\n/resume-work 明确恢复工作 · /pause 暂停 · /cancel 取消 · /forget 清除聊天 · /quit 退出\nEnter 提交 · Shift+Enter 换行 · Esc 中断 · Ctrl+D 退出');
+            ui.showStatus('/new 新聊天 · /chats 列表 · /open ID 恢复 · /scope 范围 · /status 状态\n'+(conversation?'/resume 恢复中断轮次 · /approve 确认工具 · /deny 拒绝工具 · /budget 预算':'/resume-work 明确恢复工作 · /pause 暂停')+' · /cancel 取消 · /forget 清除聊天 · /quit 退出\nEnter 提交 · Shift+Enter 换行 · Esc 中断 · Ctrl+D 退出');
             ui.clearEditor();return;
           }
           if(command==='/copy') {await ui.handleCopyCommand();ui.clearEditor();return;}
@@ -156,15 +163,22 @@ export async function createTerminal(config, invoke=worker) {
             const list=await invoke(config,{action:'list'});
             ui.showStatus(list.chats.map(c=>c.id+' · '+c.mode+' · '+new Date(c.at*1000).toLocaleDateString()).join('\n')||'没有已保存聊天');ui.clearEditor();return;
           }
-          if(command==='/scope') {ui.showStatus(scope.join(' / ')+' · '+role);ui.clearEditor();return;}
-          if(['/status','/resume-work','/pause','/cancel'].includes(command)) {
-            const action={'/status':'status','/resume-work':'resume','/pause':'pause','/cancel':'cancel'}[command];
+          if(command==='/scope') {ui.showStatus(conversation?'持续对话；仅按需使用本机已授权工具，不自动建立委托。':scope.join(' / ')+' · '+role);ui.clearEditor();return;}
+          if(command==='/budget' && conversation) {
+            const value=await invoke(config,{action:'budget',thread});ui.showStatus(value.text);ui.clearEditor();return;
+          }
+          if(['/approve','/deny'].includes(command) && conversation) {
+            const value=await invoke(config,{action:command.slice(1),thread,request_id:'control-'+randomUUID()});
+            ui.showStatus(value.text);ui.clearEditor();return;
+          }
+          if(['/status','/resume','/resume-work','/pause','/cancel'].includes(command)) {
+            const action={'/status':'status','/resume':'resume','/resume-work':'resume','/pause':'pause','/cancel':'cancel'}[command];
             const value=await invoke(config,{action,thread});ui.showStatus(value.text);ui.clearEditor();return;
           }
           if(command==='/forget') {
             await invoke(config,{action:'forget',thread});selected=null;await runtime.newSession();ui.clearEditor();return;
           }
-          ui.showWarning('可用：/new /chats /open ID /scope /status /resume-work /pause /cancel /forget /quit');return;
+          ui.showWarning('可用：/new /chats /open ID /scope /status /resume /budget /cancel /forget /quit');return;
         } catch(error){ui.showError(error.message);return;}
       }
       if(q.startsWith('!')) {ui.showWarning('个人助手入口不执行 shell 命令。');return;}

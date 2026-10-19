@@ -1,5 +1,24 @@
 # Personal Asis
 
+P1增量（2026-10-19，checkout）：默认Pi对话已接入版本化工具、本机资料与阅读缓存检索、公开搜索／正文读取及确认后的一次专业工作。需要联网时先展示具体公开词，回复“同意”继续同一轮；来源、费用、恢复与限制见[持续对话工具](docs/conversation-tools-p1.md)。旧付费协议保留，不启用后台或部署服务。
+
+Personal Asis 的产品目标是 **Local-first、Channel-agnostic、Conversation-first Personal Agent**：在Mac自然持续聊天，由单一主Agent按需选择工具；本机保存资料、会话、权限与预算，多渠道作为适配器。
+
+当前默认用Pi原生界面持续对话，直接启动：
+
+```sh
+pi
+pi --continue
+pi --session 会话ID
+pi --check
+```
+
+`pi`为本机指向checkout的启动器，仓库入口为`./scripts/asis-pi`；`scripts/asis chat`是共享同一Core的简单文本客户端。普通聊天无需角色／来源／请求编号；支持有限多轮上下文、持久恢复、按需授权本机检索、工具状态、共享预算和付费防重。`/help`查看命令。当前返回完整响应；公开联网先确认具体查询，旧公开研究命令继续可用。新Chat不自动创建长期委托或长期记忆。
+
+本轮未部署生产或重启服务。完整[审计与P0–P4路线](docs/local-first-agent-roadmap.md)、[使用方法](docs/assistant-usage.md)、[验证记录](docs/validation/local-chat-p0-20261019.json)。以下日期段落保留此前发布事实，不作为新Chat验收。
+
+2026-10-19周复盘修复：Mac更新为 `pi-week-review-6e7dc2f9d55e4e11`，VPS保留 `retrieval-context-3fa59e109dd0af73`。修复“过去的一周”的本机时间识别／Life路由、纯文本JSON模式和失败状态空结果处理；日期复盘在原8192字节提示／512生成Token上限内最多选七段。553项回归＝534通过＋19跳过，实际Pi SDK另2项通过；真实Life只读检查覆盖七天，一次MiMo虚构周记生成849 Token并离线复用，人工检查仍发现一处日期归属错误，不能报告为领域质量通过。原失败调用保留且未重试。见[修复说明](docs/pi-weekly-review-fix.md)与[验收记录](docs/validation/pi-weekly-review-20261019.json)。以下为之前发布快照。
+
 2026-10-19本机Pi入口：Mac已发布 `pi-terminal-f35a3859fc4834d1` 的[原生终端界面](docs/pi-terminal.md)，可直接聊天、查看工具过程、保存／恢复本机会话；VPS仍为 `retrieval-context-3fa59e109dd0af73`。新入口复用原MiMo、来源许可、角色与预算，不依赖飞书／VPS，不自动启用v2.3。544项回归＝525通过＋19跳过，另2项实际Pi SDK合成测试通过；真实TTY问候161 Token、无笔记读取，领域质量与完整Retrieval Gate仍待验收。固定启动器及回退材料见[本轮记录](docs/validation/pi-terminal-20261019.json)。以下为前一切片及更早快照。
 
 2026-10-19质量续作当前发布 `retrieval-context-3fa59e109dd0af73`：[时间／词法支持与逐字回答](docs/retrieval-context-quality.md)已部署到现有Mac／VPS。原16题探针和新增助手自然问句的目标／负例通过；真实两条摘录回答709 Token，原提示和预算上限内运行。完整Gate仍缺真人领域评判、真实缺信息／冲突与新Agent接线；普通入口不切换。验收见[本轮记录](docs/validation/retrieval-context-20261019.json)。以下为此前快照。

@@ -1,5 +1,18 @@
 # 个人助手项目：代理工作指南
 
+## 当前产品与开发优先级（2026-10-19）
+
+- 产品方向为Local-first、Channel-agnostic、Conversation-first Personal Agent。默认通过Pi原生界面（`pi`／`scripts/asis-pi`）连接单一主Agent持续聊天，普通问题可直接回答，按需选择受控工具；Research／Career／Life为可选专业能力，不对所有问题默认分工。
+- Conversation Session／Turn／Run与持续Work Delegation分离。Core不得依赖AstrBot、Feishu Cards或VPS；渠道适配器不定义规划／工具选择，Pi不拥有资料、权限、任务或预算权威。
+- 下一阶段按[产品里程碑P0–P4](docs/local-first-agent-roadmap.md)执行：本地Chat → 工具／检索／公开搜索 → Web Chat／稳定会话API → 有限持续工作 → 多渠道可靠性。PA0–PA5仍表示原业务能力，不改写历史验收。
+- P1工具注册由主机冻结；模型只能提议动作。公开搜索绑定精确query／提供商／结果数／期限的本机确认；账户缓存可用不代表可实时抓取或新增模型许可。专业Work仅按明确的一次范围执行，不能推断后台授权。
+- 修改工具或会话协议须版本化，保留旧已付费步骤序列化、未知结果不重试、共享预算及撤权清理。对话推断不自动成为已确认长期事实。
+- 当前P0／P1仅checkout开发与验证，不自动部署、重启Mac／VPS／AstrBot、增加预算或迁移／删除原始资料；此明确范围优先于后文持续维护授权。后续是否部署以具体任务为准。
+
+以下是此前发布与验收的日期快照；当前实现与边界见[本地Agent路线](docs/local-first-agent-roadmap.md)。
+
+2026-10-19周复盘修复：Mac更新为 `pi-week-review-6e7dc2f9d55e4e11`，VPS保留 `retrieval-context-3fa59e109dd0af73`。修复“过去的一周”的本机时间识别／Life路由、纯文本JSON模式和失败状态空结果处理；日期复盘在原8192字节提示／512生成Token上限内最多选七段。553项回归＝534通过＋19跳过，实际Pi SDK另2项通过；真实Life只读检查覆盖七天，一次MiMo虚构周记生成849 Token并离线复用，人工检查仍发现一处日期归属错误，不能报告为领域质量通过。原失败调用保留且未重试。见[修复说明](docs/pi-weekly-review-fix.md)与[验收记录](docs/validation/pi-weekly-review-20261019.json)。以下为之前发布快照。
+
 本文件维护项目规则正文；[AGENTS.md](AGENTS.md) 是代理发现与读取本文件的入口。修改规则时更新本文件，避免两份正文产生分歧。
 
 ## 项目目标与当前状态

@@ -90,6 +90,13 @@ def validate_state(home, source_home, state, channel=None):
         if channel is not None or state.get('channel'):
             raise ValueError('terminal_history_local_only')
         validate(home,state['terminal_history'],list(state['roots']))
+    if state.get('review_plan'):
+        from .local_review import validate
+        if channel is not None or state.get('channel'):
+            raise ValueError('local_review_local_only')
+        validate(state['review_plan'],list(state['roots']))
+        if state.get('temporal_scope')!=state['review_plan']['window']:
+            raise ValueError('local_review_time_scope_changed')
     sources={s.id:s for s in config.sources}
     for sid,identity in state['roots'].items():
         source=sources.get(sid)
@@ -182,6 +189,13 @@ class AgentHost:
             raise ValueError('agent_turn_limit')
         payload=self.provider.tool_payload(event['messages'],self.data['max_completion_tokens'])
         key=f'model:{turn}'
+        if self.state.get('review_plan'):
+            from .local_review import GUIDANCE
+            if turn!=1:raise ValueError('local_review_single_generation_only')
+            payload.pop('tools',None);payload.pop('tool_choice',None)
+            payload['response_format']={'type':'json_object'}
+            payload['messages'][0]['content']+=GUIDANCE
+            return self._model_call(key,payload,True)
         if self.state.get('response_plan'):
             from .request_intent import SYSTEM
             if turn!=1:raise ValueError('agent_conversation_turn_limit')
@@ -198,6 +212,8 @@ class AgentHost:
             payload.pop('tools',None)
             payload.pop('tool_choice',None)
             payload['messages'][0]['content']+=FINAL_ONLY
+            if self.state.get('local_text_json'):
+                payload['response_format']={'type':'json_object'}
         if 'role_plan' in self.state:
             from .agent_roles import SUPERVISOR_GUIDANCE
             payload['messages'][0]['content']+=SUPERVISOR_GUIDANCE
@@ -290,6 +306,8 @@ class AgentHost:
                 # call to text. The full payload is the durable replay identity.
                 payload=self.provider.tool_payload([],min(768,self.data['max_completion_tokens']))
                 payload.pop('tools',None);payload.pop('tool_choice',None)
+                if self.state.get('local_text_json'):
+                    payload['response_format']={'type':'json_object'}
                 payload['messages']=specialist_messages(role,self.state['question'],evidence,
                                                        self.state.get('domain_context'))
                 if 'role_contexts' in self.state:
@@ -341,8 +359,13 @@ class AgentHost:
                     'status':'search_limit_reached','evidence':[],
                     'coverage':'current_authorized_matches_only','next_step':'final_answer_from_existing_evidence'})
             try:
-                bundle=build_bundle(self.source_home,query,'mimo',self.encoder,list(self.state['roots']),
-                    **({'time_window':self.state['temporal_scope']} if self.state.get('temporal_scope') else {}))
+                if self.state.get('review_plan'):
+                    from .local_review import build
+                    bundle,coverage=build(self.source_home,query,self.state['review_plan'])
+                    self.state['review_coverage']=coverage
+                else:
+                    bundle=build_bundle(self.source_home,query,'mimo',self.encoder,list(self.state['roots']),
+                        **({'time_window':self.state['temporal_scope']} if self.state.get('temporal_scope') else {}))
             except ValueError as error:
                 if str(error)!='no_current_provider_authorized_evidence':
                     raise
@@ -361,7 +384,7 @@ class AgentHost:
                 position=next((i for i,e in enumerate(evidence) if identity==[e[k] for k in (
                     'document_id','content_hash','excerpt','line_start','column_start')]),None)
                 if position is None:
-                    if len(evidence)>=MAX_EVIDENCE:
+                    if len(evidence)>=(7 if self.state.get('review_plan') else MAX_EVIDENCE):
                         break
                     evidence.append(entry)
                     position=len(evidence)-1
@@ -423,6 +446,10 @@ class AgentHost:
             result.update(response_kind='conversation',coverage='current_message_only',sensitivity='private')
         if self.state.get('temporal_scope'):
             result['temporal_scope']=self.state['temporal_scope']
+        if self.state.get('review_plan'):
+            result['review_coverage']=self.state['review_coverage']
+            from .local_review import coverage_text
+            result['uncertainty']=coverage_text(self.state['review_coverage'])+' '+result['uncertainty']
         if self.state.get('tools_protocol') in ('agent-web-v1','agent-web-v2','agent-web-v3'):
             result['tools_protocol']=self.state['tools_protocol']
             result['web_usage']=copy.deepcopy(self.state.get('web_usage',{}))
@@ -442,8 +469,11 @@ def _source_home(home, request_id, synthetic):
 def execute(home, query, request_id, source_ids=None, *, resume=False, provider=None,
             synthetic=False, step_limit=None, encoder_override=None, channel=None, before_step=None, bootstrap=False, domain=None, with_history=False, mode=None, use_context=False, role_history=False,
             web=False, public_queries=None, web_provider=None, web_backend=None,
-            terminal_history=None, on_event=None):
+            terminal_history=None, on_event=None, local_text_json=False, review_plan=None):
     home=Path(home)
+    if (type(local_text_json) is not bool or ((local_text_json or review_plan is not None)
+            and (resume or synthetic or channel is not None or web))):
+        raise ValueError('local_output_protocol_new_local_sessions_only')
     if terminal_history is not None and (resume or synthetic or channel is not None or web):
         raise ValueError('terminal_history_new_local_sessions_only')
     if type(web) is not bool or ((public_queries is not None or web_backend is not None) and not web):
@@ -540,15 +570,22 @@ def execute(home, query, request_id, source_ids=None, *, resume=False, provider=
             initial['mode']='not_requested'
             if mode is not None and reply_plan['requested_mode']!=mode:
                 raise ValueError('agent_request_role_conflict')
-        elif mode is not None:
+        elif mode is not None and review_plan is None:
             from .agent_roles import plan
             initial['role_plan']=plan(mode,query)
+            initial['bootstrap_search']=True
+        if state is None and local_text_json:initial['local_text_json']=True
+        if state is None and review_plan is not None:
+            from .local_review import validate
+            validate(review_plan,source_ids)
+            initial['review_plan']=review_plan
+            initial['temporal_scope']=review_plan['window']
             initial['bootstrap_search']=True
         if state is None and not reply_plan:
             initial['evidence_protocol']='dated-evidence-v1'
             from .retrieval_time import question_window
             window=question_window(query)
-            if window:initial['temporal_scope']=window
+            if window and review_plan is None:initial['temporal_scope']=window
         if state is None and use_context and not reply_plan:
             from .role_context import prepare,VERSION
             initial['role_context_version']=VERSION
@@ -574,7 +611,7 @@ def execute(home, query, request_id, source_ids=None, *, resume=False, provider=
             if with_history and 'work_history' not in state:
                 raise ValueError('agent_request_history_conflict')
             # Transport changes never rewrite an existing paid session's contract.
-            for name in ('channel','bootstrap_search','domain_context','work_history','role_plan','response_plan','temporal_scope','evidence_protocol','role_contexts','role_context_options','role_context_version','terminal_history'):
+            for name in ('channel','bootstrap_search','domain_context','work_history','role_plan','response_plan','temporal_scope','evidence_protocol','role_contexts','role_context_options','role_context_version','terminal_history','local_text_json','review_plan'):
                 initial.pop(name,None)
                 if name in state:
                     initial[name]=state[name]
@@ -605,7 +642,7 @@ def execute(home, query, request_id, source_ids=None, *, resume=False, provider=
             state=work.start_session(rid,node,claim['epoch'],contract,initial)
             validate_state(home,source_home,state,channel)
             encoder=encoder_override
-            if not synthetic and encoder is None and not state.get('response_plan') and state.get('tools_protocol') not in ('agent-web-v1','agent-web-v2','agent-web-v3'):
+            if not synthetic and encoder is None and not state.get('response_plan') and not state.get('review_plan') and state.get('tools_protocol') not in ('agent-web-v1','agent-web-v2','agent-web-v3'):
                 encoder,_=pa1.encoder_for(data)
             if state.get('tools_protocol') in ('agent-web-v1','agent-web-v2','agent-web-v3'):
                 from .agent_web import WebAgentHost
@@ -617,6 +654,9 @@ def execute(home, query, request_id, source_ids=None, *, resume=False, provider=
                 prompt=host.bootstrap_web()
             else:
                 prompt=host.bootstrap() if state.get('bootstrap_search') else query
+            if state.get('review_plan') and not state['evidence']:
+                return host.done({'messages':[{'role':'assistant','stopReason':'stop','content':[{'type':'text',
+                    'text':encoded({'status':'insufficient_evidence','answer':'','citations':[],'uncertainty':''})}]}]})
             if state.get('temporal_scope'):
                 prompt+='\n本次按笔记标注日期限定检索范围（日期不明的材料未纳入，不扩展到旧记录）：'+encoded(state['temporal_scope'])
             if state.get('domain_context'):
@@ -632,7 +672,7 @@ def execute(home, query, request_id, source_ids=None, *, resume=False, provider=
                 from .agent_roles import supervisor_prompt
                 prompt=supervisor_prompt(prompt,state['role_plan'],host.specialists())
             return run_pi(prompt,[] if state.get('response_plan') else tools,claim['session'],host,
-                          max_turns=1 if state.get('response_plan') else MAX_TURNS,timeout=900,
+                          max_turns=1 if state.get('response_plan') or state.get('review_plan') else MAX_TURNS,timeout=900,
                           **({'on_event':on_event} if on_event is not None else {}))
         except CheckpointReached:
             work.yield_run(rid,node,claim['epoch'])
@@ -680,9 +720,20 @@ def inspect(home, request_id):
             except (OSError,ValueError):
                 work.clean(row['delegation'])
                 raise
+        failure=None
+        if row['result'] is None and state and state.get('actions'):
+            last=state['actions'][-1]
+            if (last['key'].startswith(('model:','specialist:'))
+                    and last['output'].get('stopReason')=='stop'):
+                try:json.loads(text_content(last['output']['content']))
+                except (ValueError,TypeError):
+                    failure={'code':'model_output_has_invalid_evidence_references:json',
+                             'stage':'specialist' if last['key'].startswith('specialist:') else 'answer',
+                             'automatic_retry':False}
         return {'status':row['state'],'delegation_id':row['delegation'],'run_id':row['id'],
                 'progress':json.loads(row['checkpoint']) if row['checkpoint'] else None,
                 'result':json.loads(row['result']) if row['result'] else None,
+                **({'failure':failure} if failure else {}),
                 'executions':work.executions(row['id']),'automatic_execution':False}
 
 

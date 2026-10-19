@@ -1,5 +1,27 @@
 # Personal Agent 实施计划
 
+## P1本轮进展（2026-10-19）
+
+已实现默认对话内的版本化Tool Registry、精确公开查询预览／确认、Exa/Jina或既有DeepSeek适配、发现与证据分离、有界读取／补查、授权阅读缓存、确认后复用专业Work及恢复防重。原检索排序不替换，增加原问题时间范围与归属核查；原共享预算不增加。真实固定公开词闭环、实际Pi合成检查及旧接口回归分别记录，见[P1说明](conversation-tools-p1.md)和[验收](validation/conversation-tools-p1-20261019.json)。
+
+P1剩余质量门槛是实际获准问题的充分性／忠实性／冲突评测与完整Retrieval Quality Gate；账户实时正文能力还需专门的读取／模型披露检查。不能把本轮公共链路或合成来源测试当作这些门槛已通过。P2的文本流式、摘要／历史召回与HTTP会话API不提前混入本轮。
+
+## 当前最高优先级：本地对话（2026-10-19）
+
+产品体验与核心里程碑采用P0–P4，业务能力仍采用PA0–PA5。本文下方较早的“后续优先”与“首个Agent组织”是对应日期计划，当前顺序以本节为准。
+
+| 顺序 | 交付 | 门槛 |
+|---|---|---|
+| P0 | 架构审计＋Local Chat MVP；当前checkout已实现独立Session／Turn／Run、单主Agent、按需本机检索和恢复 | 本地连续聊天、预算／防重／撤权与旧渠道回归；[验收记录](validation/local-chat-p0-20261019.json)；不自动部署 |
+| P1 | 版本化Tool Registry、检索质量、公开Exa/Jina工具、有限补查、按需专业能力与显式Work升级 | 公共query披露及网络费用协议；真实获准问题质量；保留旧已付费协议 |
+| P2 | Streaming Web Chat、稳定Session API、有界摘要与历史召回 | 本机API与浏览器先行；认证／渠道披露／持久事件／取消语义；真实文本增量另行验收 |
+| P3 | Permission-bounded Proactive Work | 每项委托有来源、频率、期限、预算、通知条件、暂停／取消 |
+| P4 | 多渠道接入与可靠性 | VPS／AstrBot／飞书仅做身份、请求和投递适配；单独联调、发布与回滚 |
+
+完整[本地Agent路线](local-first-agent-roadmap.md)记录最小迁移、旧系统兼容和P1进入条件。原Retrieval Quality Gate继续约束检索协议替换、专业角色独立检索及来源扩展；它不阻止普通本机聊天先完成。
+
+2026-10-19周复盘修复：Mac更新为 `pi-week-review-6e7dc2f9d55e4e11`，VPS保留 `retrieval-context-3fa59e109dd0af73`。修复“过去的一周”的本机时间识别／Life路由、纯文本JSON模式和失败状态空结果处理；日期复盘在原8192字节提示／512生成Token上限内最多选七段。553项回归＝534通过＋19跳过，实际Pi SDK另2项通过；真实Life只读检查覆盖七天，一次MiMo虚构周记生成849 Token并离线复用，人工检查仍发现一处日期归属错误，不能报告为领域质量通过。原失败调用保留且未重试。见[修复说明](pi-weekly-review-fix.md)与[验收记录](validation/pi-weekly-review-20261019.json)。以下为之前发布快照。
+
 2026-10-19本机Pi入口：Mac已发布 `pi-terminal-f35a3859fc4834d1` 的[原生终端界面](pi-terminal.md)，可直接聊天、查看工具过程、保存／恢复本机会话；VPS仍为 `retrieval-context-3fa59e109dd0af73`。新入口复用原MiMo、来源许可、角色与预算，不依赖飞书／VPS，不自动启用v2.3。544项回归＝525通过＋19跳过，另2项实际Pi SDK合成测试通过；真实TTY问候161 Token、无笔记读取，领域质量与完整Retrieval Gate仍待验收。固定启动器及回退材料见[本轮记录](validation/pi-terminal-20261019.json)。以下为前一切片及更早快照。
 
 2026-10-19质量续作：已发布 `retrieval-context-3fa59e109dd0af73` 的[显式时间／词法支持及一次摘录生成](retrieval-context-quality.md)。原16题探针12/12目标、4/4负例；新增助手自然问句7/7、4/4，真实两条回答709 Token且提示不超原lexical。另两条缺信息请求在付费前停止，真人领域标注、模型缺信息／冲突及新Agent会话仍待验；完整生产替换Gate未通过。532项回归与[本轮验收](validation/retrieval-context-20261019.json)已记录，不扩大角色／后台。以下日期段落保留历史范围。

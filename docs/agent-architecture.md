@@ -1,5 +1,15 @@
 # Personal Agent 架构讨论
 
+P1接线（2026-10-19）：Conversation Core通过冻结的工具注册表执行`chat-tools-v1`，模型提出JSON动作，宿主核查来源／精确公开query许可、预算与调用身份；会话内确认属于Core，不由Pi或渠道作授权判断。专业工具仅在确认后复用旧WorkStore及单领域执行器；P0和旧Agent付费路径保留。协议与实际验证见[P1工具](conversation-tools-p1.md)。
+
+## 2026-10-19 当前架构方向
+
+默认流程改为本机持久会话 → 有限上下文 → 单一主Agent直接回答或自主选受控工具 → 回答与引用校验 → 更新Turn；复杂工作与持续委托独立。新`conversation.py`复用Pi、MiMo、检索和共享预算，不导入Coordinator、Relay、AstrBot或飞书。
+
+旧Agent核心本来已独立于AstrBot；主要耦合位于按次Work生命周期、来源／角色请求字段、强制bootstrap与专业角色流水线。P0通过新增小型Conversation Engine及CLI解除聊天耦合，旧Work／渠道协议原样保留。模型、角色、工具与渠道的[实际依赖表及目标图](local-first-agent-roadmap.md)是本轮审计结果。
+
+[ADR 0035](adr/0035-prefer-local-conversations-and-opt-in-specialists.md)修订0022默认组织，0025限定于专业协作，0019／0021／0026／0029／0034保留。下文2026-10-13至18的角色结构与候选状态保留历史范围；新产品不以先配置专业角色或VPS为使用前提。P0仅checkout，真实文本streaming、公开工具接线与PWA Chat尚未交付。
+
 状态：Q1–Q32 的产品与架构原则及整体共识已由用户确认，作为后续实施基线。本文保留架构设计基线，目标清单不等于全部交付。当前已部署按需 Agent、[串行四角色协作](agent-roles.md)与[飞书卡片](feishu-cards.md)，后台工作未启用；逐项能力与缺口见[完成情况](project-status.md)。具体账号和持续委托参数在相应切片配置。整体摘要见 [架构审阅稿](agent-architecture-review.md)，交付依赖见 [实施计划](implementation-plan.md)。
 
 ## 已确认的产品方向

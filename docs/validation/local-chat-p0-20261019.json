@@ -1,0 +1,161 @@
+{
+  "date": "2026-10-19",
+  "checkout_branch": "main",
+  "starting_head": "a56cdd1",
+  "scope": "P0 checkout architecture audit and independent local chat MVP",
+  "pre_existing_changes_preserved": true,
+  "production_deployed": false,
+  "services_restarted": false,
+  "platform_messages_sent": false,
+  "new_sources_or_grants": false,
+  "model_budget_limits_changed": false,
+  "protocol": "conversation-v1",
+  "model_protocol": "chat-json-actions-v1",
+  "automated": {
+    "command": "PYTHONPATH=src <existing-pa1-python> -m unittest discover -s tests -v",
+    "new_conversation_tests": 31,
+    "total": 584,
+    "passed": 565,
+    "skipped_optional_dependencies": 19,
+    "real_pi_with_mock_model": true,
+    "real_feishu_ui": false,
+    "sandbox_first_attempt": "36 local HTTP/Unix socket bind errors; rerun in authorized environment"
+  },
+  "real_model": {
+    "provider": "mimo",
+    "model": "mimo-v2.6-flash",
+    "actual_pi": true,
+    "actual_interactive_tty": true,
+    "data": "isolated synthetic fixtures and synthetic dialogue only",
+    "budget": "existing shared production ledger, original limits, OS-keychain credential",
+    "phases": [
+      [
+        {
+          "status": "completed",
+          "error": null,
+          "tokens": 437,
+          "model_calls": 1,
+          "searches": 0,
+          "model_protocol": "development_native_tool_trial"
+        },
+        {
+          "status": "completed",
+          "error": null,
+          "tokens": 452,
+          "model_calls": 1,
+          "searches": 0,
+          "model_protocol": "development_native_tool_trial"
+        },
+        {
+          "status": "completed",
+          "error": null,
+          "tokens": 524,
+          "model_calls": 1,
+          "searches": 0,
+          "model_protocol": "development_native_tool_trial"
+        },
+        {
+          "status": "failed",
+          "error": "model_output_has_invalid_evidence_references:abstention_has_references",
+          "tokens": 696,
+          "model_calls": 1,
+          "searches": 0,
+          "model_protocol": "development_native_tool_trial"
+        }
+      ],
+      [
+        {
+          "status": "completed",
+          "error": null,
+          "tokens": 512,
+          "model_calls": 1,
+          "searches": 0,
+          "model_protocol": "development_native_tool_trial"
+        }
+      ],
+      [
+        {
+          "status": "completed",
+          "error": null,
+          "tokens": 1102,
+          "model_calls": 2,
+          "searches": 1,
+          "model_protocol": "chat-json-actions-v1"
+        },
+        {
+          "status": "completed",
+          "error": null,
+          "tokens": 602,
+          "model_calls": 1,
+          "searches": 0,
+          "model_protocol": "chat-json-actions-v1"
+        }
+      ],
+      [
+        {
+          "status": "failed",
+          "error": "chat_invalid_answer_json",
+          "tokens": 399,
+          "model_calls": 1,
+          "searches": 0,
+          "model_protocol": "development_native_tool_trial"
+        }
+      ]
+    ],
+    "total_tokens_including_development_failures": 4724,
+    "total_model_calls_including_development_failures": 9,
+    "native_json_trial_three_turn_reference_resolution": true,
+    "final_json_action_tool_loop": {
+      "model_calls": 2,
+      "searches": 1,
+      "tokens": 1102,
+      "validated_citations": true
+    },
+    "fresh_process_session_resume": {
+      "passed": true,
+      "followup_searches": 0,
+      "followup_tokens": 602
+    },
+    "duplicate_request_extra_tokens": 0,
+    "development_failures_preserved_without_retry": [
+      "plain text instead of JSON",
+      "hallucinated evidence references rejected",
+      "tool promise without execution"
+    ],
+    "personal_source_answer_quality_verified": false
+  },
+  "covered": [
+    "three-turn direct conversation without retrieval or WorkStore",
+    "bounded history and current-reference isolation",
+    "authorized model-selected personal retrieval",
+    "tool failure and no-match receipts",
+    "checkpoint resume including search limit and crash after billing",
+    "unknown result never retried",
+    "source revocation and source version change with transitive content purge",
+    "existing maintenance cleanup",
+    "turn ID deduplication and conflict",
+    "session concurrent writer fence",
+    "retention and forget tombstones",
+    "budget exhausted before provider",
+    "CLI restore and current configuration check",
+    "old PWA and Feishu automated regression"
+  ],
+  "not_implemented": [
+    "public web tools in new chat",
+    "production Tool Registry extension",
+    "older-history retrieval and summaries",
+    "text delta streaming",
+    "Session HTTP API and default PWA chat",
+    "new AstrBot session adapter",
+    "chat to specialist/work escalation",
+    "background proactive scheduling",
+    "automatic long-term memory"
+  ],
+  "quality_limits": [
+    "structured output and citation checks do not establish semantic fidelity",
+    "native MiMo tool selection and JSON mode were unreliable; final protocol uses explicit JSON actions",
+    "real personal research/career/life quality and full Retrieval Quality Gate remain unaccepted",
+    "no new phone UI or unattended reboot acceptance"
+  ],
+  "rollback": "stop new chat and use previous CLI/Pi/channel entry; retain conversation tombstones, WorkStore and shared billing ledger"
+}

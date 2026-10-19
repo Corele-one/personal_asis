@@ -1,5 +1,21 @@
 # 个人助手完成情况
 
+## P1工具闭环（2026-10-19，checkout）
+
+新增冻结工具注册／schema、公开查询确认、受控搜索与正文读取、按需专业Work升级；原生Pi与文本Chat默认使用`chat-tools-v1`，旧付费协议按保存值恢复。已接授权笔记和WUCAI/Folo/小红书本机缓存，保留作者归属及时间窗口，不启用实时账户抓取或后台任务。
+
+真实固定公开词的MiMo＋Pi＋DeepSeek＋本机正文路径通过：3次生成、1次搜索、1次读取，原共享预算3729 Token，重复结果0新增Token；确认动作在隔离测试中模拟，不冒充真人确认UI验收。没有私人正文、生产部署或飞书消息。完整检索质量Gate、真实个人领域回答质量、Exa/Jina本轮真实能力和账户实时读取尚未验收／接线。详细[实现与边界](conversation-tools-p1.md)、[验收记录](validation/conversation-tools-p1-20261019.json)。
+
+## 前轮P0交付（2026-10-19）
+
+产品目标已调整为Local-first、Channel-agnostic、Conversation-first。默认`pi`／`scripts/asis-pi`打开Pi原生持续对话界面，`scripts/asis chat`为简单文本客户端，均通过独立Conversation Engine直接在Mac运行；无需VPS／AstrBot、手填请求号、角色或来源。单主Agent可直接回答或按需检索获准本机资料；支持持久Session／Turn／Run、有限历史、来源传递失效、共享预算、防重、步骤显示及显式中断恢复。
+
+本轮不部署或重启生产，不把旧PA0／PA1验收改为新P0验收。完整回归584项（565通过、19跳过），31项新会话检查；真实MiMo合成TTY检索闭环与新进程恢复通过，重复结果0新增Token；含开发缺陷验证共4724 Token，未使用私人正文。新增代码、真实与合成验证见[本轮记录](validation/local-chat-p0-20261019.json)；[架构审计与路线](local-first-agent-roadmap.md)区分各模块实际依赖。旧Pi终端／周复盘未提交改动保留。
+
+P0验收时尚未实现、P1已补齐：Chat公开联网工具及专业Work内升级。仍未实现：摘要／较早历史召回、真实文本流式、稳定HTTP Session API、PWA默认聊天、AstrBot新会话适配、后台持续任务和自动长期记忆。私人回答领域质量及完整Retrieval Gate仍未通过。以下日期段落记录此前发布事实。
+
+2026-10-19周复盘修复：Mac更新为 `pi-week-review-6e7dc2f9d55e4e11`，VPS保留 `retrieval-context-3fa59e109dd0af73`。修复“过去的一周”的本机时间识别／Life路由、纯文本JSON模式和失败状态空结果处理；日期复盘在原8192字节提示／512生成Token上限内最多选七段。553项回归＝534通过＋19跳过，实际Pi SDK另2项通过；真实Life只读检查覆盖七天，一次MiMo虚构周记生成849 Token并离线复用，人工检查仍发现一处日期归属错误，不能报告为领域质量通过。原失败调用保留且未重试。见[修复说明](pi-weekly-review-fix.md)与[验收记录](validation/pi-weekly-review-20261019.json)。以下为之前发布快照。
+
 2026-10-19本机Pi入口：Mac已发布 `pi-terminal-f35a3859fc4834d1` 的[原生终端界面](pi-terminal.md)，可直接聊天、查看工具过程、保存／恢复本机会话；VPS仍为 `retrieval-context-3fa59e109dd0af73`。新入口复用原MiMo、来源许可、角色与预算，不依赖飞书／VPS，不自动启用v2.3。544项回归＝525通过＋19跳过，另2项实际Pi SDK合成测试通过；真实TTY问候161 Token、无笔记读取，领域质量与完整Retrieval Gate仍待验收。固定启动器及回退材料见[本轮记录](validation/pi-terminal-20261019.json)。以下为前一切片及更早快照。
 
 ## 2026-10-19 质量续作与当前发布
@@ -121,4 +137,4 @@ Study／Life 持续访问和自动记忆已经获得许可，但许可不等于�
 
 ## 接下来应做什么
 
-先补验实际领域任务的质量和当前入口／恢复，再补全领域上下文及来源适配；在明确配置具体主题、来源、频率、到期、预算及通知条件后，才实施和验收后台持续委托。PA2–PA5 与生活采集继续按各自门槛交付，详细顺序见[实施计划](implementation-plan.md)。
+P1工具已接通后，优先用真实获准问题补齐检索充分性、拒答、冲突和答案忠实性评测，并保持原质量Gate；随后再按P2会话API与Web、P3有限持续委托、P4渠道可靠性推进。PA2–PA5与生活采集继续按独立业务门槛交付；详见[本地路线](local-first-agent-roadmap.md)及[实施计划](implementation-plan.md)。

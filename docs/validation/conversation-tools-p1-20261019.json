@@ -1,0 +1,135 @@
+{
+  "date": "2026-10-19",
+  "scope": "P1 conversational tools checkout implementation",
+  "starting_head": "a56cdd1",
+  "pre_existing_worktree_preserved": true,
+  "protocols": {
+    "session": "conversation-v1",
+    "new_model": "chat-tools-v1",
+    "registry": "conversation-tools-v1",
+    "preserved": [
+      "chat-json-actions-v1",
+      "legacy Agent",
+      "agent-web-v1",
+      "agent-web-v2",
+      "agent-web-v3"
+    ]
+  },
+  "tools": [
+    "search_notes",
+    "search_reading",
+    "search_web",
+    "fetch_web",
+    "consult_specialist"
+  ],
+  "limits": {
+    "parent_models": 6,
+    "tools": 6,
+    "local_searches": 2,
+    "public_searches": 2,
+    "public_reads": 2,
+    "specialist_works": 1,
+    "child_models": 2,
+    "run_seconds_before_new_step": 180,
+    "network_seconds": 90,
+    "approval_seconds": 900,
+    "public_snapshot_seconds": 3600
+  },
+  "token_limits_changed": false,
+  "new_provider_grants": false,
+  "background_work_enabled": false,
+  "production_deployed": false,
+  "services_restarted": false,
+  "real_platform_messages_sent": false,
+  "automated": {
+    "full_command": "PYTHONPATH=src <existing-pa1-python> -m unittest discover -s tests -v",
+    "total": 613,
+    "passed": 594,
+    "skipped_optional_dependencies": 19,
+    "new_p1_tests": 24,
+    "new_native_adapter_tests": 1,
+    "conversation_tests_including_P0": 60,
+    "actual_pi_sdk_tests": 4,
+    "real_pi_mock_provider": true
+  },
+  "live": {
+    "scope": "real_mimo_pi_deepseek_fixed_public_query_synthetic_session",
+    "public_query": "LLVM release notes official",
+    "owner_approval": "synthetic_test_restricted_to_fixed_public_query",
+    "private_body_used": false,
+    "production_deployed": false,
+    "turns": [
+      {
+        "status": "completed",
+        "error": null,
+        "tokens": 3729,
+        "tool_usage": {
+          "local": 0,
+          "search": 1,
+          "fetch": 1,
+          "specialist": 0
+        },
+        "cited": [
+          "E1"
+        ],
+        "external_call_states": [
+          "known",
+          "known"
+        ]
+      }
+    ],
+    "duplicate_extra_tokens": 0
+  },
+  "live_model_calls": 3,
+  "live_model_tokens": 3729,
+  "live_public_searches": 1,
+  "live_public_reads": 1,
+  "private_body_used": false,
+  "duplicate_extra_tokens": 0,
+  "covered": [
+    "ordinary three-turn dialogue without tools or Work",
+    "frozen versioned tool definitions and strict schemas",
+    "natural exact query approval/denial/expiry and event deduplication",
+    "same-run replay without additional paid planning",
+    "discovery cannot be numbered evidence",
+    "private queries, arbitrary URLs and private DNS fail closed",
+    "new queries proposed by tool data require new approval",
+    "unknown network and crash after response do not repeat external calls",
+    "expired query grant cannot authorize a new body read",
+    "public snapshot expiry invalidates dependent history",
+    "original question time scope and authorized reading author attribution",
+    "source revocation and reading cache invalidation",
+    "optional actual Pi specialist execution with shared billing and two-call cap",
+    "incomplete work retained and completed work cancellation invalidates derivations",
+    "new UI charges are deltas, repeat approval costs zero",
+    "historical uncertainty retained as analysis rather than evidence",
+    "old Agent paid replay, PWA and Feishu automated regressions"
+  ],
+  "quality_limits": [
+    "full Retrieval Quality Gate not passed; ranking protocol unchanged",
+    "live owner approval was simulated for one fixed public query; not human UI acceptance",
+    "live answer inferred a rendered LLVM documentation URL that was not independently fetched",
+    "real personal-domain fidelity and conflict handling are not fully accepted",
+    "this turn Exa discovery failed DNS inside sandbox; not retried; no fresh Exa live acceptance",
+    "Jina anonymous conversion not retried or freshly accepted"
+  ],
+  "remaining": [
+    "real private/owner question quality evaluation",
+    "live account body tools with source/model disclosure checks",
+    "P2 summaries, history recall, text deltas and HTTP Session API",
+    "P3 proactive scheduling and P4 remote adapter integration"
+  ],
+  "official_references": [
+    "https://exa.ai/docs/reference/search",
+    "https://jina.ai/reader/",
+    "https://api-docs.deepseek.com/zh-cn/guides/search/"
+  ],
+  "source_sha256": {
+    "src/personal_asis/conversation.py": "16120c20fb45e175de7cf1f4797ee363721566ee20b31cb57400849b24c620da",
+    "src/personal_asis/conversation_tools.py": "f7f35c0508a9d1010a2cbbe6cd0fceb1fc63e343fd8f0647e6de12fdede33347",
+    "src/personal_asis/tool_registry.py": "fc762330ac58a96f85dc9ec88bd299467536488526afb968d94427042b72116e",
+    "src/personal_asis/conversation_terminal.py": "476f71c1241324f78849ac1e6ee8e2c11b7afc0498fc2e6d933441870b38f91f",
+    "src/personal_asis/chat_cli.py": "f32b925e81958117ad965f87f31d71cfcf3202e5f757d02a5eec38db87a81fe3",
+    "runtime/pi-terminal/terminal.mjs": "c8fa594104e5a5f7a86d095b815400e1b94a844720c132d6bde9e7f4e8cf4383"
+  }
+}

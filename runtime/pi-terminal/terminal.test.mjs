@@ -62,3 +62,53 @@ test('failed or unknown host work produces one visible stop with no automatic re
     assert.match(runtime.session.agent.state.messages.at(-1).content[0].text,/不会自动重试/);
   } finally {await runtime?.dispose();rmSync(temporary,{recursive:true,force:true});}
 });
+
+test('conversation native UI starts without scope or role and routes commands without paid calls',async()=>{
+  const temporary=mkdtempSync(join(tmpdir(),'asis-pi-chat-ui-'));
+  const requests=[];
+  let runtime;
+  try {
+    const terminal=await createTerminal({temporary,home:temporary,owner_home:temporary,
+      sources:[],mode:'conversation-v1',engine:'conversation'},async(_cfg,r)=>{
+      requests.push(r);
+      if(r.action==='new')return {thread:'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',messages:[],sources:[],mode:'conversation-v1'};
+      if(r.action==='run')return {status:'completed',text:r.query==='第一条'?'已经记住本会话约定':'继续这个话题',usage:{total_tokens:50}};
+      return {text:'本机会话状态'};
+    });
+    ({runtime}=terminal);
+    assert.deepEqual(requests[0],{action:'new'});
+    await runtime.session.prompt('第一条');await runtime.session.prompt('追问');
+    assert.equal(requests.filter(r=>r.action==='run').length,2);
+    assert.equal(runtime.session.agent.state.messages.at(-1).usage.totalTokens,50);
+    const tool=runtime.session.getAllTools().find(t=>t.name==='personal_assistant');
+    assert(tool);
+    terminal.ui.showStatus=()=>{};terminal.ui.showWarning=()=>{};
+    terminal.ui.setupEditorSubmitHandler();
+    await terminal.ui.defaultEditor.onSubmit('/budget');
+    await terminal.ui.defaultEditor.onSubmit('/resume');
+    assert.equal(requests.at(-2).action,'budget');
+    assert.equal(requests.at(-1).action,'resume');
+    assert.equal(requests.filter(r=>r.action==='run').length,2);
+  } finally {await runtime?.dispose();rmSync(temporary,{recursive:true,force:true});}
+});
+
+test('native conversation shows permission preview then accepts a natural reply without request codes',async()=>{
+  const temporary=mkdtempSync(join(tmpdir(),'asis-pi-consent-ui-'));
+  const requests=[];let runtime;
+  try {
+    ({runtime}=await createTerminal({temporary,home:temporary,owner_home:temporary,
+      sources:[],mode:'conversation-v1',engine:'conversation'},async(_cfg,r)=>{
+      if(r.action==='new')return {thread:'cccccccc-cccc-cccc-cccc-cccccccccccc',messages:[]};
+      requests.push(r);
+      return r.query==='同意' ? {status:'completed',text:'本轮公开来源回答 [E1]',usage:{total_tokens:100}} :
+        {status:'waiting_permission',text:'公开查询cache systems；回复同意执行。',usage:{total_tokens:50}};
+    }));
+    await runtime.session.prompt('搜索公开资料');
+    assert.match(runtime.session.agent.state.messages.at(-1).content[0].text,/回复同意/);
+    await runtime.session.prompt('同意');
+    assert.match(runtime.session.agent.state.messages.at(-1).content[0].text,/公开来源回答/);
+    assert.deepEqual(requests.map(r=>r.query),['搜索公开资料','同意']);
+    assert.notEqual(requests[0].request_id,requests[1].request_id);
+    assert.equal(runtime.session.agent.state.messages.filter(m=>m.role==='assistant').reduce((n,m)=>n+m.usage.totalTokens,0),150);
+  } finally {await runtime?.dispose();rmSync(temporary,{recursive:true,force:true});}
+});

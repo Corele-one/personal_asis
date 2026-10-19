@@ -76,6 +76,11 @@ def main(argv=None):
     parser.add_argument("--home", type=Path, default=DEFAULT_HOME, help="本机私密运行数据目录")
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("doctor")
+    p = commands.add_parser('chat', help='本机持续聊天、有限上下文及按需工具；独立于VPS和AstrBot')
+    p.add_argument('--session', help='恢复已保存的conversation-v1会话')
+    p.add_argument('--continue', dest='continued', action='store_true', help='恢复最近会话')
+    p.add_argument('--check', action='store_true', help='检查配置和Pi依赖，不调用模型')
+    p.add_argument('--list', dest='list_sessions', action='store_true', help='列出最近会话ID')
     p = commands.add_parser("init")
     p.add_argument("--test-root", required=True, type=Path)
     p.add_argument("--node-id", default="mac")
@@ -240,6 +245,10 @@ def main(argv=None):
     try:
         if args.command == "doctor":
             result = doctor()
+        elif args.command == 'chat':
+            from .chat_cli import main as chat_main
+            return chat_main(home, session=args.session, continued=args.continued,
+                             check=args.check, list_sessions=args.list_sessions)
         elif args.command == 'quality-answer':
             from .reranking import LocalCrossEncoder
             from .quality_answer import analyze, prepare

@@ -1,5 +1,18 @@
 # 项目文档索引
 
+当前P1：[持续对话受控工具](conversation-tools-p1.md)记录工具版本、查询确认、来源／预算／恢复、真实公开闭环与剩余质量门槛；[本轮验收](validation/conversation-tools-p1-20261019.json)区分合成、真实接口与UI验收。默认仍为`pi`原生持续对话，本轮没有生产部署。
+
+## 本轮入口：Local-first Conversational Agent
+
+- [本地Agent路线与实际架构审计](local-first-agent-roadmap.md)：模块依赖、Conversation与Delegation、Core API、预算／来源／恢复、P0–P4、兼容与回滚。
+- [本机Chat使用](assistant-usage.md)：`scripts/asis chat`、恢复、工具状态与当前限制。
+- [P0验证记录](validation/local-chat-p0-20261019.json)：合成、实际Pi、隔离真实MiMo与旧接口回归分别记录。
+- [ADR 0035](adr/0035-prefer-local-conversations-and-opt-in-specialists.md)：默认单主Agent与按需专业能力，修订0022／0025适用范围。
+
+本轮仅checkout实现，不部署或重启服务；下文各日期发布快照保留历史范围，不表示PWA／飞书已经切换新Session协议。
+
+2026-10-19周复盘修复：Mac更新为 `pi-week-review-6e7dc2f9d55e4e11`，VPS保留 `retrieval-context-3fa59e109dd0af73`。修复“过去的一周”的本机时间识别／Life路由、纯文本JSON模式和失败状态空结果处理；日期复盘在原8192字节提示／512生成Token上限内最多选七段。553项回归＝534通过＋19跳过，实际Pi SDK另2项通过；真实Life只读检查覆盖七天，一次MiMo虚构周记生成849 Token并离线复用，人工检查仍发现一处日期归属错误，不能报告为领域质量通过。原失败调用保留且未重试。见[修复说明](pi-weekly-review-fix.md)与[验收记录](validation/pi-weekly-review-20261019.json)。以下为之前发布快照。
+
 2026-10-19本机Pi入口：Mac已发布 `pi-terminal-f35a3859fc4834d1` 的[原生终端界面](pi-terminal.md)，可直接聊天、查看工具过程、保存／恢复本机会话；VPS仍为 `retrieval-context-3fa59e109dd0af73`。新入口复用原MiMo、来源许可、角色与预算，不依赖飞书／VPS，不自动启用v2.3。544项回归＝525通过＋19跳过，另2项实际Pi SDK合成测试通过；真实TTY问候161 Token、无笔记读取，领域质量与完整Retrieval Gate仍待验收。固定启动器及回退材料见[本轮记录](validation/pi-terminal-20261019.json)。以下为前一切片及更早快照。
 
 2026-10-19当前发布 `retrieval-context-3fa59e109dd0af73`：[质量续作](retrieval-context-quality.md)记录日期误筛、词法误报、自然问句与逐字回答实验；532项回归、真实两条回答和[部署验收](validation/retrieval-context-20261019.json)已记录，完整生产替换Gate仍未通过。以下为前一切片及更早记录。
