@@ -1,10 +1,16 @@
 # 项目文档索引
 
+2026-10-19本机Pi入口：Mac已发布 `pi-terminal-f35a3859fc4834d1` 的[原生终端界面](pi-terminal.md)，可直接聊天、查看工具过程、保存／恢复本机会话；VPS仍为 `retrieval-context-3fa59e109dd0af73`。新入口复用原MiMo、来源许可、角色与预算，不依赖飞书／VPS，不自动启用v2.3。544项回归＝525通过＋19跳过，另2项实际Pi SDK合成测试通过；真实TTY问候161 Token、无笔记读取，领域质量与完整Retrieval Gate仍待验收。固定启动器及回退材料见[本轮记录](validation/pi-terminal-20261019.json)。以下为前一切片及更早快照。
+
+2026-10-19当前发布 `retrieval-context-3fa59e109dd0af73`：[质量续作](retrieval-context-quality.md)记录日期误筛、词法误报、自然问句与逐字回答实验；532项回归、真实两条回答和[部署验收](validation/retrieval-context-20261019.json)已记录，完整生产替换Gate仍未通过。以下为前一切片及更早记录。
+
+2026-10-19当前发布 `retrieval-quality-e6d8bd41f7ea44a3`：[Retrieval Quality](retrieval-quality.md)记录运行恢复、显式离线重排、冻结题／保留题和私密版本绑定评测；两组合成检索Gate通过，真实探针与完整生产替换未通过，不切换普通检索或旧付费工具。当前测试／发布见[本轮记录](validation/retrieval-quality-20261019.json)。以下10月18日段落保留当时范围。
+
 最新续验：现已发布 `web-live-cfb5d209d8b32103`；公开 DeepSeek→本机正文校验→MiMo引用、Exa真实路径、旧付费恢复与生产加密通道通过；Jina匿名401仍保留降级。新飞书文字入口与501项回归、费用、失败和回退见[真实联网部署](web-search-live-deployment.md)。新能力只在显式公开工作启用，旧角色／私密资料协议与预算不变；以下旧发布及checkout记录保留当时范围。
 
 2026-10-18 新 checkout 切片：[Agent 联网搜索集成](web-search-integration.md)记录 Exa/Jina 适配、新会话工具协议、账户按需正文、证据／权限分派、预算、模拟与真实边界及回退。已实现本机最小闭环，**未部署、未替换默认或已付费 Agent**；飞书新联网工作创建、账户自动分类和披露接线尚待完成。生产发布仍见下节，最新状态见[完成情况](project-status.md)。
 
-## 2026-10-18 当前发布
+## 2026-10-18 Retrieval V2 发布快照
 
 当前发布 `retrieval-v2-de593bc25486b7cc` 已部署Mac／VPS；原解释器、来源／模型许可与普通搜索／Agent协议保持原值。本人飞书私聊测试：`/asis retrieve-v2 study | 缓存一致性`。这是显式词法候选阅读，返回段落与位置，0模型调用；完整质量Gate未过，普通检索未切换。实际协议／测试与回滚见[部署验收](validation/retrieval-v2-deployment-20261018.json)。真实飞书消息和界面由用户自行验证，下列较早发布编号与数量保留历史范围。
 

@@ -1,5 +1,9 @@
 # Retrieval V2：审计、基础实现与质量门槛
 
+2026-10-19进一步续作：[v2.3时间／词法支持与逐字回答实验](retrieval-context-quality.md)已部署，原探针目标与负例通过，但人工领域质量、真实缺信息／冲突及新Agent会话仍待验收。默认v2.1／既有v2.2和历史付费输入保持原值；完整Gate未通过。见[本轮验收](validation/retrieval-context-20261019.json)。
+
+2026-10-19续作：[质量实验](retrieval-quality.md)已增加显式本机重排接口、独立`retrieval-v2.2` Bundle、保持不变的39题及13道保留题、版本绑定私密评测与机器检索Gate。未传重排器的`retrieval-v2.1`及普通／历史付费工具不变。下文“P2未编码”是10月18日初始快照；可插拔重排与分层评测现已编码，通用Planner、Live路由、语义覆盖／补查和角色自主检索仍待实现。实际评测／发布见[本轮记录](validation/retrieval-quality-20261019.json)。
+
 2026-10-18 初次完成 Phase 0 合成基线与 Phase 1 独立本机闭环；随后按用户明确要求发布 `retrieval-v2-de593bc25486b7cc` 到 Mac／VPS，并增加显式飞书只读实验。**普通生产 PA1、Pi 工具与旧付费协议没有切换**，Phase 2 仍仅设计。来源与模型／渠道政策未改，无生成调用或后台抓取。初次未部署的验收保留在原记录；续发见[部署验收](validation/retrieval-v2-deployment-20261018.json)。
 
 同日后续 checkout（未部署）：[agent-web-v1 联网切片](web-search-integration.md)把 V2 接入显式新会话的 `search_notes`，并增加 Exa搜索／安全正文读取与分类型证据校验；原文、划线、批注的结构归属可进入新工具结果。真实 Pi＋模拟 Provider 已测，真实新协议质量未验收，默认／历史 Agent 不变。纯只读 V2渠道现在只查阅读／渠道许可，可与 MiMo许可分离；账户明确条目的按需获取→V2 已有本机入口，但账户自主Live、远程抓取接线与完整 Quality Gate 仍待完成。以下审计表与基线保留初次切片范围。

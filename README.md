@@ -1,5 +1,11 @@
 # Personal Asis
 
+2026-10-19本机Pi入口：Mac已发布 `pi-terminal-f35a3859fc4834d1` 的[原生终端界面](docs/pi-terminal.md)，可直接聊天、查看工具过程、保存／恢复本机会话；VPS仍为 `retrieval-context-3fa59e109dd0af73`。新入口复用原MiMo、来源许可、角色与预算，不依赖飞书／VPS，不自动启用v2.3。544项回归＝525通过＋19跳过，另2项实际Pi SDK合成测试通过；真实TTY问候161 Token、无笔记读取，领域质量与完整Retrieval Gate仍待验收。固定启动器及回退材料见[本轮记录](docs/validation/pi-terminal-20261019.json)。以下为前一切片及更早快照。
+
+2026-10-19质量续作当前发布 `retrieval-context-3fa59e109dd0af73`：[时间／词法支持与逐字回答](docs/retrieval-context-quality.md)已部署到现有Mac／VPS。原16题探针和新增助手自然问句的目标／负例通过；真实两条摘录回答709 Token，原提示和预算上限内运行。完整Gate仍缺真人领域评判、真实缺信息／冲突与新Agent接线；普通入口不切换。验收见[本轮记录](docs/validation/retrieval-context-20261019.json)。以下为此前快照。
+
+2026-10-19当前Mac／VPS发布为 `retrieval-quality-e6d8bd41f7ea44a3`：[检索质量实验](docs/retrieval-quality.md)新增显式本机重排、独立新Bundle与私密版本绑定评测；隧道和Life索引已恢复。合成检索Gate通过，真实探针与完整生产替换仍未通过；普通检索、权限和历史付费工作不切换。实际验收见[本轮记录](docs/validation/retrieval-quality-20261019.json)；下文10月18日为此前发布范围。
+
 **已部署可按需使用的助手，完整实施计划尚未完成。** 2026-10-18当前Mac／VPS发布为 `web-live-cfb5d209d8b32103`：新增显式本人公开检索入口、可选DeepSeek搜索正文与MiMo引用回答，真实调用、失败及501项回归见[联网部署](docs/web-search-live-deployment.md)。Jina匿名401仍降级；MiMo模型／预算、普通PA1／角色和历史付费输入不变。WUCAI、Folo、小红书已有本机读取，但账户披露与完整性仍分别检查。逐项状态见[完成情况](docs/project-status.md)与[实施计划](docs/implementation-plan.md)。
 
 同日最初的[联网 Agent 实验](docs/web-search-integration.md)在checkout完成模拟验证；随后已按用户授权进行上述真实续验部署。账户指定条目→V2已有本机入口，完整账户远程抓取／分类／披露链路仍待完成，未新增来源模型／渠道许可。知乎不推进。
@@ -9,6 +15,8 @@
 PA0 已按 Mac 单节点范围验收；VPS 负责协调和渠道入口，ROG 停用。2026-10-14 验收时索引 Study 267 篇、Life 181 篇，共 448 篇 Markdown；这不是实时来源数量。独立备份和恢复密钥按用户选择暂缓，整机重启未验。
 
 ## 使用入口
+
+Mac直接使用：运行 `./scripts/asis-pi`，或在Finder双击 `scripts/Personal Asis.command`。恢复最近聊天用 `--continue`；详见[本机Pi](docs/pi-terminal.md)。界面与工具在Mac，模型沿用MiMo Flash。
 
 V2 只读实验：本人已绑定飞书私聊发送 `/asis retrieve-v2 study | 缓存一致性`。返回候选段落、来源与位置，不调用模型。部署与验证见[续发记录](docs/validation/retrieval-v2-deployment-20261018.json)。
 

@@ -1,0 +1,667 @@
+{
+  "date": "2026-10-19",
+  "release": "retrieval-context-3fa59e109dd0af73",
+  "same_gold_target_identity_unchanged": true,
+  "historical_report_preserved": "retrieval-quality-private-probes-20261019.json",
+  "natural_questions_authored_by": "assistant",
+  "human_annotated_or_user_accepted": false,
+  "shared_negative_cases_not_independent": true,
+  "results": {
+    "same_gold_explicit_time": {
+      "protocol": "retrieval-private-eval-v2",
+      "synthetic_only": false,
+      "temporal_policy": "explicit",
+      "quality_profile": null,
+      "dataset_design": "known_span_smoke",
+      "manual_relevance_judgment": false,
+      "dataset_sha256": "e27eaaad8bd43c1f8274781f2f42d02ab65a768554264d0235a051035599119c",
+      "questions": 16,
+      "k": 5,
+      "model_generation_calls": 0,
+      "evidence_recall_at_k": 1.0,
+      "precision_at_k": 0.15000000000000002,
+      "returned_precision_macro_nonempty": 0.26666666666666666,
+      "negative_cases_total": 4,
+      "negative_cases_passed": 3,
+      "latency_ms": {
+        "p50": 4796.514999999999,
+        "p95": 7648.37
+      },
+      "root_and_target_versions_checked": true,
+      "degraded_questions": 0,
+      "query_text_titles_paths_document_ids_or_excerpts_in_report": false,
+      "answer_faithfulness_verified": false,
+      "answer_relevancy_verified": false,
+      "production_replacement_gate_passed": false,
+      "cases": [
+        {
+          "case_number": 1,
+          "expected": 1,
+          "matched": 1,
+          "returned": 5,
+          "relevant": 1,
+          "latency_ms": 5233.74,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 2,
+          "expected": 1,
+          "matched": 1,
+          "returned": 3,
+          "relevant": 1,
+          "latency_ms": 6561.3,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 3,
+          "expected": 1,
+          "matched": 1,
+          "returned": 3,
+          "relevant": 1,
+          "latency_ms": 5921.04,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 4,
+          "expected": 1,
+          "matched": 1,
+          "returned": 5,
+          "relevant": 1,
+          "latency_ms": 7648.37,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 5,
+          "expected": 1,
+          "matched": 1,
+          "returned": 5,
+          "relevant": 1,
+          "latency_ms": 6201.08,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 6,
+          "expected": 1,
+          "matched": 1,
+          "returned": 5,
+          "relevant": 1,
+          "latency_ms": 4873.16,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 7,
+          "expected": 1,
+          "matched": 1,
+          "returned": 5,
+          "relevant": 1,
+          "latency_ms": 6936.29,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 8,
+          "expected": 1,
+          "matched": 1,
+          "returned": 5,
+          "relevant": 1,
+          "latency_ms": 4719.87,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 9,
+          "expected": 1,
+          "matched": 1,
+          "returned": 1,
+          "relevant": 1,
+          "latency_ms": 3114.65,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 10,
+          "expected": 1,
+          "matched": 1,
+          "returned": 5,
+          "relevant": 1,
+          "latency_ms": 4113.85,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 11,
+          "expected": 1,
+          "matched": 1,
+          "returned": 5,
+          "relevant": 1,
+          "latency_ms": 6773.86,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 12,
+          "expected": 1,
+          "matched": 1,
+          "returned": 5,
+          "relevant": 1,
+          "latency_ms": 4374.1,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 13,
+          "expected": 0,
+          "matched": 0,
+          "returned": 2,
+          "relevant": 0,
+          "latency_ms": 2349.54,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 14,
+          "expected": 0,
+          "matched": 0,
+          "returned": 0,
+          "relevant": 0,
+          "latency_ms": 689.44,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 15,
+          "expected": 0,
+          "matched": 0,
+          "returned": 0,
+          "relevant": 0,
+          "latency_ms": 2543.02,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 16,
+          "expected": 0,
+          "matched": 0,
+          "returned": 0,
+          "relevant": 0,
+          "latency_ms": 712.5,
+          "mode": "lexical",
+          "degraded": false
+        }
+      ]
+    },
+    "same_gold_strict_lexical": {
+      "protocol": "retrieval-private-eval-v2",
+      "synthetic_only": false,
+      "temporal_policy": "explicit",
+      "quality_profile": "strict-lexical-v1",
+      "dataset_design": "known_span_smoke",
+      "manual_relevance_judgment": false,
+      "dataset_sha256": "e27eaaad8bd43c1f8274781f2f42d02ab65a768554264d0235a051035599119c",
+      "questions": 16,
+      "k": 5,
+      "model_generation_calls": 0,
+      "evidence_recall_at_k": 1.0,
+      "precision_at_k": 0.15000000000000002,
+      "returned_precision_macro_nonempty": 0.28194444444444444,
+      "negative_cases_total": 4,
+      "negative_cases_passed": 4,
+      "latency_ms": {
+        "p50": 4665.41,
+        "p95": 7392.41
+      },
+      "root_and_target_versions_checked": true,
+      "degraded_questions": 0,
+      "query_text_titles_paths_document_ids_or_excerpts_in_report": false,
+      "answer_faithfulness_verified": false,
+      "answer_relevancy_verified": false,
+      "production_replacement_gate_passed": false,
+      "cases": [
+        {
+          "case_number": 1,
+          "expected": 1,
+          "matched": 1,
+          "returned": 5,
+          "relevant": 1,
+          "latency_ms": 4810.04,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 2,
+          "expected": 1,
+          "matched": 1,
+          "returned": 4,
+          "relevant": 1,
+          "latency_ms": 7068.43,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 3,
+          "expected": 1,
+          "matched": 1,
+          "returned": 3,
+          "relevant": 1,
+          "latency_ms": 5784.47,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 4,
+          "expected": 1,
+          "matched": 1,
+          "returned": 5,
+          "relevant": 1,
+          "latency_ms": 7271.99,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 5,
+          "expected": 1,
+          "matched": 1,
+          "returned": 5,
+          "relevant": 1,
+          "latency_ms": 5958.88,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 6,
+          "expected": 1,
+          "matched": 1,
+          "returned": 5,
+          "relevant": 1,
+          "latency_ms": 4673.31,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 7,
+          "expected": 1,
+          "matched": 1,
+          "returned": 5,
+          "relevant": 1,
+          "latency_ms": 7392.41,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 8,
+          "expected": 1,
+          "matched": 1,
+          "returned": 5,
+          "relevant": 1,
+          "latency_ms": 4657.51,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 9,
+          "expected": 1,
+          "matched": 1,
+          "returned": 1,
+          "relevant": 1,
+          "latency_ms": 3173.14,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 10,
+          "expected": 1,
+          "matched": 1,
+          "returned": 5,
+          "relevant": 1,
+          "latency_ms": 4140.45,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 11,
+          "expected": 1,
+          "matched": 1,
+          "returned": 5,
+          "relevant": 1,
+          "latency_ms": 7342.51,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 12,
+          "expected": 1,
+          "matched": 1,
+          "returned": 5,
+          "relevant": 1,
+          "latency_ms": 4449.19,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 13,
+          "expected": 0,
+          "matched": 0,
+          "returned": 0,
+          "relevant": 0,
+          "latency_ms": 318.87,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 14,
+          "expected": 0,
+          "matched": 0,
+          "returned": 0,
+          "relevant": 0,
+          "latency_ms": 635.83,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 15,
+          "expected": 0,
+          "matched": 0,
+          "returned": 0,
+          "relevant": 0,
+          "latency_ms": 322.87,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 16,
+          "expected": 0,
+          "matched": 0,
+          "returned": 0,
+          "relevant": 0,
+          "latency_ms": 780.07,
+          "mode": "lexical",
+          "degraded": false
+        }
+      ]
+    },
+    "natural_baseline": {
+      "protocol": "retrieval-private-eval-v2",
+      "synthetic_only": false,
+      "temporal_policy": "explicit",
+      "quality_profile": null,
+      "dataset_design": "assistant_authored_natural",
+      "manual_relevance_judgment": false,
+      "dataset_sha256": "fc7d511fb31fef27e45b99ac760255f86b3498d3b5658f7487e2f67f174073b3",
+      "questions": 11,
+      "k": 5,
+      "model_generation_calls": 0,
+      "evidence_recall_at_k": 1.0,
+      "precision_at_k": 0.1272727272727273,
+      "returned_precision_macro_nonempty": 0.19166666666666668,
+      "negative_cases_total": 4,
+      "negative_cases_passed": 3,
+      "latency_ms": {
+        "p50": 4129.62,
+        "p95": 5864.65
+      },
+      "root_and_target_versions_checked": true,
+      "degraded_questions": 0,
+      "query_text_titles_paths_document_ids_or_excerpts_in_report": false,
+      "answer_faithfulness_verified": false,
+      "answer_relevancy_verified": false,
+      "production_replacement_gate_passed": false,
+      "cases": [
+        {
+          "case_number": 1,
+          "expected": 1,
+          "matched": 1,
+          "returned": 5,
+          "relevant": 1,
+          "latency_ms": 4150.0,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 2,
+          "expected": 1,
+          "matched": 1,
+          "returned": 3,
+          "relevant": 1,
+          "latency_ms": 2708.54,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 3,
+          "expected": 1,
+          "matched": 1,
+          "returned": 5,
+          "relevant": 1,
+          "latency_ms": 4129.62,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 4,
+          "expected": 1,
+          "matched": 1,
+          "returned": 5,
+          "relevant": 1,
+          "latency_ms": 5603.22,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 5,
+          "expected": 1,
+          "matched": 1,
+          "returned": 5,
+          "relevant": 1,
+          "latency_ms": 5864.65,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 6,
+          "expected": 1,
+          "matched": 1,
+          "returned": 5,
+          "relevant": 1,
+          "latency_ms": 4447.0,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 7,
+          "expected": 1,
+          "matched": 1,
+          "returned": 5,
+          "relevant": 1,
+          "latency_ms": 4973.04,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 8,
+          "expected": 0,
+          "matched": 0,
+          "returned": 2,
+          "relevant": 0,
+          "latency_ms": 2390.42,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 9,
+          "expected": 0,
+          "matched": 0,
+          "returned": 0,
+          "relevant": 0,
+          "latency_ms": 689.6,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 10,
+          "expected": 0,
+          "matched": 0,
+          "returned": 0,
+          "relevant": 0,
+          "latency_ms": 2479.92,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 11,
+          "expected": 0,
+          "matched": 0,
+          "returned": 0,
+          "relevant": 0,
+          "latency_ms": 758.7,
+          "mode": "lexical",
+          "degraded": false
+        }
+      ]
+    },
+    "natural_strict_lexical": {
+      "protocol": "retrieval-private-eval-v2",
+      "synthetic_only": false,
+      "temporal_policy": "explicit",
+      "quality_profile": "strict-lexical-v1",
+      "dataset_design": "assistant_authored_natural",
+      "manual_relevance_judgment": false,
+      "dataset_sha256": "fc7d511fb31fef27e45b99ac760255f86b3498d3b5658f7487e2f67f174073b3",
+      "questions": 11,
+      "k": 5,
+      "model_generation_calls": 0,
+      "evidence_recall_at_k": 1.0,
+      "precision_at_k": 0.1272727272727273,
+      "returned_precision_macro_nonempty": 0.21904761904761905,
+      "negative_cases_total": 4,
+      "negative_cases_passed": 4,
+      "latency_ms": {
+        "p50": 3938.99,
+        "p95": 5714.75
+      },
+      "root_and_target_versions_checked": true,
+      "degraded_questions": 0,
+      "query_text_titles_paths_document_ids_or_excerpts_in_report": false,
+      "answer_faithfulness_verified": false,
+      "answer_relevancy_verified": false,
+      "production_replacement_gate_passed": false,
+      "cases": [
+        {
+          "case_number": 1,
+          "expected": 1,
+          "matched": 1,
+          "returned": 5,
+          "relevant": 1,
+          "latency_ms": 3938.99,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 2,
+          "expected": 1,
+          "matched": 1,
+          "returned": 3,
+          "relevant": 1,
+          "latency_ms": 2718.63,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 3,
+          "expected": 1,
+          "matched": 1,
+          "returned": 5,
+          "relevant": 1,
+          "latency_ms": 4201.26,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 4,
+          "expected": 1,
+          "matched": 1,
+          "returned": 5,
+          "relevant": 1,
+          "latency_ms": 5545.53,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 5,
+          "expected": 1,
+          "matched": 1,
+          "returned": 5,
+          "relevant": 1,
+          "latency_ms": 5714.75,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 6,
+          "expected": 1,
+          "matched": 1,
+          "returned": 5,
+          "relevant": 1,
+          "latency_ms": 4382.44,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 7,
+          "expected": 1,
+          "matched": 1,
+          "returned": 5,
+          "relevant": 1,
+          "latency_ms": 4858.13,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 8,
+          "expected": 0,
+          "matched": 0,
+          "returned": 0,
+          "relevant": 0,
+          "latency_ms": 308.31,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 9,
+          "expected": 0,
+          "matched": 0,
+          "returned": 0,
+          "relevant": 0,
+          "latency_ms": 624.54,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 10,
+          "expected": 0,
+          "matched": 0,
+          "returned": 0,
+          "relevant": 0,
+          "latency_ms": 414.66,
+          "mode": "lexical",
+          "degraded": false
+        },
+        {
+          "case_number": 11,
+          "expected": 0,
+          "matched": 0,
+          "returned": 0,
+          "relevant": 0,
+          "latency_ms": 706.93,
+          "mode": "lexical",
+          "degraded": false
+        }
+      ]
+    }
+  }
+}

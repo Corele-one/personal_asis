@@ -17,7 +17,8 @@ import time
 PI_DIR = Path(__file__).resolve().parents[2] / 'runtime' / 'pi'
 
 
-def run_pi(prompt, tools, session, handler, *, max_turns=6, timeout=20, runtime_dir=PI_DIR):
+def run_pi(prompt, tools, session, handler, *, max_turns=6, timeout=20, runtime_dir=PI_DIR,
+           on_event=None):
     runtime_dir = Path(runtime_dir).resolve()
     node = shutil.which('node')
     if node is None or not (runtime_dir/'node_modules/@earendil-works/pi-agent-core').is_dir():
@@ -63,7 +64,12 @@ def run_pi(prompt, tools, session, handler, *, max_turns=6, timeout=20, runtime_
                         raise ValueError('pi_bridge_invalid_protocol')
                     sequence += 1
                     # On any host rejection kill the entire loop, not a follow-up retry.
+                    if on_event is not None:
+                        on_event({'kind':event['kind'], 'phase':'start',
+                                  **({'name':event['name']} if event['kind']=='tool' else {'turn':event['turn']})})
                     reply = handler(event['kind'], event)
+                    if on_event is not None:
+                        on_event({'kind':event['kind'], 'phase':'done'})
                     send({'id': sequence, 'ok': True, 'value': reply})
                 raise ValueError('pi_bridge_event_limit')
         finally:

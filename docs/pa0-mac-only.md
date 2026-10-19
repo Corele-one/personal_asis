@@ -1,5 +1,15 @@
 # PA0 Mac 单节点运行
 
+2026-10-19本机Pi入口：Mac已发布 `pi-terminal-f35a3859fc4834d1` 的[原生终端界面](pi-terminal.md)，可直接聊天、查看工具过程、保存／恢复本机会话；VPS仍为 `retrieval-context-3fa59e109dd0af73`。新入口复用原MiMo、来源许可、角色与预算，不依赖飞书／VPS，不自动启用v2.3。544项回归＝525通过＋19跳过，另2项实际Pi SDK合成测试通过；真实TTY问候161 Token、无笔记读取，领域质量与完整Retrieval Gate仍待验收。固定启动器及回退材料见[本轮记录](validation/pi-terminal-20261019.json)。以下为前一切片及更早快照。
+
+## 2026-10-19 当前运行
+
+质量续作后当前Mac PA0／PA1与VPS代码为 `retrieval-context-3fa59e109dd0af73`，原解释器、配置及前一发布保留；隧道／独立MCP仍运行。仅新增[本机显式质量实验](retrieval-context-quality.md)，完整生产替换Gate未通过。Mac／VPS回退标识同发布名，按[回退步骤](retrieval-context-quality.md#发布回退与下一门槛)恢复代码／plist，不回滚预算／索引库。部署和只读链路见[本轮记录](validation/retrieval-context-20261019.json)；下文为前一切片快照。
+
+Mac PA0／PA1与VPS现使用 `retrieval-quality-e6d8bd41f7ea44a3`，原解释器和旧发布保留；默认检索、角色、来源／渠道权限与历史付费协议不变。隧道和Life索引已恢复，当前Study267／Life187、外部24／9／8，共495活动条目。新增的是[显式本机质量工具](retrieval-quality.md)，合成检索Gate通过，真实探针／完整生产替换未通过，不能开启后台或替换普通检索。
+
+本次发布发现`launchctl bootstrap`成功后服务仍未启动，已自动回滚，随后在bootstrap后显式`launchctl kickstart gui/$(id -u)/LABEL`并等待`state = running`再继续。首次登记成功不等于运行成功；完整回滚与验收见[本轮记录](validation/retrieval-quality-20261019.json)。人工恢复不代替无人值守休眠／重启验收。以下10月18日及更早记录保留历史范围。
+
 ## 2026-10-18 Retrieval V2 续发
 
 当前发布 `retrieval-v2-de593bc25486b7cc` 已部署Mac／VPS；原解释器、来源／模型许可与普通搜索／Agent协议保持原值。本人飞书私聊测试：`/asis retrieve-v2 study | 缓存一致性`。这是显式词法候选阅读，返回段落与位置，0模型调用；完整质量Gate未过，普通检索未切换。实际协议／测试与回滚见[部署验收](validation/retrieval-v2-deployment-20261018.json)。真实飞书消息和界面由用户自行验证，下列较早发布编号与数量保留历史范围。

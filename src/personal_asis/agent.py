@@ -85,6 +85,11 @@ def validate_state(home, source_home, state, channel=None):
         from .work_history import validate_history
         for recipient in ({state.get('channel'),channel}-{None}) or {None}:
             validate_history(home,state['work_history'],state['domain_context'],list(state['roots']),recipient)
+    if state.get('terminal_history'):
+        from .terminal_history import validate
+        if channel is not None or state.get('channel'):
+            raise ValueError('terminal_history_local_only')
+        validate(home,state['terminal_history'],list(state['roots']))
     sources={s.id:s for s in config.sources}
     for sid,identity in state['roots'].items():
         source=sources.get(sid)
@@ -436,8 +441,11 @@ def _source_home(home, request_id, synthetic):
 
 def execute(home, query, request_id, source_ids=None, *, resume=False, provider=None,
             synthetic=False, step_limit=None, encoder_override=None, channel=None, before_step=None, bootstrap=False, domain=None, with_history=False, mode=None, use_context=False, role_history=False,
-            web=False, public_queries=None, web_provider=None, web_backend=None):
+            web=False, public_queries=None, web_provider=None, web_backend=None,
+            terminal_history=None, on_event=None):
     home=Path(home)
+    if terminal_history is not None and (resume or synthetic or channel is not None or web):
+        raise ValueError('terminal_history_new_local_sessions_only')
     if type(web) is not bool or ((public_queries is not None or web_backend is not None) and not web):
         raise ValueError('agent_web_requires_explicit_new_protocol')
     if web and (resume or bootstrap or synthetic or domain or with_history or use_context or role_history
@@ -546,6 +554,9 @@ def execute(home, query, request_id, source_ids=None, *, resume=False, provider=
             initial['role_context_version']=VERSION
             initial['role_contexts']=prepare(source_home,initial['role_plan']['roles'],query,source_ids,rid,channel,role_history)
             initial['role_context_options']={'use_context':True,'role_history':role_history}
+        if state is None and terminal_history and not reply_plan:
+            from .terminal_history import prepare
+            initial['terminal_history']=prepare(home,terminal_history,source_ids)
         if domain is not None:
             from .domain_context import DomainContexts
             with DomainContexts(source_home) as contexts:
@@ -563,7 +574,7 @@ def execute(home, query, request_id, source_ids=None, *, resume=False, provider=
             if with_history and 'work_history' not in state:
                 raise ValueError('agent_request_history_conflict')
             # Transport changes never rewrite an existing paid session's contract.
-            for name in ('channel','bootstrap_search','domain_context','work_history','role_plan','response_plan','temporal_scope','evidence_protocol','role_contexts','role_context_options','role_context_version'):
+            for name in ('channel','bootstrap_search','domain_context','work_history','role_plan','response_plan','temporal_scope','evidence_protocol','role_contexts','role_context_options','role_context_version','terminal_history'):
                 initial.pop(name,None)
                 if name in state:
                     initial[name]=state[name]
@@ -614,11 +625,15 @@ def execute(home, query, request_id, source_ids=None, *, resume=False, provider=
             if 'work_history' in state:
                 from .work_history import prompt_history
                 prompt=prompt_history(prompt,state['work_history'])
+            if state.get('terminal_history'):
+                from .terminal_history import prompt as history_prompt
+                prompt=history_prompt(prompt,state['terminal_history'])
             if 'role_plan' in state:
                 from .agent_roles import supervisor_prompt
                 prompt=supervisor_prompt(prompt,state['role_plan'],host.specialists())
             return run_pi(prompt,[] if state.get('response_plan') else tools,claim['session'],host,
-                          max_turns=1 if state.get('response_plan') else MAX_TURNS,timeout=900)
+                          max_turns=1 if state.get('response_plan') else MAX_TURNS,timeout=900,
+                          **({'on_event':on_event} if on_event is not None else {}))
         except CheckpointReached:
             work.yield_run(rid,node,claim['epoch'])
             return {'status':'checkpointed','delegation_id':did,'run_id':rid,

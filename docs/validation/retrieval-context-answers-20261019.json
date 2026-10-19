@@ -1,0 +1,95 @@
+{
+  "date": "2026-10-19",
+  "release": "retrieval-context-3fa59e109dd0af73",
+  "protocol": "quality-answer-v1",
+  "generation_calls": 2,
+  "actual_tokens": 709,
+  "cases": [
+    {
+      "case_number": 1,
+      "expected_status": "supported",
+      "preflight": {
+        "protocol": "quality-answer-v1",
+        "prompt_bytes": 1209,
+        "baseline_lexical_prompt_bytes": 1328,
+        "prompt_byte_limit": 8192,
+        "completion_token_limit": 512,
+        "evidence_count": 1,
+        "prompt_bytes_no_greater_than_lexical_baseline": true,
+        "context_protocol": "retrieval-v2.3",
+        "provider": "mimo",
+        "model": "mimo-v2.6-flash"
+      },
+      "status": "supported",
+      "usage": {
+        "completion_tokens": 44,
+        "prompt_tokens": 312,
+        "total_tokens": 356,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "prompt_tokens_details": null
+      },
+      "literal_quotes_verified": true,
+      "cached": false,
+      "cached_reuse_no_network": true,
+      "observed_quote_answers_sample_question": true,
+      "model_generation_calls": 1
+    },
+    {
+      "case_number": 2,
+      "expected_status": "supported",
+      "preflight": {
+        "protocol": "quality-answer-v1",
+        "prompt_bytes": 1179,
+        "baseline_lexical_prompt_bytes": 1301,
+        "prompt_byte_limit": 8192,
+        "completion_token_limit": 512,
+        "evidence_count": 1,
+        "prompt_bytes_no_greater_than_lexical_baseline": true,
+        "context_protocol": "retrieval-v2.3",
+        "provider": "mimo",
+        "model": "mimo-v2.6-flash"
+      },
+      "status": "supported",
+      "usage": {
+        "completion_tokens": 64,
+        "prompt_tokens": 289,
+        "total_tokens": 353,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "prompt_tokens_details": null
+      },
+      "literal_quotes_verified": true,
+      "cached": false,
+      "observed_quote_answers_sample_question": true,
+      "model_generation_calls": 1
+    },
+    {
+      "case_number": 3,
+      "expected_status": "insufficient_evidence",
+      "error": "v2_no_evidence_within_authorized_budget",
+      "model_generation_calls": 0,
+      "no_reservation_created": true
+    },
+    {
+      "case_number": 4,
+      "expected_status": "insufficient_evidence",
+      "distinct_missing_numeric_detail_case": true,
+      "error": "quality_context_cannot_fit_legacy_cost_baseline",
+      "model_generation_calls": 0
+    }
+  ],
+  "cached_reuse_network_blocked": true,
+  "automatic_retry": false,
+  "private_raw_answers_in_git": false,
+  "historical_unknown_call_count": 2,
+  "historical_unknown_reserved_tokens": 5688,
+  "live_missing_evidence_model_abstention_verified": false,
+  "live_conflict_semantics_verified": false,
+  "synthetic_absence_conflict_quote_and_revoke_tests_passed": true,
+  "quote_contiguity_is_not_semantic_entailment_proof": true,
+  "preflight_stops_are_not_successful_generated_answers": true,
+  "production_replacement_gate_passed": false
+}

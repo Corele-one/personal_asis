@@ -101,10 +101,32 @@ def fixture(home):
                     index.db.execute(f'UPDATE {table} SET document_id=? WHERE document_id=?', (stable, row['document_id']))
 
 
-def evaluate(home, version, mode='lexical', encoder=None, k=5):
+def holdout_cases():
+    """Additional queries frozen separately; never used to choose a score threshold."""
+    return [
+        {'id': 'held-copy', 'mode': 'paraphrase', 'query': '服务器里的缓存副本需要怎样同步', 'targets': [FACTS[0][2]]},
+        {'id': 'held-branch', 'mode': 'paraphrase', 'query': '分支方向猜错之后流水级怎样恢复', 'targets': [FACTS[3][2]]},
+        {'id': 'held-power', 'mode': 'paraphrase', 'query': '电压提高时动态功耗会怎么变化', 'targets': [FACTS[5][2]]},
+        {'id': 'held-tlb', 'mode': 'paraphrase', 'query': '页表转换结果为何放在TLB中', 'targets': [FACTS[2][2]]},
+        {'id': 'held-numa', 'mode': 'cross_language', 'query': 'Why is remote NUMA memory slower than local memory?', 'targets': [FACTS[1][2]]},
+        {'id': 'held-protocols', 'mode': 'cross_language', 'query': 'How do directory and broadcast coherence protocols differ?',
+         'targets': ['协议甲通过广播失效实现一致性。', '协议乙通过目录跟踪共享者。']},
+        {'id': 'held-roofline', 'mode': 'paraphrase', 'query': 'What does the Roofline model compare?', 'targets': [FACTS[9][2]]},
+        *[{'id': 'held-missing-' + str(i), 'mode': 'insufficient', 'query': query, 'targets': []}
+          for i, query in enumerate(['昨天东京的降雨量是多少', '本月食堂菜单与价格', '校园班车今天几点出发',
+                                     '红海航运实时运价', 'Who won the latest tennis final?',
+                                     'What is the current EUR to JPY rate?'])],
+    ]
+
+
+def evaluate(home, version, mode='lexical', encoder=None, k=5, *, reranker=None, min_score=None,
+             max_rerank_candidates=40, suite='frozen', quality_profile=None):
     rows = []
+    dataset = cases() if suite == 'frozen' else holdout_cases() if suite == 'holdout' else None
+    if dataset is None:
+        raise ValueError('unknown_retrieval_eval_suite')
     with Index(home / 'index.sqlite3', load_pa1_config(home)) as index:
-        for case in cases():
+        for case in dataset:
             start = time.perf_counter()
             if version == 'baseline':
                 found = retrieve(index, case['query'], k, 'mimo', encoder,
@@ -113,7 +135,9 @@ def evaluate(home, version, mode='lexical', encoder=None, k=5):
                 from .retrieval_v2 import RetrievalV2
                 with RetrievalV2(index) as v2:
                     found = v2.search(case['query'], limit=k, provider='mimo', mode=mode,
-                                      encoder=encoder, time_window=case.get('time_window'))
+                                      encoder=encoder, time_window=case.get('time_window'),
+                                      reranker=reranker, min_score=min_score,
+                                      max_rerank_candidates=max_rerank_candidates, quality_profile=quality_profile)
             evidence = found['evidence']
             targets = case['targets']
             # Match evidence spans, not just document IDs. Duplicate arrivals do not add recall.
@@ -138,18 +162,25 @@ def evaluate(home, version, mode='lexical', encoder=None, k=5):
     positives = [r for r in rows if r['expected']]
     precisions = [r['precision_at_k'] for r in rows if r['precision_at_k'] is not None]
     code_files = ['retrieval.py', 'semantic.py', 'index.py', 'retrieval_time.py', 'config.py']
-    if version == 'v2':
+    if version != 'baseline':
         code_files += ['retrieval_v2.py']
+    if reranker is not None:
+        code_files += ['reranking.py']
     return {'protocol': 'retrieval-eval-v1', 'version': version, 'requested_mode': mode, 'k': k,
-            'dataset_sha256': hashlib.sha256(json.dumps([FACTS, cases(), 'fixture-long24x30-v1'], ensure_ascii=False, sort_keys=True).encode()).hexdigest(),
+            'dataset_sha256': hashlib.sha256(json.dumps([FACTS, dataset, 'fixture-long24x30-v1'], ensure_ascii=False, sort_keys=True).encode()).hexdigest(),
             'implementation_files_sha256': {name: hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest() for name in code_files},
             'stage_coverage': {'candidate_and_evidence_retrieval': True, 'context_span_loss': True,
                                'answer_faithfulness': False, 'answer_relevancy': False},
             'synthetic_only': True, 'model_generation_calls': 0,
+            **({'suite': suite} if suite != 'frozen' else {}),
+            **({'quality_profile': quality_profile} if quality_profile else {}),
+            **({'reranking': {'model_fingerprint': reranker.cache_key, 'min_score': min_score,
+                              'max_candidates': max_rerank_candidates}} if reranker is not None else {}),
             'semantic_backend': 'supplied' if encoder else 'none', 'questions': len(rows),
             'evidence_recall_at_k': sum(r['evidence_recall_at_k'] for r in positives) / len(positives),
             'precision_at_k': sum(precisions) / len(precisions) if precisions else None,
             'negative_cases_passed': sum(not r['returned'] for r in rows if not r['expected']),
+            'negative_cases_total': sum(not r['expected'] for r in rows),
             'forbidden_evidence_leaks': sum(r['forbidden_evidence_leak'] for r in rows),
             'metric_semantics': {'recall': 'macro over positive questions, exact expected span in retrieved evidence',
                                  'precision': 'relevant returned spans / K; macro over all questions, unfilled slots count zero',
@@ -158,14 +189,42 @@ def evaluate(home, version, mode='lexical', encoder=None, k=5):
             'failure_counts': dict(Counter(r['failure'] for r in rows if r['failure'])), 'cases': rows}
 
 
+def retrieval_gate(reference, candidate):
+    """A retrieval-only pass cannot authorize a production protocol replacement."""
+    comparable = (reference['dataset_sha256'] == candidate['dataset_sha256']
+                  and reference['k'] == candidate['k'])
+    checks = {'same_dataset_and_k': comparable,
+              'recall_no_regression': comparable and candidate['evidence_recall_at_k'] >= reference['evidence_recall_at_k'],
+              'precision_no_regression': comparable and candidate['precision_at_k'] >= reference['precision_at_k'],
+              'negative_abstention': candidate['negative_cases_passed'] == candidate['negative_cases_total'],
+              'no_permission_leak': candidate['forbidden_evidence_leaks'] == 0}
+    return {'checks': checks, 'retrieval_gate_passed': all(checks.values()),
+            'production_replacement_gate_passed': False,
+            'remaining': ['real_source_quality', 'answer_faithfulness_and_relevancy',
+                          'full_prompt_cost_and_new_agent_protocol', 'owner_ui_acceptance']}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--version', choices=['baseline', 'v2'], default='baseline')
     parser.add_argument('--mode', choices=['lexical', 'semantic', 'hybrid'], default='lexical')
     parser.add_argument('--output', type=Path)
     parser.add_argument('--semantic-home', type=Path, help='Only read existing local encoder settings; no source data or model API')
+    parser.add_argument('--suite', choices=['frozen', 'holdout'], default='frozen')
+    parser.add_argument('--reranker-dir', type=Path)
+    parser.add_argument('--min-score', type=float)
+    parser.add_argument('--rerank-candidates', type=int, default=40)
+    parser.add_argument('--quality-profile', choices=['strict-lexical-v1'])
     args = parser.parse_args()
     encoder = None
+    reranker = None
+    if args.reranker_dir:
+        if args.version == 'baseline' or args.min_score is None:
+            parser.error('reranking requires v2 and an explicit --min-score')
+        from .reranking import LocalCrossEncoder
+        reranker = LocalCrossEncoder(args.reranker_dir)
+    elif args.min_score is not None:
+        parser.error('--min-score requires --reranker-dir')
     if args.semantic_home:
         from .pa1 import settings, encoder_for
         encoder, reason = encoder_for(settings(args.semantic_home))
@@ -174,7 +233,9 @@ def main():
     with tempfile.TemporaryDirectory(prefix='asis-eval-') as temporary:
         home = Path(temporary).resolve()
         fixture(home)
-        result = evaluate(home, args.version, args.mode, encoder)
+        result = evaluate(home, args.version, args.mode, encoder, reranker=reranker,
+                          min_score=args.min_score, max_rerank_candidates=args.rerank_candidates,
+                          suite=args.suite, quality_profile=args.quality_profile)
     payload = json.dumps(result, ensure_ascii=False, indent=2) + '\n'
     if args.output:
         args.output.write_text(payload)

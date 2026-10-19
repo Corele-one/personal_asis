@@ -1,0 +1,113 @@
+{
+  "date": "2026-10-19",
+  "dataset_design": "known_span_smoke",
+  "manual_relevance_judgment": false,
+  "source_documents": {
+    "study": 8,
+    "life": 4
+  },
+  "note": "Version-bound known-span probes, not natural-question, complete relevance labels or answer acceptance. All qrels remain private on Mac.",
+  "real_source_gate_passed": false,
+  "results": {
+    "lexical": {
+      "protocol": "retrieval-private-eval-v1",
+      "synthetic_only": false,
+      "dataset_design": "known_span_smoke",
+      "manual_relevance_judgment": false,
+      "dataset_sha256": "e27eaaad8bd43c1f8274781f2f42d02ab65a768554264d0235a051035599119c",
+      "questions": 16,
+      "k": 5,
+      "model_generation_calls": 0,
+      "evidence_recall_at_k": 0.9166666666666666,
+      "precision_at_k": 0.1375,
+      "returned_precision_macro_nonempty": 0.14666666666666667,
+      "negative_cases_total": 4,
+      "negative_cases_passed": 0,
+      "latency_ms": {
+        "p50": 264.08,
+        "p95": 305.09
+      },
+      "root_and_target_versions_checked": true,
+      "degraded_questions": 0,
+      "query_text_titles_paths_document_ids_or_excerpts_in_report": false,
+      "answer_faithfulness_verified": false,
+      "answer_relevancy_verified": false,
+      "production_replacement_gate_passed": false
+    },
+    "mmarco_score_0": {
+      "protocol": "retrieval-private-eval-v1",
+      "synthetic_only": false,
+      "dataset_design": "known_span_smoke",
+      "manual_relevance_judgment": false,
+      "dataset_sha256": "e27eaaad8bd43c1f8274781f2f42d02ab65a768554264d0235a051035599119c",
+      "questions": 16,
+      "k": 5,
+      "model_generation_calls": 0,
+      "evidence_recall_at_k": 0.9166666666666666,
+      "precision_at_k": 0.1375,
+      "returned_precision_macro_nonempty": 0.7757575757575758,
+      "negative_cases_total": 4,
+      "negative_cases_passed": 4,
+      "latency_ms": {
+        "p50": 1427.115,
+        "p95": 1955.8
+      },
+      "root_and_target_versions_checked": true,
+      "degraded_questions": 0,
+      "query_text_titles_paths_document_ids_or_excerpts_in_report": false,
+      "answer_faithfulness_verified": false,
+      "answer_relevancy_verified": false,
+      "production_replacement_gate_passed": false
+    },
+    "bge_score_0": {
+      "protocol": "retrieval-private-eval-v1",
+      "synthetic_only": false,
+      "dataset_design": "known_span_smoke",
+      "manual_relevance_judgment": false,
+      "dataset_sha256": "e27eaaad8bd43c1f8274781f2f42d02ab65a768554264d0235a051035599119c",
+      "questions": 16,
+      "k": 5,
+      "model_generation_calls": 0,
+      "evidence_recall_at_k": 0.9166666666666666,
+      "precision_at_k": 0.1375,
+      "returned_precision_macro_nonempty": 0.6545454545454545,
+      "negative_cases_total": 4,
+      "negative_cases_passed": 4,
+      "latency_ms": {
+        "p50": 4704.195,
+        "p95": 8527.47
+      },
+      "root_and_target_versions_checked": true,
+      "degraded_questions": 0,
+      "query_text_titles_paths_document_ids_or_excerpts_in_report": false,
+      "answer_faithfulness_verified": false,
+      "answer_relevancy_verified": false,
+      "production_replacement_gate_passed": false
+    },
+    "bge_selected_score_minus_4_5": {
+      "protocol": "retrieval-private-eval-v1",
+      "synthetic_only": false,
+      "dataset_design": "known_span_smoke",
+      "manual_relevance_judgment": false,
+      "dataset_sha256": "e27eaaad8bd43c1f8274781f2f42d02ab65a768554264d0235a051035599119c",
+      "questions": 16,
+      "k": 5,
+      "model_generation_calls": 0,
+      "evidence_recall_at_k": 0.9166666666666666,
+      "precision_at_k": 0.1375,
+      "returned_precision_macro_nonempty": 0.2611111111111111,
+      "negative_cases_total": 4,
+      "negative_cases_passed": 3,
+      "latency_ms": {
+        "p50": 4559.86,
+        "p95": 7151.38
+      },
+      "root_and_target_versions_checked": true,
+      "degraded_questions": 0,
+      "query_text_titles_paths_document_ids_or_excerpts_in_report": false,
+      "answer_faithfulness_verified": false,
+      "answer_relevancy_verified": false,
+      "production_replacement_gate_passed": false
+    }
+  }
+}

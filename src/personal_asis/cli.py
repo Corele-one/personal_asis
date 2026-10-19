@@ -221,16 +221,51 @@ def main(argv=None):
     p.add_argument('--document-id')
     p.add_argument('--content-hash')
     p.add_argument('--neighbors', type=int, default=1)
+    p.add_argument('--reranker-dir', type=Path, help='显式加载现有本机 Safetensors 重排模型；不下载')
+    p.add_argument('--rerank-min-score', type=float, help='显式模型原始 logit 门槛；不是正确概率')
+    p.add_argument('--rerank-candidates', type=int, default=40)
+    p.add_argument('--quality-profile', choices=['strict-lexical-v1'])
+    p.add_argument('--literal-time', action='store_true', help='仅使用显式时间范围，不把检索原文中的相对时间词解释为筛选条件')
     p.add_argument('--diagnostics-only', action='store_true', help='只输出计数、模式及降级原因，不输出问题、身份或正文')
+    p = commands.add_parser('quality-answer', help='显式本机摘录质量实验；不切换普通PA1或旧付费工作')
+    p.add_argument('action', choices=['inspect', 'analyze'])
+    p.add_argument('--query', required=True)
+    p.add_argument('--source', action='append', required=True)
+    p.add_argument('--reranker-dir', type=Path, required=True)
+    p.add_argument('--min-score', type=float, required=True)
+    p.add_argument('--request-id')
+    p.add_argument('--live', action='store_true', help='显式请求一次原MiMo模型调用，沿用共享预算；未知或失败不重做')
     args = parser.parse_args(argv)
     home = args.home.expanduser().absolute()
     try:
         if args.command == "doctor":
             result = doctor()
+        elif args.command == 'quality-answer':
+            from .reranking import LocalCrossEncoder
+            from .quality_answer import analyze, prepare
+            if args.action == 'analyze' and (not args.live or not args.request_id):
+                raise ValueError('quality_explicit_live_and_request_id_required')
+            reranker = LocalCrossEncoder(args.reranker_dir)
+            if args.action == 'inspect':
+                _, _, diagnostics = prepare(home, args.query, args.source, reranker=reranker, min_score=args.min_score)
+                result = {**diagnostics, 'model_generation_calls':0}
+            else:
+                result = analyze(home, args.query, args.source, args.request_id, reranker=reranker, min_score=args.min_score)
         elif args.command == 'retrieval-v2':
             from .config import load_pa1_config
             from .retrieval_v2 import RetrievalV2, build_bundle_v2
             encoder = None
+            reranker = None
+            if args.reranker_dir is not None:
+                if args.action not in ('search', 'bundle') or args.rerank_min_score is None:
+                    raise ValueError('reranking_requires_search_or_bundle_and_explicit_threshold')
+                from .reranking import LocalCrossEncoder
+                reranker = LocalCrossEncoder(args.reranker_dir)
+            elif args.rerank_min_score is not None:
+                raise ValueError('reranking_requires_local_model')
+            quality_options = dict(reranker=reranker, min_score=args.rerank_min_score,
+                                   max_rerank_candidates=args.rerank_candidates,
+                                   quality_profile=args.quality_profile, infer_time_window=not args.literal_time)
             if args.mode != 'lexical' and args.action in ('search', 'bundle'):
                 from .pa1 import settings, encoder_for
                 encoder, _ = encoder_for(settings(home))
@@ -238,8 +273,9 @@ def main(argv=None):
                 if not args.query:
                     raise ValueError('v2_query_required')
                 bundle = build_bundle_v2(home, args.query, provider=args.provider or 'mimo',
-                    encoder=encoder, source_ids=args.source, mode=args.mode, max_bytes=args.max_bytes)
-                result = ({'protocol': 'retrieval-v2.1', 'mode': bundle.retrieval_mode, 'coverage': bundle.coverage}
+                    encoder=encoder, source_ids=args.source, mode=args.mode, max_bytes=args.max_bytes,
+                    **quality_options)
+                result = ({'protocol': bundle.protocol, 'mode': bundle.retrieval_mode, 'coverage': bundle.coverage}
                           if args.diagnostics_only else {'cloud_input': bundle.cloud_input(home),
                               'local_evidence': bundle.evidence, 'coverage': bundle.coverage,
                               'fingerprint': bundle.fingerprint()})
@@ -249,9 +285,16 @@ def main(argv=None):
                         result = v2.sync()
                     elif args.action == 'search':
                         result = v2.search(args.query, mode=args.mode, limit=args.limit, provider=args.provider,
-                                           encoder=encoder, source_ids=args.source)
+                                           encoder=encoder, source_ids=args.source, **quality_options)
                         if args.diagnostics_only:
+                            quality = result.get('reranking')
+                            retrieval_policy = result.get('retrieval_policy')
                             result = {k: result[k] for k in ('protocol', 'mode', 'requested_mode', 'degradation', 'diagnostics')}
+                            # Reranking contains only a model fingerprint, policy and counts.
+                            if quality is not None:
+                                result['reranking'] = quality
+                            if retrieval_policy is not None:
+                                result['retrieval_policy'] = retrieval_policy
                     else:
                         if not all((args.chunk_id, args.document_id, args.content_hash)):
                             raise ValueError('v2_expansion_requires_versioned_identity')

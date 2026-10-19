@@ -21,9 +21,26 @@ from .semantic import body_start, checked_vectors
 
 
 PROTOCOL = 'retrieval-v2.1'
+RERANK_PROTOCOL = 'retrieval-v2.2'
+QUALITY_PROTOCOL = 'retrieval-v2.3'
 PIPELINE = 'paragraph-attribution-char400-overlap80-v1'
 MAX_CANDIDATES = 200
 MAX_SEMANTIC_CHUNKS = 10000
+
+
+def literal_support(query, evidence):
+    """Conservative lexical-only filter; never requires overlap for semantic retrieval."""
+    terms = set(features(query))
+    han = {t for t in terms if re.fullmatch(r'[\u3400-\u9fff]{2}', t)}
+    if len(han) < 6:
+        return True
+    context = evidence['title'] + '\n' + ' '.join(evidence.get('section_path', [])) + '\n' + evidence['excerpt']
+    if query.strip().casefold() in context.casefold():
+        return True
+    found = set(features(context))
+    identifiers = {t for t in terms if re.fullmatch(r'[a-z][a-z0-9_]{1,}', t)} - {
+        'the', 'of', 'in', 'on', 'at', 'to', 'and', 'or', 'is', 'are', 'for', 'how', 'what', 'does'}
+    return len(han & found) >= 2 or bool(identifiers & found)
 
 
 def encoded(value):
@@ -261,14 +278,24 @@ class RetrievalV2:
         return allowed
 
     def search(self, query, *, mode='hybrid', limit=20, provider=None, source_ids=None,
-               encoder=None, channel='local', time_window=None):
+               encoder=None, channel='local', time_window=None, reranker=None,
+               min_score=None, max_rerank_candidates=40, infer_time_window=True,
+               quality_profile=None):
         if (not isinstance(query, str) or not query.strip() or len(query) > 512
                 or type(limit) is not int or not 1 <= limit <= 100 or mode not in ('lexical', 'semantic', 'hybrid')):
             raise ValueError('v2_invalid_query')
         if provider and exclusion_reason('', query):
             raise ValueError('model_query_contains_credentials')
+        if reranker is not None:
+            from .reranking import validate_policy
+            validate_policy(reranker, min_score, max_rerank_candidates)
+        elif min_score is not None:
+            raise ValueError('reranking_requires_local_model')
+        if (type(infer_time_window) is not bool or quality_profile not in (None, 'strict-lexical-v1')
+                or quality_profile is not None and reranker is None):
+            raise ValueError('invalid_v2_quality_policy')
         self.sync()
-        time_window = time_window if time_window is not None else question_window(query)
+        time_window = time_window if time_window is not None or not infer_time_window else question_window(query)
         allowed = self._allowed(provider, source_ids, channel, time_window)
         chunks = {r['chunk_id']: json.loads(r['evidence']) for r in self.db.execute('SELECT * FROM chunks')
                   if r['document_id'] in allowed}
@@ -298,6 +325,11 @@ class RetrievalV2:
                     degradation, effective = 'semantic_inference_unavailable', 'lexical'
                     sem, semantic_scores = [], {}
                     lex, lexical_scores = self._lexical(query, chunks)
+        filtered = 0
+        if quality_profile is not None and effective == 'lexical':
+            supported = [c for c in lex if literal_support(query, chunks[c])]
+            filtered = len(lex) - len(supported)
+            lex = supported
         rankings = [lex] if effective == 'lexical' else [sem] if effective == 'semantic' else [lex, sem]
         score = Counter()
         for ranking in rankings:
@@ -325,12 +357,25 @@ class RetrievalV2:
                 'exact_original': c in exact, 'rrf_score': score[c]}}
             seen[identity] = hit
             evidence.append(hit)
-        result = {'protocol': PROTOCOL, 'mode': effective, 'requested_mode': mode,
+        quality = None
+        if reranker is not None:
+            from .reranking import rerank
+            evidence, quality = rerank(query, evidence, reranker, min_score, max_rerank_candidates)
+        policy = None
+        if quality_profile is not None or not infer_time_window:
+            policy = {'profile': quality_profile or 'legacy', 'infer_time_window': infer_time_window,
+                      'lexical_support_filter_applied': quality_profile is not None and effective == 'lexical',
+                      'weak_lexical_candidates_removed': filtered, 'semantic_sufficiency_verified': False}
+        result = {'protocol': QUALITY_PROTOCOL if policy is not None else RERANK_PROTOCOL if quality is not None else PROTOCOL, 'mode': effective, 'requested_mode': mode,
                   'degradation': degradation, 'evidence': evidence[:limit], 'time_window': time_window,
                   'diagnostics': {'eligible_documents': len(allowed), 'eligible_chunks': len(chunks),
                                   'lexical_candidates': len(lex), 'semantic_candidates': len(sem),
                                   'fused_candidates': len(score), 'unique_passages': len(evidence),
                                   'candidate_limit': MAX_CANDIDATES, 'semantic_vectors_persisted': False}}
+        if quality is not None:
+            result['reranking'] = quality
+        if policy is not None:
+            result['retrieval_policy'] = policy
         return result
 
     def _lexical(self, query, chunks):
@@ -405,39 +450,60 @@ class ContextBundleV2:
     retrieval_mode: str
     max_bytes: int
     coverage: dict
+    protocol: str = PROTOCOL
+    reranking: dict | None = None
+    retrieval_policy: dict | None = None
 
     def fingerprint(self):
-        return digest(encoded([PROTOCOL, self.query, self.provider, self.evidence, self.max_bytes]))
+        value = [self.protocol, self.query, self.provider, self.evidence, self.max_bytes]
+        if self.reranking is not None:
+            value.append(self.reranking)
+        if self.retrieval_policy is not None:
+            value.append(self.retrieval_policy)
+        return digest(encoded(value))
 
     def cloud_input(self, home, channel='local'):
         if channel not in ('local', 'pwa', 'feishu'):
             raise ValueError('v2_invalid_channel')
         with Index(Path(home) / 'index.sqlite3', load_pa1_config(Path(home))) as index:
             validate_evidence(index, self.evidence, self.provider, channel)
-        payload = {'protocol': PROTOCOL, 'question': self.query, 'evidence': cloud_evidence(self.evidence)}
+        payload = _bundle_payload(self.protocol, self.query, self.evidence, self.reranking, self.retrieval_policy)
         if len(encoded(payload).encode()) > self.max_bytes:
             raise ValueError('v2_context_exceeds_budget')
         return payload
 
 
+def _bundle_payload(protocol, query, evidence, reranking=None, retrieval_policy=None):
+    payload = {'protocol': protocol, 'question': query, 'evidence': cloud_evidence(evidence)}
+    if reranking is not None:
+        payload['reranking'] = reranking
+    if retrieval_policy is not None:
+        payload['retrieval_policy'] = retrieval_policy
+    return payload
+
+
 def build_bundle_v2(home, query, *, provider='mimo', encoder=None, source_ids=None, mode='hybrid',
-                    max_bytes=6144, channel='local', time_window=None):
+                    max_bytes=6144, channel='local', time_window=None, reranker=None,
+                    min_score=None, max_rerank_candidates=40, infer_time_window=True,
+                    quality_profile=None):
     if type(max_bytes) is not int or not 512 <= max_bytes <= 16384:
         raise ValueError('v2_invalid_context_budget')
     home = Path(home)
     with Index(home / 'index.sqlite3', load_pa1_config(home)) as index, RetrievalV2(index) as v2:
         result = v2.search(query, mode=mode, provider=provider, encoder=encoder,
-                           source_ids=source_ids, channel=channel, limit=100, time_window=time_window)
+                           source_ids=source_ids, channel=channel, limit=100, time_window=time_window,
+                           reranker=reranker, min_score=min_score, max_rerank_candidates=max_rerank_candidates,
+                           infer_time_window=infer_time_window, quality_profile=quality_profile)
     selected, works, covered = [], set(), set()
     candidates = list(result['evidence'])
     terms = set(features(query))
     while candidates and len(selected) < 20:
         # Prefer a new work and then uncovered query terms; deterministic rank breaks ties.
-        position = max(range(len(candidates)), key=lambda i: (
+        position = 0 if reranker is not None else max(range(len(candidates)), key=lambda i: (
             candidates[i]['work_key'] not in works,
             len((set(features(candidates[i]['excerpt'])) & terms) - covered), -i))
         e = candidates.pop(position)
-        payload = {'protocol': PROTOCOL, 'question': query, 'evidence': cloud_evidence(selected + [e])}
+        payload = _bundle_payload(result['protocol'], query, selected + [e], result.get('reranking'), result.get('retrieval_policy'))
         if len(encoded(payload).encode()) > max_bytes:
             continue
         # Suppress strongly overlapping windows, while keeping distinct same-document paragraphs.
@@ -454,6 +520,12 @@ def build_bundle_v2(home, query, *, provider='mimo', encoder=None, source_ids=No
                 'covered_query_terms': len(covered), 'query_terms': len(terms),
                 'semantic_coverage_verified': False, 'follow_up_performed': False,
                 'degradation': result['degradation'], 'candidates': result['diagnostics']}
-    bundle = ContextBundleV2(query, provider, selected, result['mode'], max_bytes, coverage)
+    if reranker is not None:
+        coverage['method'] = 'local_cross_encoder_rank_then_byte_budget'
+        coverage['reranking'] = result['reranking']
+    if result.get('retrieval_policy') is not None:
+        coverage['retrieval_policy'] = result['retrieval_policy']
+    bundle = ContextBundleV2(query, provider, selected, result['mode'], max_bytes, coverage,
+                             result['protocol'], result.get('reranking'), result.get('retrieval_policy'))
     bundle.cloud_input(home, channel)
     return bundle

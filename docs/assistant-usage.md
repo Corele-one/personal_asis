@@ -1,5 +1,7 @@
 # 综合个人助手：使用与运行
 
+本机入口已补齐：`./scripts/asis-pi` 打开Pi原生终端，`--continue` 恢复本机聊天，无需飞书／VPS；来源、角色、工具和预算继续由原宿主管理。命令与限制见[Mac本机Pi](pi-terminal.md)。
+
 ## 飞书 V2 只读实验
 
 当前发布 `retrieval-v2-de593bc25486b7cc` 已部署Mac／VPS；原解释器、来源／模型许可与普通搜索／Agent协议保持原值。本人飞书私聊测试：`/asis retrieve-v2 study | 缓存一致性`。这是显式词法候选阅读，返回段落与位置，0模型调用；完整质量Gate未过，普通检索未切换。实际协议／测试与回滚见[部署验收](validation/retrieval-v2-deployment-20261018.json)。真实飞书消息和界面由用户自行验证，下列较早发布编号与数量保留历史范围。

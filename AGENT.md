@@ -4,6 +4,12 @@
 
 ## 项目目标与当前状态
 
+2026-10-19本机Pi入口：Mac已发布 `pi-terminal-f35a3859fc4834d1` 的[原生终端界面](docs/pi-terminal.md)，可直接聊天、查看工具过程、保存／恢复本机会话；VPS仍为 `retrieval-context-3fa59e109dd0af73`。新入口复用原MiMo、来源许可、角色与预算，不依赖飞书／VPS，不自动启用v2.3。544项回归＝525通过＋19跳过，另2项实际Pi SDK合成测试通过；真实TTY问候161 Token、无笔记读取，领域质量与完整Retrieval Gate仍待验收。固定启动器及回退材料见[本轮记录](docs/validation/pi-terminal-20261019.json)。以下为前一切片及更早快照。
+
+2026-10-19质量续作当前发布：Mac PA0／PA1与VPS为 `retrieval-context-3fa59e109dd0af73`。新增[显式时间／词法支持和逐字摘录实验](docs/retrieval-context-quality.md)，仅本机显式入口；原16题探针12/12目标与4/4负例通过，新增助手编写11题为7/7目标与4/4负例通过，均不冒充用户标注。真实两条Study逐字回答709 Token、提示不超原lexical，同编号离线复用0调用；另两条缺信息请求在付费前停止，真实模型拒答／冲突未验收。Mac工作区／独立包532项＝513通过＋19跳过，VPS核心365通过＋167跳过、实际SDK专项31项通过。默认角色／检索、旧付费协议、权限与预算不切换，完整生产替换Gate仍未通过，下一步见[本轮记录](docs/validation/retrieval-context-20261019.json)。以下为前一切片及更早快照。
+
+2026-10-19当前发布：Mac PA0／PA1与VPS为 `retrieval-quality-e6d8bd41f7ea44a3`，原解释器、默认检索、旧付费协议、来源／模型／渠道许可与预算保持原值；隧道和Life索引已恢复。新增[显式本机重排与私密评测](docs/retrieval-quality.md)，不接普通角色或后台。BGE固定版本与-4.5门槛在39题＋13道保留题通过合成检索Gate；真实16题探针仍有1/12未命中及1/4负例误报，完整生产替换Gate未通过。Mac checkout／独立包515项＝496通过＋19跳过，VPS核心515项＝348通过＋167跳过，实际SDK／加密专项31项通过，无新增云生成调用或飞书消息。首次发布bootstrap后未启动已回滚，显式kickstart后重发并检查running；真实UI与无人值守重启仍未验收。见[本轮记录](docs/validation/retrieval-quality-20261019.json)。下文较早发布均保留历史范围。
+
 2026-10-18最新运行续验：Mac PA0／PA1与VPS已发布 `web-live-cfb5d209d8b32103`。显式本人 `/asis web-deepseek 公开词 | 问题` 使用用户选定DeepSeek公开搜索／正文快照、本机HTTPS／DNS／跳转校验和原MiMo一次JSON生成；普通角色、PA0／PA1默认检索和旧付费输入不变。Exa真实路径与DeepSeek→MiMo引用通过，Jina匿名401未通过且保留静态降级；无新增账户模型／渠道披露或后台调度。Mac501项＝482通过＋19跳过，VPS核心501项＝334通过＋167跳过，实际SDK／加密通道／DeepSeek31项通过。新v3纯公开由Host预检索，旧v1/v2按保存协议恢复，不依赖MiMo不支持的强制工具选择。详见[当前联网发布](docs/web-search-live-deployment.md)。下文较早发布、数量与验证限制保留其日期范围。
 
 构建基于个人资料、能够跨设备持续工作的个人助手，覆盖资料检索、研究生申请与职业选择、饮食、作息和心理状态复盘。以“记录 → 复盘 → 用户选择行动 → 反馈”形成持续改进。
