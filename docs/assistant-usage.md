@@ -28,3 +28,7 @@
 运行 `scripts/asis-life-sync` 可以不进入 Pi 而进行同样的预览／确认。没有 `--yes` 或自动确认模式。JSON／RPC／print 模式需要单独交互同步，不消费管道输入作为批准。
 
 旧本机会话可使用 `pi --engine conversation`／`pi --engine legacy`；它们不使用新 AstrBot 和同步协议。旧 `/asis`、飞书卡片和远程搜索页面退役。真实聊天与记录质量的验收范围见[当前状态](project-status.md)。
+
+## 已初始化的起始背景
+
+Mac Pi的私密 `knowledge-context.md` 包含已读资料地图和带出处的使用背景，按问题需要读取。AstrBot的 `life_context` 按需读取本人选定30天范围的生活背景；看板单列“近期生活背景”，不混入新消息。可用 `/life forget-context` 删除当前VPS起始背景及其工作区说明。原日记、Mac初始化文件、平台历史与回退备份需分别处理。

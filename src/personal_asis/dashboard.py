@@ -29,7 +29,9 @@ def snapshot(home):
         from .mac_content import validate as validate_content
         validate_content({k:content[k] for k in ('request_id','title','content')})
         content={k:content[k] for k in ('title','content','updated_at')}
-    return dict(version=2, astrbot={'records': records, 'reminders': reminders}, mac=mac, mac_content=content)
+    from .bootstrap_context import load as load_bootstrap
+    baseline=load_bootstrap(Path(home)/'bootstrap.json')
+    return dict(version=2, astrbot={'records': records, 'reminders': reminders}, mac=mac, mac_content=content, life_baseline=baseline)
 
 
 def server(home, origin, port=8766):

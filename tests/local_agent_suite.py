@@ -12,7 +12,7 @@ REMOTE_MODULES = frozenset('personal_asis.' + name for name in (
 LOCAL_TESTS = (
     'test_local_isolation', 'test_conversation', 'test_conversation_tools', 'test_answer_policy',
     'test_conversation_terminal', 'test_conversation_web', 'test_pi_terminal', 'test_native_pi', 'test_native_sources',
-    'test_life', 'test_life_dashboard', 'test_work', 'test_runtime', 'test_agent', 'test_agent_roles',
+    'test_bootstrap_context', 'test_life', 'test_life_dashboard', 'test_work', 'test_runtime', 'test_agent', 'test_agent_roles',
     'test_role_context', 'test_work_history', 'test_local_review',
 )
 

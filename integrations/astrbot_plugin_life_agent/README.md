@@ -6,4 +6,6 @@
 
 配置 schema 自带，首次迁移从已有本人绑定生成；后续部署保留配置。普通文本记录不等于模型已成功整理，工具成功前不能回报已整理。提醒 `sending`／`unknown` 不自动重发。
 
+`life_context` 按需读取本人授权的带出处初始化背景，`/life forget-context` 删除当前背景和工作区说明。初始化不创建消息或提醒；部署会复制共用的 `bootstrap_context.py` 验证实现。
+
 完整范围见[项目规格](../../SPECIFICATION.md)、[运维](../../docs/operations.md)。

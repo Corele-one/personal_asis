@@ -46,3 +46,7 @@ scripts/deploy-life-vps
 ## 验证边界
 
 本轮已核验服务、实际SDK工具、SSH导出与状态上传、原生Pi的无网络合成TTY、窄写入UI拒绝、MCP工具目录和合成Dashboard浏览器。生产生活库最初检查为空，没有本人日记写入或聊天测试。真实新请求、提醒投递、账户登录有效性和平台写入需要各自场景验收。见[本轮记录](validation/two-agent-20261020.json)。
+
+## 私密初始化文件
+
+Mac：忽略目录 `.local/pi-agent/knowledge-context.md`、`initialization/evidence-manifest.json` 与VPS摘要预览；目录0700、文件0600。VPS：生活目录的 `bootstrap.json` 以及工作区的 `生活初始化背景.md`，供 `life_context` 和认证后的Dashboard读取。部署保留这些运行文件，不打包回Git。摘要含日期、相对来源与原文哈希，无Mac绝对路径；源内容改变后需重新核对，不声称已做后台失效传播。初始化不插入生活事件或提醒，不改日记。

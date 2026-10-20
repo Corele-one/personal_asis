@@ -1,0 +1,107 @@
+{
+  "date": "2026-10-20",
+  "status": "git_architecture_synced_and_both_private_contexts_initialized",
+  "authorization": {
+    "requested_by_owner": true,
+    "processor_for_source_reading": "Codex for this initialization task",
+    "vps_window_selected_by_owner": "30 days",
+    "source_window": [
+      "2026-09-21",
+      "2026-10-20"
+    ],
+    "no_new_native_pi_provider_grant": true
+  },
+  "git": {
+    "architecture_checkpoint": "f225a05fc12ffb54545dd2b3d017c03fa7487376",
+    "architecture_checkpoint_pushed": true,
+    "architecture_remote_sha_verified": true,
+    "private_initialization_files_excluded": true
+  },
+  "mac": {
+    "private_knowledge_context_initialized": true,
+    "native_prompt_contains_pointer_only": true,
+    "life_daily_files_in_window": 29,
+    "missing_days": [
+      "2026-09-22"
+    ],
+    "original_daily_hashes_unchanged": 29,
+    "selected_study_sections_read": true,
+    "existing_reading_cache_metadata_files": {
+      "wucai": 24,
+      "xiaohongshu": 8
+    },
+    "live_platform_content_requests": 0,
+    "private_context_and_manifest_mode": "0600",
+    "original_notes_written": 0
+  },
+  "vps": {
+    "release": "20261020_160141_441420",
+    "plugin_version": "2.0.1",
+    "baseline_facts": 9,
+    "baseline_separate_from_live_events": true,
+    "life_events_after_initialization": 0,
+    "reminders_after_initialization": 0,
+    "absolute_mac_paths_sent": false,
+    "study_corpus_sent": false,
+    "raw_diaries_sent": false,
+    "dashboard_baseline_readable": true,
+    "active_services": [
+      "astrbot.service",
+      "personal-asis-dashboard.service"
+    ],
+    "real_platform_messages_sent": 0,
+    "real_model_generations": 0
+  },
+  "verification": {
+    "full_suite": {
+      "total": 537,
+      "passed": 534,
+      "skipped": 3,
+      "failed": 0,
+      "synthetic": true
+    },
+    "local_isolation_suite": {
+      "total": 209,
+      "passed": 209,
+      "failed": 0
+    },
+    "new_bootstrap_tests": {
+      "total": 5,
+      "passed": 5
+    },
+    "actual_astrbot_sdk": {
+      "owner_can_read_real_initialized_context": true,
+      "unbound_identity_denied": true,
+      "tool_guide_present": true,
+      "baseline_not_automatically_injected_as_system_prompt": true,
+      "tools": [
+        "life_organize",
+        "life_context",
+        "life_recent",
+        "vps_workspace"
+      ],
+      "real_model_calls": 0
+    },
+    "browser": {
+      "engine": "isolated Chrome",
+      "data": "synthetic",
+      "baseline_card_shown": true,
+      "separate_message_list": true,
+      "login_filter_logout": true,
+      "mobile_horizontal_overflow": false,
+      "page_errors": []
+    }
+  },
+  "scope_notes": [
+    "Historical self-reports are dated, not current diagnoses or permanent preferences.",
+    "Unchecked templates and prior AI answers are not user facts.",
+    "Old tasks without reliable due times remain candidates; no reminders activated.",
+    "Initialization never creates sync events, so existing diary material is not copied back into the vault.",
+    "Private body, actual personal source citations and hashes stay outside Git; this validation stores counts only."
+  ],
+  "remaining_acceptance": [
+    "Real owner conversation with AstrBot model using context tool",
+    "Real owner review of private initialized Dashboard",
+    "Future exact-batch approval before any Obsidian write"
+  ]
+}

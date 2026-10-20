@@ -23,3 +23,5 @@ pi --plain
 这是原生工具使用约定与窄接口保护，不是 OS 沙箱。Pi 的 shell／文件工具仍有本机进程权限。真实问答、提供商可用性和资料分析质量按独立场景验收；[早期来源抽查](native-source-status.md)保留原日期。
 
 旧会话使用 `--engine conversation`／`--engine legacy`，不迁移已付费状态。Finder 旧固定包的处理见[运维](operations.md)。
+
+Codex已按本轮授权初始化私密 `knowledge-context.md`；生成的资料说明仅附文件定位，未把整份背景自动拼入系统提示。按需读取时仍区分原话、历史计划与暂定解释。初始化文件及证据清单不进Git。
