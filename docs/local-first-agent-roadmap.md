@@ -1,6 +1,14 @@
 # Local-first Conversational Agent 路线
 
-2026-10-19，当前产品定位为 **Local-first、Channel-agnostic、Conversation-first Personal Agent**。P0及本轮P1仅修改checkout，不部署、不重启Mac／VPS／AstrBot，不增加预算、来源或后台工作。PA0–PA5保留业务能力编号及原验收事实；下列P0–P4是产品体验与核心能力的实施顺序。
+## 当前范围修订（2026-10-20）
+
+先完成[本机 Pi Agent](local-agent-focus.md)；VPS／机器人／远程通信已[归档隔离](archive/remote-communications-20261020.md)，转入[下一阶段](remote-communications-plan.md)。本页保留既有 P0–P4 进度历史；P2 的远程 PWA 和 P4 全部暂缓，不作为本机验收前提。P0／P1／本机 P2 优先，P3 不自动启用后台。统一 CLI 延迟加载远程模块，宿主披露政策独立于 Relay，本机验收用 `scripts/test-local-agent`；线上服务未操作。
+
+2026-10-19，当前产品定位为 **Local-first、Channel-agnostic、Conversation-first Personal Agent**。P0–P4代码续作限于checkout，不部署、不重启Mac／VPS／AstrBot，不增加预算或来源，不启动后台执行。PA0–PA5保留业务能力编号及原验收事实；下列P0–P4是产品体验与核心能力的实施顺序。
+
+2026-10-19 P2–P4 续作：新增[conversation-session-v1本机API与Web Chat](conversation-core-api.md)；持久SSE只传步骤状态，MiMo/Pi仍为完整响应。WorkStore新增需逐项确认的Proactive Policy记录，但没有调度器、委托预算执行器或通知投递。Pi／CLI／本机Web共用Core；PWA／AstrBot／飞书远程Session迁移尚未开始。此checkout没有部署或后台执行。
+
+2026-10-20续作：本机Web Chat增加会话列表／切换与显式清除入口；仅展示会话元数据，清除仍保留防重标记。全量回归621项，541通过、80因可选依赖／VPS解释器跳过；不含真实模型或平台验收。P2剩余流式文本、有界摘要／旧历史召回和远程PWA；P3无安全执行器；P4远程身份、逐来源披露与加密Core Relay未完成。见[本轮验证](validation/conversation-continuation-20261020.json)。
 
 ## 审计基线与实际依赖
 
@@ -16,10 +24,10 @@
 | `work.py` | 委托、运行、租约／fencing、执行资源锁、持久动作、控制与清理 | 继续作为Delegation权威；会话不是委托，不为闲聊建立WorkStore记录 |
 | `retrieval.py` | 当前生产文档融合、单行证据、模型来源过滤及原文版本／位置重核；V2质量实验独立 | 新聊天按模型需要调用已有lexical baseline，不预热语义模型；检索协议替换仍须原质量Gate |
 | `research.py` / `agent_web.py` | 已有Exa／Jina公开读取及v1/v2/v3受控研究；v3公开路径Host预检索以保证实际搜索 | P0预留公开工具接点，聊天不自动调用。P1以独立协议接入白名单query／SSRF／网络成本；不能把私人问题直接当公开词 |
-| `conversation.py` / `chat_cli.py` | 新增持久Session／Turn／Run、有限上下文、共享预算、防重、来源失效与单主Agent；CLI只做输入、展示、控制 | 新增核心及简单文本客户端；后续本轮接线已使原生Pi默认调用同一Core，无目录搬迁 |
+| `conversation.py` / `conversation_api.py` / `conversation_web.py` | 持久Session／Turn／Run、有限上下文、共享预算、防重、来源失效、版本化Core API和loopback Web/SSE | Pi／CLI／本机Web共用Core；SSE无文本增量；远程客户端须另做身份、披露和加密Relay适配 |
 | `agent_channel.py` | Relay及本机Worker；Worker在Mac调用`agent.execute`，Relay管理短期加密投递／低敏感状态 | 旧接口保留；P2/P4再用Session API接线，不让Relay规划 |
 | `agent_feishu.py` | 核对本人绑定、平台事件防重、临时密钥及加密回复转换 | 继续适配旧工作接口 |
-| Coordinator / PWA | 本机出站轮询；PWA表单提交已有分析／Agent工作，服务器不持有本机正文和密钥 | P2新增聊天页／Session API，当前不伪装已改版 |
+| Coordinator / PWA | 本机出站轮询；PWA表单提交已有分析／Agent工作，服务器不持有本机正文和密钥 | 当前远程PWA未切聊天页；本机Web Chat不经VPS |
 | AstrBot插件 / Feishu Cards | 插件身份／命令／回调／投递；卡片会话存表单及动作身份，不是核心对话历史。插件不定义模型工具选择 | 本轮不改；P4转换到同一Core API |
 | `cli.py` / 旧Pi终端 | CLI已有agent run/resume/status、work、PA1、检索和研究；原Pi终端存工作引用，普通conversation仅看本轮、资料追问最多两项 | 新增`chat`命令；`asis-pi`及旧模式继续可用 |
 
@@ -47,7 +55,7 @@ flowchart LR
 
 Conversation Session保持交流连续性；Turn绑定一次用户输入及回复；Run绑定这轮的执行与计费步骤。会话内的“记得”只表示选入的本会话上下文，不是长期事实。Work Delegation是独立的明确委托，范围、周期、到期、预算和通知条件需要另行定义；新Chat目前不自动升级或建立委托。三个专业角色及其目标／历史作为后续按需能力，旧入口继续可用。
 
-## P0 核心API与状态
+## Core API与持久状态（P0/P2）
 
 Python API在`personal_asis.conversation`：
 
@@ -56,7 +64,7 @@ Python API在`personal_asis.conversation`：
 - `cancel(home, session_id, turn_id)`、`ConversationStore.forget()`：取消未完成轮次／清除内容。正在运行的进程需先中断；另进程控制遇会话锁返回busy。
 - `on_event`复用规范化`kind=model|tool, phase=start|done`，模型含turn、工具含name。CLI只显示有限步骤信息，不打印原始工具正文或payload。这是步骤通知，不是真实文本增量，也不是持久SSE日志。
 
-不新增HTTP服务。P2需在认证／Origin／CSRF、来源模型及渠道披露核验后封装这些API，不能把本机函数直接暴露公网。跨渠道身份映射、远程授权管理和持久事件游标仍未交付。
+`personal_asis.conversation_api.ConversationAPI` 提供版本化的`conversation-session-v1`；`conversation_web`只绑定loopback，写请求核验Host与Origin，持久SSE只返回步骤状态。该本机Web入口没有公网监听。VPS PWA／AstrBot／飞书尚未适配，不能把本机函数直接暴露公网；跨渠道身份映射、来源渠道披露复核和加密Relay事件投递仍待P4。
 
 新库`conversation.sqlite3`保存消息、步骤与最小证据，文件0600；每个Session用本机非阻塞进程锁防并发。`running`表示已创建执行；`interrupted`可显式恢复已提交步骤；`failed`不能自动重做；`completed`按同ID返回缓存；`cancelled`不能恢复；`expired/invalidated/forgotten`仅保留防重标记。进程崩溃留下running时，必须显式恢复，账本仍会阻断未提交的已付费或未知结果。未知调用保留预算预留；已知格式失败保留实际计费，不自动重试。Ctrl-C不能撤销已发出的请求。
 
@@ -83,11 +91,11 @@ Python API在`personal_asis.conversation`：
 |---|---|
 | P0 | 架构审计＋本机完整响应聊天、持久Session与有限历史、按需个人工具、恢复／预算／撤权、旧接口回归。先合成单测、实际Pi、隔离真实MiMo合成TTY，再由用户在checkout体验；不为每个核心变化做VPS联调 |
 | P1 | 版本化Tool Registry、公开query披露边界、复用Exa/Jina／已有SSRF及网络成本、语义／时间／归属质量、有限补查、显式委托升级与按需专业能力；WUCAI/Folo/小红书按既有只读及模型许可接入。知乎／公众号不因旧计划重新推进 |
-| P2 | 有界摘要／历史召回、稳定Session HTTP API、取消语义、事件持久化／SSE及真实文本增量，PWA默认Chat；高级设置容纳来源／模型／角色；先本机浏览器验收 |
-| P3 | 权限内持续委托：主题／来源／频率／期限／预算／通知条件／暂停取消，使用WorkStore，不从一般资料授权推断后台许可 |
-| P4 | VPS／AstrBot／飞书适配同一API，渠道加密／绑定／可靠性验收；最后独立发布，保留已验证回退 |
+| P2 | Core Session API、loopback Web Chat、持久步骤状态SSE、恢复／取消界面、会话切换／清理已实现；真实文本增量、有界摘要／历史召回仍待交付与验收；远程PWA移至下一阶段 |
+| P3 | WorkStore可保存逐项确认的来源／频率／期限／Token预算／轮数上限／本机通知条件策略并暂停／恢复／取消；周期执行、硬预算执行、撤权联动和通知器未实现，策略不会自动运行 |
+| P4（暂缓） | 本机客户端共用Core API；PWA／AstrBot／飞书仍沿用旧协议。远程身份绑定、来源渠道披露、端到端加密事件和本人端到端验收尚未开始 |
 
-P0测试必须包括连续无需检索聊天、至少三轮指代、个人检索、工具失败、中断恢复、撤权及内容失效、重复请求0新增付费、脱离AstrBot执行，以及旧PWA／Feishu合成回归。真实模型联调使用隔离合成资料、原钥匙串及共享真实账本，只输出脱敏计数。真实个人回答质量、PWA手机展示和新版无人值守重启不能用此测试替代。
+P0测试必须包括连续无需检索聊天、至少三轮指代、个人检索、工具失败、中断恢复、撤权及内容失效、重复请求0新增付费、脱离AstrBot执行。旧PWA／Feishu合成回归单独保留，不作为本机验收前提。真实模型联调使用隔离合成资料、原钥匙串及共享真实账本，只输出脱敏计数。真实个人回答质量、PWA手机展示和新版无人值守重启不能用此测试替代。
 
 本轮完整回归584项（565通过、19可选依赖跳过），其中31项会话检查；实际Pi＋合成模型通过。真实MiMo隔离合成TTY：三轮无需检索的指代交流、最终JSON动作检索闭环（1102 Token）、新进程恢复后零检索追问（602 Token）、重复结果新增0 Token；包含开发阶段失败在内共9次模型调用、4724 Token，使用原共享账本。开发中普通文本／虚构引用／只承诺工具未执行均保留，不将其报告为质量通过。真实私人回答、手机UI、无人值守重启未验收。详见[Local Chat P0验收](validation/local-chat-p0-20261019.json)。进入P1需本轮恢复／防重／撤权及旧接口检查通过，用户能在Mac连续使用；公开工具接入前明确网络预算及可外发query协议，检索协议替换仍须既有Retrieval Quality Gate。
 

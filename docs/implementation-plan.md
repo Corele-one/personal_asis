@@ -1,10 +1,18 @@
 # Personal Agent 实施计划
 
+## 当前执行范围（2026-10-20）
+
+先完成[本机 Pi 主线](local-agent-focus.md)：日常对话与恢复体验 → 获准个人问题的证据质量 → 有界长会话。P0／P1／本机 P2 继续使用既有编号；P3 执行器另立本机切片，不因已有策略记录启动后台。远程 PWA、VPS 接线、AstrBot／飞书及 P4 统一归入[下一阶段远程计划](remote-communications-plan.md)，旧实现见[归档](archive/remote-communications-20261020.md)。
+
+本机交付以 `scripts/test-local-agent` 的依赖隔离及合成回归、实际 Pi、真实模型和用户体验分别验收；不要求 VPS／平台联调。旧渠道兼容检查独立保留。本次只变更 checkout，未执行停服／部署或状态迁移。下方旧表中的远程待办均为暂缓项。
+
 ## P1本轮进展（2026-10-19）
 
 已实现默认对话内的版本化Tool Registry、精确公开查询预览／确认、Exa/Jina或既有DeepSeek适配、发现与证据分离、有界读取／补查、授权阅读缓存、确认后复用专业Work及恢复防重。原检索排序不替换，增加原问题时间范围与归属核查；原共享预算不增加。真实固定公开词闭环、实际Pi合成检查及旧接口回归分别记录，见[P1说明](conversation-tools-p1.md)和[验收](validation/conversation-tools-p1-20261019.json)。
 
-P1剩余质量门槛是实际获准问题的充分性／忠实性／冲突评测与完整Retrieval Quality Gate；账户实时正文能力还需专门的读取／模型披露检查。不能把本轮公共链路或合成来源测试当作这些门槛已通过。P2的文本流式、摘要／历史召回与HTTP会话API不提前混入本轮。
+P1剩余质量门槛是实际获准问题的充分性／忠实性／冲突评测与完整Retrieval Quality Gate；账户实时正文能力还需专门的读取／模型披露检查。不能把本轮公共链路或合成来源测试当作这些门槛已通过。后续P2边界与未验收项见下方当前checkout进度。
+
+2026-10-20 checkout续作：P2 Web Chat增加无正文预览的会话列表、切换与内容清除；恢复／取消和工具确认仍由同一 Core API 处理。当前文本仍整段返回，摘要／较早历史召回未做，远程PWA仍旧表单。P3授权策略尚无执行器、硬Token预算或通知器，策略不会自动运行。P4尚未为远程身份、逐来源披露和加密事件投递建立可验收的新接入；AstrBot／Feishu／VPS Relay 未切换协议或部署。细节见[API交付记录](conversation-core-api.md)。
 
 ## 当前最高优先级：本地对话（2026-10-19）
 
@@ -14,9 +22,9 @@ P1剩余质量门槛是实际获准问题的充分性／忠实性／冲突评测
 |---|---|---|
 | P0 | 架构审计＋Local Chat MVP；当前checkout已实现独立Session／Turn／Run、单主Agent、按需本机检索和恢复 | 本地连续聊天、预算／防重／撤权与旧渠道回归；[验收记录](validation/local-chat-p0-20261019.json)；不自动部署 |
 | P1 | 版本化Tool Registry、检索质量、公开Exa/Jina工具、有限补查、按需专业能力与显式Work升级 | 公共query披露及网络费用协议；真实获准问题质量；保留旧已付费协议 |
-| P2 | Streaming Web Chat、稳定Session API、有界摘要与历史召回 | 本机API与浏览器先行；认证／渠道披露／持久事件／取消语义；真实文本增量另行验收 |
-| P3 | Permission-bounded Proactive Work | 每项委托有来源、频率、期限、预算、通知条件、暂停／取消 |
-| P4 | 多渠道接入与可靠性 | VPS／AstrBot／飞书仅做身份、请求和投递适配；单独联调、发布与回滚 |
+| P2 | 稳定Session Core API、本机Web Chat、持久执行状态事件 | API、本机浏览器、会话切换／清理、工具确认／拒绝、恢复／取消和预算显示已落地；真正文本增量、摘要／历史召回仍未验收；远程PWA移至下一阶段 |
+| P3 | Permission-bounded Proactive Work | 当前只有精确授权策略与控制状态；执行器、频率调度、逐委托预算硬限制、结果通知与撤权联动未交付，不启动后台 |
+| P4（暂缓） | 下一阶段：多渠道接入与可靠性 | Core API 已具备本机调用边界；VPS／AstrBot／飞书仍用旧协议，身份映射、端到端加密事件与真人UI验收未开始 |
 
 完整[本地Agent路线](local-first-agent-roadmap.md)记录最小迁移、旧系统兼容和P1进入条件。原Retrieval Quality Gate继续约束检索协议替换、专业角色独立检索及来源扩展；它不阻止普通本机聊天先完成。
 

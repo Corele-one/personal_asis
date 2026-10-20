@@ -189,7 +189,7 @@ def analyze(home, query, request_id, provider=None, synthetic_home=None, source_
     encoder,degradation=encoder_for(data) if encoder_override is None else (encoder_override,None)
     bundle=build_bundle(source_home,query,data['provider'],encoder,source_ids)
     if channel is not None:
-        from .analysis_channel import validate_result
+        from .disclosure import validate_result
         validate_result(source_home,{'provider':bundle.provider,'evidence':bundle.evidence,
             'retrieval_mode':bundle.retrieval_mode},channel)
     if research is not None:

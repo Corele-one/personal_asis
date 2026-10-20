@@ -83,6 +83,16 @@ class StoreTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'invalid_id'):
                 store.session('../x')
 
+    def test_persisted_progress_events_exclude_message_and_tool_bodies(self):
+        with c.ConversationStore(self.home) as store:
+            tid='event-turn'
+            store.event(self.sid,tid,'turn_started')
+            store.event(self.sid,tid,'tool_start',{'tool':'search_notes','query':'private body'})
+            values=store.events(self.sid)
+        self.assertEqual([v['kind'] for v in values],['turn_started','tool_start'])
+        self.assertEqual(values[1]['payload'],{'tool':'search_notes'})
+        self.assertNotIn('private body',json.dumps(values,ensure_ascii=False))
+
 
 @unittest.skipUnless(PI_AVAILABLE, 'actual Pi and Node required')
 class ConversationTests(StoreTests):

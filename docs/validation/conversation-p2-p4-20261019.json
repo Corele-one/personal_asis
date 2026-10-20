@@ -1,0 +1,42 @@
+{
+  "date": "2026-10-19",
+  "scope": "checkout only; no production deployment, service restart, background scheduler, model request, or platform message",
+  "base_commit": "9b37dec",
+  "p2": {
+    "implemented": [
+      "conversation-session-v1 Python Core facade",
+      "loopback-only Web Chat and same-origin write checks",
+      "SQLite-persisted, content-free step events and resumable SSE cursor",
+      "local session reload, budget display, tool approval/denial, resume and cancel controls"
+    ],
+    "not_implemented": [
+      "provider token streaming; MiMo and Pi still use stream:false",
+      "summaries and selective older-history retrieval",
+      "remote VPS PWA default chat"
+    ]
+  },
+  "p3": {
+    "implemented": "WorkStore stores an explicit, one-time-confirmed policy with existing source scope, interval, expiry, token budget, run cap, local notice condition, and pause/resume/cancel state.",
+    "not_implemented": "No scheduler, run dispatch, per-delegation token enforcement, notice delivery, or background execution. An authorized policy is an auditable record only."
+  },
+  "p4": {
+    "implemented": "Pi, CLI and local Web call the same ConversationAPI facade; old PWA, AstrBot and Feishu protocols remain intact.",
+    "not_implemented": "No remote Session relay, channel identity mapping, channel disclosure adapter, or new platform UI acceptance."
+  },
+  "tests": {
+    "command": "PYTHONPATH=src:tests python3 -m unittest discover -s tests -v",
+    "total": 620,
+    "passed": 540,
+    "skipped": 80,
+    "failed": 0,
+    "focused": {
+      "conversation_web_http_sse": "2 passed",
+      "existing_pwa_regression": "3 passed",
+      "workstore_and_policy": "14 passed",
+      "javascript_syntax": "node --check passed",
+      "cli_help": "web-chat and proactive commands rendered successfully"
+    },
+    "data": "Synthetic fixtures only; no private content or credentials in Git."
+  },
+  "deployment": "none"
+}

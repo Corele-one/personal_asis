@@ -1,5 +1,13 @@
 # Personal Assistant Specification
 
+## Active scope override — local Pi Agent (2026-10-20)
+
+The owner prioritizes a complete, usable local Pi Agent. VPS connectivity, remote PWA, AstrBot/Feishu interaction and remote communication are frozen compatibility adapters, archived for a separate next stage. Local acceptance does not require a VPS, tunnel, bot SDK, remote service, or platform UI. This section overrides remote prerequisites in older PA0/product milestones below; dated acceptance remains historical evidence.
+
+Pi/text CLI/loopback Web → Conversation Core → local host capabilities is the dependency direction. Local CLI commands do not load remote adapters or consume coordinator configuration. Host-owned disclosure checks live independently in `disclosure.py`; remote adapters retain compatible imports. Model calls and approved public retrieval may still go directly from Mac to existing providers under unchanged permissions and budget. No deployment, shutdown, credential/state migration or grant revocation is implied.
+
+Default local acceptance uses `scripts/test-local-agent`, blocking remote module imports throughout synthetic execution. Legacy channel regressions remain separately runnable compatibility checks. P2's remote PWA and all P4 work are deferred; P3 policy records remain inert without an independently delivered executor. See [active local scope](docs/local-agent-focus.md), [remote archive](docs/archive/remote-communications-20261020.md) and [next-stage plan](docs/remote-communications-plan.md).
+
 ## P1 conversational tools (2026-10-19 checkout)
 
 Native Pi and text chat now call `conversation_tools.submit`. New turns use `chat-tools-v1` with a frozen `conversation-tools-v1` registry; P0 `chat-json-actions-v1`, legacy Agent and web-v1/v2/v3 paid steps retain their saved implementations. Core interprets only explicit replies to a concrete pending tool preview; models cannot grant permissions.
@@ -16,9 +24,11 @@ The new `conversation-v1` Core API (with versioned `chat-json-actions-v1` model-
 
 P0 uses the existing Pi loop and MiMo, up to four model steps / two searches / six evidence excerpts (160 characters each). It exposes complete responses and actual model/tool step events; provider text streaming is not implemented. Public web tools are reserved for P1 with explicit public-query disclosure controls. No new background work, source grants, model budget or channel deployment is implied. Existing PWA/Feishu request and paid replay contracts remain unchanged.
 
-Acceptance requires at least three conversational turns with reference resolution, zero retrieval for simple chat, model-selected authorized retrieval, tool-error feedback, interrupt/resume, revocation and source-change invalidation, duplicate-request zero added paid calls, independent local execution and regression coverage of existing channels. Automated synthetic checks, actual Pi, real MiMo with synthetic data, private-answer quality and UI acceptance must be reported separately.
+Acceptance requires at least three conversational turns with reference resolution, zero retrieval for simple chat, model-selected authorized retrieval, tool-error feedback, interrupt/resume, revocation and source-change invalidation, duplicate-request zero added paid calls, independent local execution. Existing-channel regressions are separately runnable compatibility checks, outside the local acceptance prerequisite. Automated synthetic checks, actual Pi, real MiMo with synthetic data, private-answer quality and UI acceptance must be reported separately.
 
 The product milestone order is P0 audit/local chat → P1 tools/retrieval/web → P2 streaming Web Chat/Session API → P3 permission-bounded proactive work → P4 channel integration/reliability. PA0–PA5 capability IDs and their historical acceptance remain intact. See [roadmap and API boundaries](docs/local-first-agent-roadmap.md), [ADR 0035](docs/adr/0035-prefer-local-conversations-and-opt-in-specialists.md), and [P0 validation](docs/validation/local-chat-p0-20261019.json). This checkout slice does not deploy or restart production services. Following dated and PA0 channel-specific descriptions retain their original scope.
+
+2026-10-19 P2/P3 checkout additions: `conversation-session-v1` and a same-origin loopback Web Chat are available through `scripts/asis web-chat`. Persistent SSE carries step-state events only; current MiMo/Pi replies remain complete-response. P3 stores a scoped, explicitly confirmed WorkStore policy (source IDs, interval, expiry, per-run token budget, run cap, local notice condition, pause/cancel); no scheduler or proactive model execution is enabled. P4 remote adapters remain on the existing PWA/AstrBot/Feishu protocols until identity binding, per-source channel disclosure and encrypted event delivery use the new Core API. See [Core API and status](docs/conversation-core-api.md).
 
 2026-10-19本机周复盘修复：原生Pi的auto／life个人时间复盘使用已获准Life日期记录，最多七段、上下文5400字节，仍受原完整提示8192字节／生成512 Token和共享预算约束。没有日期记录时本机明确不足且不调用模型；显示记录范围和片段覆盖，不把计划写成已完成或把缺记录写成无活动。新纯文本调用启用JSON模式，历史付费协议不升级／不自动重做。实现与未通过的语义日期质量见[本轮说明](docs/pi-weekly-review-fix.md)。
 

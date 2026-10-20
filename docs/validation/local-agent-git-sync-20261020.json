@@ -1,0 +1,64 @@
+{
+  "date": "2026-10-20",
+  "scope": "Git checkpoint and push of local-agent direction, remote isolation and pending local Conversation API/Web/policy work; no runtime deployment",
+  "review_fix": {
+    "issue": "Client used CSS-selector strings with a getElementById helper, stopping initialization before handlers attached",
+    "change": "Use element IDs consistently",
+    "verification": "Execute actual client JS against synthetic DOM/API; initialize, register controls, submit/render and create another session. No browser/UI acceptance claim."
+  },
+  "tests": {
+    "local_isolation": {
+      "command": "scripts/test-local-agent",
+      "total": 165,
+      "passed": 165,
+      "skipped": 0,
+      "failed": 0,
+      "elapsed_seconds": 27.833,
+      "remote_import_attempts": 0
+    },
+    "final_compatibility": {
+      "command": "PYTHONPATH=src python3 -m unittest discover -s tests -v",
+      "status": "passed",
+      "total": 625,
+      "passed": 545,
+      "skipped": 80,
+      "failed": 0,
+      "errors": 0,
+      "elapsed_seconds": 59.32
+    },
+    "client_js_syntax": "node --check src/personal_asis/web/conversation.js: passed",
+    "static_checks": [
+      "Staged diff whitespace check",
+      "Candidate Markdown relative links and code fences",
+      "Candidate JSON parsing",
+      "No new credential patterns or runtime/private files",
+      "Synthetic DOM check; no real browser acceptance claim"
+    ]
+  },
+  "git_review": {
+    "base_commit": "9b37dec",
+    "branch": "main",
+    "remote": "origin",
+    "remote_branch": "main",
+    "remote_after_fetch": "no divergence at review",
+    "included_pending_work": "Local Core API/Web session listing/switch/clear, persistent step events and inert scoped proactive policy records",
+    "sensitive_file_audit": "No candidate runtime database, credential/config file, key, log, binary, symlink or dependency directory. Pattern hits were pre-existing synthetic credential-rejection test and original manual test-source path; neither introduced by this change.",
+    "documentation": "Rules/specification/glossary/status/index/implementation plan synchronized; roadmap now gives ordered local acceptance outcomes."
+  },
+  "boundaries": {
+    "real_model_calls": 0,
+    "platform_messages": 0,
+    "VPS_connections": 0,
+    "production_deployments": 0,
+    "service_stops_or_restarts": 0,
+    "runtime_state_migration": false
+  },
+  "remaining": [
+    "Native Pi daily-use acceptance",
+    "Real authorized personal-answer quality and full retrieval gate",
+    "Bounded summaries and older-history recall",
+    "Inspectable/correctable long-term memory",
+    "Additional scoped execution tools and artifact delivery",
+    "Safe local proactive executor; VPS/bot integration deferred"
+  ]
+}

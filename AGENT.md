@@ -1,10 +1,18 @@
 # 个人助手项目：代理工作指南
 
+## 当前开发范围修订（2026-10-20，优先于下方旧路线）
+
+- 当前只推进[本机 Pi Agent 主线](docs/local-agent-focus.md)。VPS 连接、机器人交互与远程通信按[归档清单](docs/archive/remote-communications-20261020.md)原位冻结，转入[下一阶段计划](docs/remote-communications-plan.md)；不以远程服务、平台 UI 或联调作为本机交付前提。
+- Pi／CLI／回环 Web → Conversation Core → 本机宿主，Core 不得依赖 VPS、Relay、轮询器或机器人模块。统一 CLI 按明确命令延迟加载旧适配器，证据披露政策归本机 `disclosure.py`。
+- 默认本机验收命令为 `scripts/test-local-agent`；全套旧渠道回归可独立运行。P2 中的远程 PWA 与 P4 全部暂缓；P3 现有授权记录保留，不启用后台执行。
+- 本机可继续直接使用既有获准 MiMo 与受控公开搜索。此次归档不撤销来源／模型许可，不搬迁资料、私密状态或账本，不停服、不部署、不重启现有 Mac／VPS／AstrBot；历史维护授权不构成本机变更时必须远程联动的要求。
+
 ## 当前产品与开发优先级（2026-10-19）
 
 - 产品方向为Local-first、Channel-agnostic、Conversation-first Personal Agent。默认通过Pi原生界面（`pi`／`scripts/asis-pi`）连接单一主Agent持续聊天，普通问题可直接回答，按需选择受控工具；Research／Career／Life为可选专业能力，不对所有问题默认分工。
 - Conversation Session／Turn／Run与持续Work Delegation分离。Core不得依赖AstrBot、Feishu Cards或VPS；渠道适配器不定义规划／工具选择，Pi不拥有资料、权限、任务或预算权威。
 - 下一阶段按[产品里程碑P0–P4](docs/local-first-agent-roadmap.md)执行：本地Chat → 工具／检索／公开搜索 → Web Chat／稳定会话API → 有限持续工作 → 多渠道可靠性。PA0–PA5仍表示原业务能力，不改写历史验收。
+- P2 本机 Web Chat 仅绑定 loopback；SSE 仅发布已实现的步骤状态，MiMo/Pi 当前完整响应，不得拆分伪装文本流。P3 授权策略不是调度器；只有实际预算执行与权限复核上线后才可启用运行。P4 远程渠道必须经认证 Relay、用户绑定、逐来源披露检查与加密投递。
 - P1工具注册由主机冻结；模型只能提议动作。公开搜索绑定精确query／提供商／结果数／期限的本机确认；账户缓存可用不代表可实时抓取或新增模型许可。专业Work仅按明确的一次范围执行，不能推断后台授权。
 - 修改工具或会话协议须版本化，保留旧已付费步骤序列化、未知结果不重试、共享预算及撤权清理。对话推断不自动成为已确认长期事实。
 - 当前P0／P1仅checkout开发与验证，不自动部署、重启Mac／VPS／AstrBot、增加预算或迁移／删除原始资料；此明确范围优先于后文持续维护授权。后续是否部署以具体任务为准。

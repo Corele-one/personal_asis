@@ -1,5 +1,8 @@
 # 飞书 `/asis` 交互卡片
 
+> 2026-10-20：本文归入远程兼容资料；VPS／机器人／远程通信暂缓，当前开发以[本机 Pi 主线](local-agent-focus.md)为准。本文版本与验收均限原日期，不能据此推断当前线上状态。
+
+
 本人在已绑定的 Miyuki 私聊发送 `/asis`，机器人回复原生飞书卡片。卡片可选择研究、申请职业、生活复盘或总管自动分工，选择 Study／Life／两者，填写问题；提交后在同一张卡片显示工作编号、结果和刷新／暂停／恢复／取消按钮。另有原工作编号查询和新建问题。现有文字命令继续可用。
 
 实现依据为用户指定的[官方卡片机器人开发流程](https://open.feishu.cn/document/uAjLw4CM/ukzMukzMukzM/feishu-cards/quick-start/develop-a-card-interactive-bot?lang=zh-CN)、[JSON 2.0 表单容器](https://open.feishu.cn/document/feishu-cards/card-json-v2-components/containers/form-container)和[卡片回传交互](https://open.feishu.cn/document/uAjLw4CM/ukzMukzMukzM/feishu-cards/card-callback-communication)。卡片使用代码构造的 JSON 2.0，不需要创建模板或持久化 CardKit 实体。

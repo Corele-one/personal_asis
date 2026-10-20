@@ -10,6 +10,7 @@ import json
 import os
 from pathlib import Path
 import sqlite3
+import secrets
 import time
 import uuid
 
@@ -61,6 +62,15 @@ class WorkStore:
           CREATE TABLE IF NOT EXISTS agent_sessions (
             run TEXT PRIMARY KEY REFERENCES runs(id), contract TEXT NOT NULL,
             payload TEXT, at REAL NOT NULL);
+          CREATE TABLE IF NOT EXISTS proactive_policies (
+            id TEXT PRIMARY KEY, request_id TEXT NOT NULL UNIQUE,
+            delegation TEXT NOT NULL UNIQUE REFERENCES delegations(id),
+            scope TEXT NOT NULL, fingerprint TEXT NOT NULL, state TEXT NOT NULL,
+            interval_seconds INTEGER NOT NULL, expires REAL NOT NULL,
+            token_budget INTEGER NOT NULL, max_runs INTEGER NOT NULL,
+            notify_when TEXT NOT NULL, notify_channel TEXT NOT NULL,
+            preview_hash TEXT, preview_expires REAL, next_at REAL,
+            runs_created INTEGER NOT NULL DEFAULT 0, created REAL NOT NULL, updated REAL NOT NULL);
         ''')
         self.clean()
 
@@ -121,6 +131,109 @@ class WorkStore:
             self._event(did, 'created')
             return did
 
+    def prepare_proactive(self, did, *, request_id, interval_seconds, expires,
+                          token_budget, max_runs, notify_when, notify_channel='local'):
+        """Save a disabled, short-lived preview. It never starts a scheduler."""
+        if (not isinstance(request_id,str) or not 1<=len(request_id)<=128
+                or type(interval_seconds) is not int or not 3600<=interval_seconds<=30*86400
+                or type(expires) not in (int,float) or not self.clock()<expires<=self.clock()+365*86400
+                or type(token_budget) is not int or not 1<=token_budget<=100_000
+                or type(max_runs) is not int or not 1<=max_runs<=1000
+                or notify_when not in ('completion','attention','expiry','none')
+                or notify_channel != 'local'):
+            raise ValueError('invalid_proactive_policy')
+        token=secrets.token_urlsafe(24)
+        with self.transaction():
+            delegation=self._delegation(did)
+            if delegation['state'] in ('cancelled','completed','stopped'):
+                raise ValueError('inactive_delegation_cannot_schedule')
+            scope=json.loads(delegation['scope'])
+            policy={'interval_seconds':interval_seconds,'expires':expires,'token_budget':token_budget,
+                    'max_runs':max_runs,'notify_when':notify_when,'notify_channel':notify_channel,
+                    'sources':scope['sources'],'delegation_fingerprint':delegation['fingerprint']}
+            fp=fingerprint(policy)
+            seen=self.db.execute('SELECT * FROM proactive_policies WHERE request_id=?',(request_id,)).fetchone()
+            if seen:
+                if seen['delegation']!=did or seen['fingerprint']!=fp:
+                    raise ValueError('proactive_request_conflict')
+                raise ValueError('proactive_preview_already_created_no_token')
+            prior=self.db.execute('SELECT * FROM proactive_policies WHERE delegation=?',(did,)).fetchone()
+            if prior and prior['state']=='authorized' and prior['expires']>self.clock():
+                raise ValueError('active_proactive_policy_must_be_paused_first')
+            pid=prior['id'] if prior else str(uuid.uuid4())
+            self.db.execute('''INSERT INTO proactive_policies
+              (id,request_id,delegation,scope,fingerprint,state,interval_seconds,expires,token_budget,max_runs,
+               notify_when,notify_channel,preview_hash,preview_expires,next_at,runs_created,created,updated)
+              VALUES(?,?,?,?,?, 'pending_confirmation',?,?,?,?,?,?,?, ?,NULL,0,?,?)
+              ON CONFLICT(delegation) DO UPDATE SET scope=excluded.scope,fingerprint=excluded.fingerprint,
+               request_id=excluded.request_id,
+               state='pending_confirmation',interval_seconds=excluded.interval_seconds,expires=excluded.expires,
+               token_budget=excluded.token_budget,max_runs=excluded.max_runs,notify_when=excluded.notify_when,
+               notify_channel=excluded.notify_channel,preview_hash=excluded.preview_hash,
+               preview_expires=excluded.preview_expires,next_at=NULL,runs_created=0,updated=excluded.updated''',
+              (pid,request_id,did,encoded(policy),fp,interval_seconds,expires,token_budget,max_runs,notify_when,
+               notify_channel,fingerprint(token),self.clock()+900,self.clock(),self.clock()))
+            self._event(did,'proactive_preview_created')
+        return {'policy_id':pid,'state':'pending_confirmation','confirmation_token':token,
+                'expires_in':900,'policy':policy,'scheduler_started':False}
+
+    def control_proactive(self, did, action, *, confirmation_token=None):
+        if action not in ('authorize','pause','resume','cancel'):
+            raise ValueError('invalid_proactive_control')
+        with self.transaction():
+            delegation=self._delegation(did)
+            row=self.db.execute('SELECT * FROM proactive_policies WHERE delegation=?',(did,)).fetchone()
+            if row is None:
+                raise ValueError('proactive_policy_not_found')
+            state=row['state']
+            if row['expires']<=self.clock() and state not in ('cancelled','expired'):
+                self.db.execute('UPDATE proactive_policies SET state=\'expired\',next_at=NULL,preview_hash=NULL,preview_expires=NULL,updated=? WHERE id=?',
+                                (self.clock(),row['id']))
+                self._event(did,'proactive_expired')
+                if action!='cancel':
+                    return {'policy_id':row['id'],'state':'expired','scheduler_started':False}
+                state='expired'
+            if action=='authorize':
+                if (state!='pending_confirmation' or not isinstance(confirmation_token,str)
+                        or row['preview_expires']<=self.clock()
+                        or fingerprint(confirmation_token)!=row['preview_hash']):
+                    raise ValueError('proactive_confirmation_invalid_or_expired')
+                if delegation['state']!='active':
+                    raise ValueError('delegation_not_active')
+                state='authorized'
+                self.db.execute('UPDATE proactive_policies SET state=?,next_at=NULL,preview_hash=NULL,preview_expires=NULL,updated=? WHERE id=?',
+                                (state,self.clock(),row['id']))
+            elif action=='resume':
+                if state!='paused' or delegation['state']!='active':
+                    raise ValueError('proactive_policy_cannot_resume')
+                state='authorized'
+                self.db.execute('UPDATE proactive_policies SET state=?,next_at=NULL,updated=? WHERE id=?',
+                                (state,self.clock(),row['id']))
+            else:
+                if state in ('cancelled','expired') and action=='cancel':
+                    return {'policy_id':row['id'],'state':state}
+                state={'pause':'paused','cancel':'cancelled'}[action]
+                self.db.execute('UPDATE proactive_policies SET state=?,next_at=NULL,preview_hash=NULL,preview_expires=NULL,updated=? WHERE id=?',
+                                (state,self.clock(),row['id']))
+            self._event(did,'proactive_'+action)
+            return {'policy_id':row['id'],'state':state,'scheduler_started':False}
+
+    def proactive(self, did):
+        self._delegation(did)
+        row=self.db.execute('SELECT * FROM proactive_policies WHERE delegation=?',(did,)).fetchone()
+        if row is None:
+            return None
+        if row['expires']<=self.clock() and row['state'] not in ('cancelled','expired'):
+            with self.transaction():
+                self.db.execute("UPDATE proactive_policies SET state='expired',next_at=NULL,preview_hash=NULL,preview_expires=NULL,updated=? WHERE id=?",
+                                (self.clock(),row['id']))
+                self._event(did,'proactive_expired')
+            row=self.db.execute('SELECT * FROM proactive_policies WHERE id=?',(row['id'],)).fetchone()
+        value=dict(row)
+        value['scope']=json.loads(value['scope'])
+        value.pop('preview_hash',None)
+        return value
+
     def enqueue(self, did, request_id, role='supervisor', parent=None, priority='foreground'):
         if (role not in ROLES or priority not in ('foreground', 'background') or
                 not isinstance(request_id, str) or not 0 < len(request_id) <= 128):
@@ -162,6 +275,12 @@ class WorkStore:
                 raise ValueError('cancelled_delegation_cannot_resume')
             state = {'pause': 'paused', 'resume': 'active', 'cancel': 'cancelled'}[action]
             self.db.execute('UPDATE delegations SET state=? WHERE id=?', (state, did))
+            if action in ('pause','cancel'):
+                policy_state='paused' if action=='pause' else 'cancelled'
+                self.db.execute('''UPDATE proactive_policies SET state=?,next_at=NULL,preview_hash=NULL,
+                    preview_expires=NULL,updated=? WHERE delegation=? AND state IN ('authorized','pending_confirmation')''',
+                    (policy_state,self.clock(),did))
+                self._event(did,'proactive_'+action)
             if action == 'resume':
                 self.db.execute("UPDATE runs SET state='queued' WHERE delegation=? AND state='paused'", (did,))
             else:

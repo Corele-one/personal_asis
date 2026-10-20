@@ -1,5 +1,25 @@
 # 个人助手完成情况
 
+2026-10-20 Git 同步复核：补正本机 Web 客户端初始化的元素定位错误，新增合成 DOM 初始化／发送／渲染／新会话检查；本机隔离165项全部通过；最终全量625项＝545通过＋80可选依赖／平台解释器跳过，见[同步验证](validation/local-agent-git-sync-20261020.json)。原生 Pi 与真实个人问答质量仍待日常验收，后续顺序见[本机主线](local-agent-focus.md)。
+
+## 本机优先与远程隔离（2026-10-20）
+
+当前主线为[本机 Pi Agent](local-agent-focus.md)，VPS／机器人／远程通信已转入[归档](archive/remote-communications-20261020.md)与[下一阶段计划](remote-communications-plan.md)。CLI 不再启动即加载远程实现；宿主证据披露策略从 Relay 提取，旧适配器仍复用同一检查。本机验收套件强制禁止远程模块依赖，详见[本轮验证](validation/local-agent-isolation-20261020.json)。
+
+当前仍待改善 Pi 日常体验、真实个人检索／回答质量和长会话。P3 执行器、远程 PWA／P4 暂不推进。本轮未部署、停服、重启、连接 VPS 或发送平台消息，线上状态未重新核验；下方已部署版本均按原日期理解。
+
+## P2–P4 checkout续作（2026-10-20）
+
+本机 Web Chat 已增加会话切换与显式内容清除；列表严格只返回 session ID 和最近活动时间，清理保留防重墓碑。全套回归621项，541通过、80跳过、0失败；跳过项依赖可选加密包或VPS专用解释器。详情见[本轮续作验收](validation/conversation-continuation-20261020.json)。真实文本流式、摘要／旧历史召回、远程PWA默认聊天仍缺；P3没有可安全执行的预算硬限制与调度器；P4远程身份／披露／加密Relay尚未接入。没有模型调用、平台消息或部署。
+
+## P2–P4 checkout续作（2026-10-19）
+
+P2新增`conversation-session-v1` Core facade、本机loopback Web Chat、持久SSE步骤事件、预算显示及同标签会话恢复；工具确认／拒绝与中断恢复／取消按钮调用同一Core。Pi/MiMo仍返回完整文本。摘要／较早历史召回、真实增量文本、远程PWA默认聊天未交付。
+
+P3新增WorkStore授权策略记录和CLI预览／确认／状态／暂停／恢复／取消，包含固定既有来源、频率、期限、Token预算、最大轮数及本机通知条件。没有周期调度器、每委托预算执行、结果通知或后台执行；授权记录不自行启动任务。
+
+P4方面，Pi、CLI、本机Web已共用Core服务边界；VPS PWA／AstrBot／飞书仍保留原接口，没有新Session远程接线或生产部署。认证身份映射、来源级渠道披露、加密事件／答案投递、真实平台UI和可靠性验收仍待做。实现与验收见[Core API交付记录](conversation-core-api.md)及[验证记录](validation/conversation-p2-p4-20261019.json)。
+
 ## P1工具闭环（2026-10-19，checkout）
 
 新增冻结工具注册／schema、公开查询确认、受控搜索与正文读取、按需专业Work升级；原生Pi与文本Chat默认使用`chat-tools-v1`，旧付费协议按保存值恢复。已接授权笔记和WUCAI/Folo/小红书本机缓存，保留作者归属及时间窗口，不启用实时账户抓取或后台任务。

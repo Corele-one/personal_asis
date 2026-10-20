@@ -1,0 +1,9 @@
+#!/bin/sh
+# Local Pi/Core acceptance without importing VPS, bot, or relay adapters.
+ASIS_REPO_ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+export PYTHONPATH="$ASIS_REPO_ROOT/src:$ASIS_REPO_ROOT/tests"
+export HF_HUB_OFFLINE=1
+export TRANSFORMERS_OFFLINE=1
+export HF_HUB_DISABLE_TELEMETRY=1
+export TOKENIZERS_PARALLELISM=false
+exec "${ASIS_PYTHON:-python3}" "$ASIS_REPO_ROOT/tests/local_agent_suite.py" "$@"

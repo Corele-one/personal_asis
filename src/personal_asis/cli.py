@@ -12,13 +12,6 @@ import sys
 
 from .config import DEFAULT_HOME, load_config
 from .index import Index
-from .service import daemon, install, uninstall, install_tunnel, uninstall_tunnel
-from .coordinator import Coordinator
-from .node import Client, Poller, connection_config
-from .transport import server
-from .feishu import FeishuBridge
-from .pwa import server as pwa_server, settings as pwa_settings
-from .web_auth import WebAuth
 from .extractors import FORMATS
 
 
@@ -37,7 +30,7 @@ def doctor():
         db.close()
     return {"python": platform.python_version(), "executable": sys.executable,
             "sqlite": sqlite3.sqlite_version, "fts5_trigram": fts5,
-            "platform": platform.system(), "network": "outbound polling when coordinator.json is configured",
+            "platform": platform.system(), "network": "local commands do not start VPS polling; legacy node/daemon commands opt in",
             "text_formats": list(FORMATS),
             "pdf_text_backend": "pdftotext" if shutil.which("pdftotext") else "pypdf" if importlib.util.find_spec("pypdf") else None,
             "legacy_office_converter": bool(shutil.which("libreoffice") and shutil.which("unshare") and Path("/usr/lib/python3/dist-packages/uno.py").exists()),
@@ -72,7 +65,7 @@ def init(home, root, node_id):
 def main(argv=None):
     # Also restrict SQLite WAL/SHM sidecars and temporary output.
     os.umask(0o077)
-    parser = argparse.ArgumentParser(description="本机证据检索、节点协调与受控 PA1 分析")
+    parser = argparse.ArgumentParser(description="本机 Pi Agent、证据检索与受控分析；远程命令保留兼容")
     parser.add_argument("--home", type=Path, default=DEFAULT_HOME, help="本机私密运行数据目录")
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("doctor")
@@ -81,6 +74,8 @@ def main(argv=None):
     p.add_argument('--continue', dest='continued', action='store_true', help='恢复最近会话')
     p.add_argument('--check', action='store_true', help='检查配置和Pi依赖，不调用模型')
     p.add_argument('--list', dest='list_sessions', action='store_true', help='列出最近会话ID')
+    p = commands.add_parser('web-chat', help='启动仅本机可访问的持续聊天网页')
+    p.add_argument('--port', type=int, default=0, help='回环端口，默认由系统分配')
     p = commands.add_parser("init")
     p.add_argument("--test-root", required=True, type=Path)
     p.add_argument("--node-id", default="mac")
@@ -214,6 +209,15 @@ def main(argv=None):
     p.add_argument('--priority', choices=['foreground', 'background'], default='foreground')
     p.add_argument('--execution-key')
     p.add_argument('--outcome', choices=['done', 'rejected'])
+    p = commands.add_parser('proactive', help='为既有委托保存明确的持续工作范围；不启动后台执行器')
+    p.add_argument('action',choices=['preview','authorize','status','pause','resume','cancel'])
+    p.add_argument('--delegation-id',required=True)
+    p.add_argument('--request-id')
+    p.add_argument('--interval-hours',type=int)
+    p.add_argument('--expires-days',type=int)
+    p.add_argument('--token-budget',type=int)
+    p.add_argument('--max-runs',type=int)
+    p.add_argument('--notify-when',choices=['completion','attention','expiry','none'])
     p = commands.add_parser('retrieval-v2', help='独立本机实验协议；不切换 PA1/Agent 或调用模型')
     p.add_argument('action', choices=['rebuild', 'search', 'bundle', 'expand'])
     p.add_argument('--query')
@@ -249,6 +253,26 @@ def main(argv=None):
             from .chat_cli import main as chat_main
             return chat_main(home, session=args.session, continued=args.continued,
                              check=args.check, list_sessions=args.list_sessions)
+        elif args.command == 'web-chat':
+            from .conversation_web import server as chat_server
+            from .conversation import ConversationStore
+            from urllib.parse import quote
+            with chat_server(home, args.port) as http:
+                with ConversationStore(home) as store:
+                    sessions = store.sessions()
+                    sid = sessions[0]['id'] if sessions else store.create()
+                url=f'http://127.0.0.1:{http.server_port}/chat#session={quote(sid)}'
+                print('Personal Asis 本机聊天：'+url, flush=True)
+                try:
+                    import webbrowser
+                    webbrowser.open(url)
+                except Exception:
+                    pass
+                try:
+                    http.serve_forever()
+                except KeyboardInterrupt:
+                    pass
+            return 0
         elif args.command == 'quality-answer':
             from .reranking import LocalCrossEncoder
             from .quality_answer import analyze, prepare
@@ -476,6 +500,25 @@ def main(argv=None):
                     else:
                         work.control(args.delegation_id, args.action)
                     result = {'updated': True, 'action': args.action, 'automatic_execution': False}
+        elif args.command == 'proactive':
+            from .work import WorkStore
+            with WorkStore(home/'work.sqlite3') as work:
+                if args.action=='preview':
+                    if not all((args.request_id,args.interval_hours,args.expires_days,
+                                args.token_budget,args.max_runs,args.notify_when)):
+                        raise ValueError('proactive_preview_requires_scope_frequency_expiry_budget_runs_and_notice')
+                    import time
+                    result=work.prepare_proactive(args.delegation_id,request_id=args.request_id,
+                        interval_seconds=args.interval_hours*3600,expires=time.time()+args.expires_days*86400,
+                        token_budget=args.token_budget,max_runs=args.max_runs,notify_when=args.notify_when)
+                elif args.action=='status':
+                    result={'policy':work.proactive(args.delegation_id),'scheduler_started':False}
+                elif args.action=='authorize':
+                    print('将启用此精确范围的持续工作授权；执行器仍需单独启动。',flush=True)
+                    confirmation=getpass.getpass('输入 preview 命令返回的一次性确认值：')
+                    result=work.control_proactive(args.delegation_id,'authorize',confirmation_token=confirmation)
+                else:
+                    result=work.control_proactive(args.delegation_id,args.action)
         elif args.command == "pa1":
             from . import pa1
             from .config import load_pa1_config
@@ -581,8 +624,10 @@ def main(argv=None):
         elif args.command == "init":
             result = init(home, args.test_root, args.node_id)
         elif args.command == "service":
+            from .service import install, uninstall
             result = install(home) if args.action == "install" else uninstall()
         elif args.command == "tunnel":
+            from .service import install_tunnel, uninstall_tunnel
             if args.action == "install":
                 if not args.host:
                     raise ValueError("需要 --host user@hostname")
@@ -590,9 +635,11 @@ def main(argv=None):
             else:
                 result = uninstall_tunnel()
         elif args.command == "daemon":
+            from .service import daemon
             daemon(home, emit)
             return 0
         elif args.command == "node":
+            from .node import Client, Poller, connection_config
             if args.action == "enroll":
                 config = load_config(home / "sources.yaml")
                 client = Client(connection_config(home), config.node_id)
@@ -604,6 +651,8 @@ def main(argv=None):
                 finally:
                     poller.close()
         elif args.command == "pwa":
+            from .pwa import server as pwa_server, settings as pwa_settings
+            from .web_auth import WebAuth
             config = pwa_settings(home)
             if args.action == "serve":
                 with pwa_server(home, args.port) as http:
@@ -617,6 +666,7 @@ def main(argv=None):
                 setup = auth.bootstrap(args.reset)
             result = {"setup_url": config["origin"] + "/#setup=" + setup["setup_token"], "expires_in": setup["expires_in"]}
         elif args.command == "feishu":
+            from .feishu import FeishuBridge
             bridge = FeishuBridge(home)
             try:
                 if args.action == "pair":
@@ -629,8 +679,10 @@ def main(argv=None):
             finally:
                 bridge.close()
         elif args.command == "coordinator":
+            from .coordinator import Coordinator
             path = home / "coordinator.sqlite3"
             if args.action == "serve":
+                from .transport import server
                 with server(path, args.port, tuple(args.nodes)) as http:
                     emit({"event": "listening", "host": "127.0.0.1", "port": http.server_port,
                           "node_api_only": True})

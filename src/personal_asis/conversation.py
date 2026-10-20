@@ -87,9 +87,15 @@ class ConversationStore:
           CREATE TABLE IF NOT EXISTS conversation_controls (
             id TEXT PRIMARY KEY, session TEXT NOT NULL, target TEXT NOT NULL,
             action TEXT NOT NULL, scope TEXT NOT NULL, at REAL NOT NULL);
+          CREATE TABLE IF NOT EXISTS conversation_events (
+            sequence INTEGER PRIMARY KEY AUTOINCREMENT, session TEXT NOT NULL,
+            turn TEXT NOT NULL, kind TEXT NOT NULL, payload TEXT NOT NULL, at REAL NOT NULL);
+          CREATE INDEX IF NOT EXISTS conversation_event_session
+            ON conversation_events(session, sequence);
         ''')
         self.db.execute("UPDATE conversation_turns SET state=NULL,result=NULL,status='expired' WHERE at<? AND state IS NOT NULL",
                         (time.time()-30*86400,))
+        self.db.execute('DELETE FROM conversation_events WHERE at<?', (time.time()-30*86400,))
         self.db.commit()
         (self.home/'conversation.sqlite3').chmod(0o600)
 
@@ -175,6 +181,31 @@ class ConversationStore:
         with self.lock(sid), self.db:
             self.session(sid)
             self.db.execute("UPDATE conversation_turns SET state=NULL,result=NULL,status='forgotten',error=NULL WHERE session=?", (sid,))
+            self.db.execute('DELETE FROM conversation_events WHERE session=?', (sid,))
+
+    def event(self, sid, tid, kind, payload=None):
+        # Persist state-only events; message and tool bodies never enter this log.
+        if kind not in {'turn_started','model_start','model_done','tool_start','tool_done',
+                        'permission_required','turn_completed','turn_failed','turn_interrupted','turn_cancelled'}:
+            raise ValueError('chat_invalid_event')
+        safe = {}
+        if isinstance(payload, dict):
+            for key in ('tool','turn','status','error'):
+                value = payload.get(key)
+                if isinstance(value, (str, int)) and not isinstance(value, bool):
+                    safe[key] = value
+        with self.db:
+            self.db.execute('INSERT INTO conversation_events(session,turn,kind,payload,at) VALUES(?,?,?,?,?)',
+                            (sid, tid, kind, dumps(safe), time.time()))
+
+    def events(self, sid, after=0, limit=200):
+        self.session(sid)
+        if type(after) is not int or after < 0 or type(limit) is not int or not 1 <= limit <= 500:
+            raise ValueError('chat_invalid_event_cursor')
+        return [{'sequence':r['sequence'],'turn_id':r['turn'],'kind':r['kind'],
+                 'payload':json.loads(r['payload']),'at':r['at']}
+                for r in self.db.execute('SELECT * FROM conversation_events WHERE session=? AND sequence>? ORDER BY sequence LIMIT ?',
+                                         (sid, after, limit))]
 
 
 def budget_status(home):
@@ -516,14 +547,25 @@ def send(home, sid, message=None, *, turn_id=None, resume=False, provider=None, 
             host.services=services
         usage_before=state['usage']+state.get('specialist_usage',0)
         store.save(tid, state, 'running')
+        store.event(sid, tid, 'turn_started')
+        def persist_event(event):
+            kind = ('model_' if event.get('kind') == 'model' else 'tool_') + str(event.get('phase',''))
+            payload = {'turn':event.get('turn')}
+            if event.get('name'):
+                payload['tool'] = event['name']
+            store.event(sid, tid, kind, payload)
+            if on_event is not None:
+                on_event(event)
         try:
             host.check()
             run_pi(state['question'], host.tool_definitions(), row['run'], host, max_turns=host.max_models, timeout=180,
-                   on_event=on_event)
+                   on_event=persist_event)
         except AwaitingToolPermission:
             store.save(tid, state, 'waiting_permission')
+            store.event(sid, tid, 'permission_required')
         except (KeyboardInterrupt, InterruptedError):
             store.save(tid, state, 'interrupted', error='chat_interrupted_resume_committed_steps_only')
+            store.event(sid, tid, 'turn_interrupted')
         except BaseException as error:
             # Never copy provider bodies, paths, or private input into error records.
             code = str(error)
@@ -533,8 +575,12 @@ def send(home, sid, message=None, *, turn_id=None, resume=False, provider=None, 
             current = store.get(sid, tid)
             if current['state'] is not None:
                 store.save(tid, state, 'failed', error=code)
+                store.event(sid, tid, 'turn_failed',
+                            {'error':code if code.startswith('chat_') else 'chat_execution_failed'})
         finally:
             host.ledger.close()
+        if inspect(home, sid, tid)['status'] == 'completed':
+            store.event(sid, tid, 'turn_completed')
         return {**inspect(home, sid, tid), 'cached': False,
                 'new_usage_tokens':max(0,state['usage']+state.get('specialist_usage',0)-usage_before)}
 
@@ -543,3 +589,4 @@ def cancel(home, sid, tid):
     with ConversationStore(home) as store, store.lock(sid), store.db:
         store.get(sid, tid)
         store.db.execute("UPDATE conversation_turns SET status='cancelled' WHERE id=? AND status IN ('running','interrupted','waiting_permission')", (tid,))
+        store.event(sid, tid, 'turn_cancelled')

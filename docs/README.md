@@ -1,11 +1,22 @@
 # 项目文档索引
 
-当前P1：[持续对话受控工具](conversation-tools-p1.md)记录工具版本、查询确认、来源／预算／恢复、真实公开闭环与剩余质量门槛；[本轮验收](validation/conversation-tools-p1-20261019.json)区分合成、真实接口与UI验收。默认仍为`pi`原生持续对话，本轮没有生产部署。
+## 当前入口（2026-10-20）
+
+- [本机 Pi 主线](local-agent-focus.md)：当前范围、依赖方向、本机验收与下一步。
+- [本机使用指南](assistant-usage.md)、[完成情况](project-status.md)、[本轮解耦验证](validation/local-agent-isolation-20261020.json)。
+- [远程归档清单](archive/remote-communications-20261020.md)、[旧远程用法](archive/remote-usage-20261020.md)、[下一阶段计划](remote-communications-plan.md)。
+
+下方“当前使用与维护”中涉及 VPS／飞书／PWA 的材料均为保留的旧运行资料；远程接线与 P4 暂缓，不构成本机开发或验收前提。线上服务本轮未操作。
+
+当前：[P1持续对话受控工具](conversation-tools-p1.md)记录工具和公开研究门槛；[P2–P4 Core API交付](conversation-core-api.md)说明本机Web Chat、事件SSE、授权策略与尚未接入的远程渠道。`pi`仍是默认入口，本轮checkout续作没有生产部署。
 
 ## 本轮入口：Local-first Conversational Agent
 
 - [本地Agent路线与实际架构审计](local-first-agent-roadmap.md)：模块依赖、Conversation与Delegation、Core API、预算／来源／恢复、P0–P4、兼容与回滚。
 - [本机Chat使用](assistant-usage.md)：`scripts/asis chat`、恢复、工具状态与当前限制。
+- [Conversation Core API](conversation-core-api.md)：本机Web Chat、Session／SSE事件、Proactive Policy与P4渠道适配边界。
+- [P2–P4 checkout验证记录](validation/conversation-p2-p4-20261019.json)：当前交付、完整回归数及明确未完成项。
+- [本机聊天续作验证](validation/conversation-continuation-20261020.json)：Web 会话切换／清理与当日完整回归；P3/P4未宣称完成。
 - [P0验证记录](validation/local-chat-p0-20261019.json)：合成、实际Pi、隔离真实MiMo与旧接口回归分别记录。
 - [ADR 0035](adr/0035-prefer-local-conversations-and-opt-in-specialists.md)：默认单主Agent与按需专业能力，修订0022／0025适用范围。
 

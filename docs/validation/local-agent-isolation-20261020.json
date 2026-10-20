@@ -1,0 +1,71 @@
+{
+  "date": "2026-10-20",
+  "scope": "checkout only: prioritize local Pi Agent; freeze legacy remote adapters and defer VPS/bot integration",
+  "implemented": [
+    "CLI loads coordinator/node/service/PWA/Feishu modules only in explicitly selected legacy command branches",
+    "Host-owned disclosure.py preserves the exact validation body; analysis_channel.validate_result remains the same callable for compatibility",
+    "Agent/PA1/work-history use host disclosure policy without importing remote Relay modules",
+    "Local acceptance blocks 13 remote adapter modules through imports and synthetic execution",
+    "Local commands work with an invalid legacy coordinator.json; no coordinator or polling state created",
+    "README and usage prioritize local Pi; original README and remote usage archived with relative links preserved",
+    "Project rules/specification/glossary/roadmap/status/authority synchronized; remote scope and next-stage requirements documented"
+  ],
+  "validation": {
+    "local_suite": {
+      "command": "scripts/test-local-agent",
+      "total": 164,
+      "passed": 164,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "elapsed_seconds": 26.021,
+      "remote_import_attempts": 0,
+      "includes": "Actual installed Pi runtime with simulated model/provider and temporary synthetic sources; direct host disclosure grant/revocation/URI stripping; loopback Web HTTP"
+    },
+    "compatibility_suite": {
+      "command": "PYTHONPATH=src python3 -m unittest discover -s tests -v",
+      "total": 623,
+      "passed": 543,
+      "skipped": 80,
+      "failures": 0,
+      "errors": 0,
+      "elapsed_seconds": 60.283,
+      "collection_note": "Collected before the final host-disclosure test was added; that final test passed in the 164-test local suite.",
+      "skip_reasons": {
+        "optional_encryption_dependencies": 61,
+        "VPS_AstrBot_interpreter": 16,
+        "LibreOffice_UNO": 2,
+        "test_format_dependency": 1
+      }
+    },
+    "static_checks": [
+      "Legacy analysis_channel.validate_result is disclosure.validate_result",
+      "Extracted validation function body exactly matches HEAD implementation",
+      "Changed/new Markdown relative links and code fences checked",
+      "git diff --check"
+    ],
+    "sandbox_note": "Initial local suite had three loopback bind PermissionErrors under sandbox. Re-run with approved local listener access passed; no application workaround or security weakening."
+  },
+  "boundaries": {
+    "real_model_requests": 0,
+    "platform_messages": 0,
+    "VPS_connections": 0,
+    "service_restarts_or_stops": 0,
+    "production_deployments": 0,
+    "source_or_credential_migration": false,
+    "production_state_verified": false,
+    "preexisting_uncommitted_conversation_work": "preserved",
+    "archive_semantics": "Code and legacy command paths retained in place; development/import/acceptance isolation, not runtime shutdown or authorization revocation."
+  },
+  "next_local_work": [
+    "Pi daily usability acceptance",
+    "Real authorized personal-answer quality and retrieval gate",
+    "Bounded long-conversation context"
+  ],
+  "deferred": [
+    "Remote PWA chat",
+    "VPS/Relay session integration",
+    "AstrBot/Feishu adapters and UI acceptance",
+    "Production shutdown/deployment changes"
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "date": "2026-10-20",
+  "scope": "checkout only; no production deployment, service restart, background scheduler, model request, or platform message",
+  "p2": {
+    "implemented": [
+      "Web Chat session picker displays metadata only and switches between persisted sessions",
+      "explicit session-content clearing through the Core API; request tombstones remain for paid-call deduplication",
+      "existing same-origin checks, approval/denial, interruption recovery, cancel, SSE status, and shared budget remain"
+    ],
+    "not_implemented": [
+      "provider token streaming; MiMo/Pi still return complete responses",
+      "summaries and selective older-history retrieval",
+      "remote VPS PWA default chat"
+    ]
+  },
+  "tests": {
+    "command": "PYTHONPATH=src python3 -m unittest discover -s tests -v",
+    "total": 621,
+    "passed": 541,
+    "skipped": 80,
+    "failed": 0,
+    "web_http_tests": "3 passed using loopback only",
+    "static_checks": [
+      "node --check src/personal_asis/web/conversation.js",
+      "py_compile conversation_web.py conversation_api.py",
+      "git diff --check",
+      "documentation relative-link check"
+    ],
+    "data": "Tests use synthetic fixtures; no private body, credentials, or sensitive session is included."
+  },
+  "deployment": "none"
+}

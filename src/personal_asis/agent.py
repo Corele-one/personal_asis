@@ -113,7 +113,7 @@ def validate_state(home, source_home, state, channel=None):
     bundle=ContextBundle(state['question'],'mimo',state['evidence'],state['mode'],state['degradation'])
     bundle.revalidate(source_home)
     for recipient in {state.get('channel'),channel}-{None}:
-        from .analysis_channel import validate_result
+        from .disclosure import validate_result
         validate_result(source_home,{'provider':'mimo','evidence':state['evidence'],
                                     'retrieval_mode':state['mode']},recipient)
     if state['synthetic']:
@@ -372,7 +372,7 @@ class AgentHost:
                 bundle=ContextBundle(query,'mimo',[],'lexical','no_authorized_match')
             bundle.revalidate(self.source_home)
             for recipient in {self.state.get('channel'),self.channel}-{None}:
-                from .analysis_channel import validate_result
+                from .disclosure import validate_result
                 validate_result(self.source_home,{'provider':'mimo','evidence':bundle.evidence,
                     'retrieval_mode':bundle.retrieval_mode},recipient)
             if self.state['synthetic']:

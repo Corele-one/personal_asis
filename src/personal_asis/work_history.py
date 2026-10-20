@@ -48,7 +48,7 @@ def _record(work, home, rid, binding, source_ids, channel, visiting, role=None):
         raise ValueError('agent_history_source_scope_denied')
     ContextBundle(state['question'],'mimo',result['evidence'],result['retrieval_mode']).revalidate(home)
     for recipient in {state.get('channel'),channel}-{None}:
-        from .analysis_channel import validate_result
+        from .disclosure import validate_result
         validate_result(home,result,recipient)
     dependencies=selected.get('history',[]) if role else state.get('work_history',[])
     analysis=result

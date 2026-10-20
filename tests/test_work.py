@@ -40,6 +40,49 @@ class WorkTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'conflict'):
             self.store.enqueue(self.did, 'research', 'life', parent['id'])
 
+    def test_proactive_policy_requires_scoped_unexpired_confirmation_and_is_reversible(self):
+        preview=self.store.prepare_proactive(self.did,request_id='p3-preview',interval_seconds=3600,
+            expires=self.now+86400,token_budget=2000,max_runs=5,notify_when='attention')
+        value=self.store.proactive(self.did)
+        self.assertEqual(value['state'],'pending_confirmation')
+        self.assertFalse(preview['scheduler_started'])
+        self.assertEqual(value['scope']['sources'],['synthetic'])
+        with self.assertRaisesRegex(ValueError,'confirmation_invalid'):
+            self.store.control_proactive(self.did,'authorize',confirmation_token='wrong')
+        active=self.store.control_proactive(self.did,'authorize',confirmation_token=preview['confirmation_token'])
+        self.assertEqual(active['state'],'authorized')
+        self.store.control(self.did,'pause')
+        self.assertEqual(self.store.proactive(self.did)['state'],'paused')
+        self.store.control(self.did,'resume')
+        self.assertEqual(self.store.proactive(self.did)['state'],'paused')
+        self.store.control_proactive(self.did,'resume')
+        self.store.control_proactive(self.did,'cancel')
+        self.assertEqual(self.store.proactive(self.did)['state'],'cancelled')
+
+    def test_proactive_policy_rejects_unbounded_or_external_notifications(self):
+        with self.assertRaisesRegex(ValueError,'invalid_proactive_policy'):
+            self.store.prepare_proactive(self.did,request_id='p3-bad',interval_seconds=10,
+                expires=self.now+86400,token_budget=2000,max_runs=5,notify_when='completion')
+        with self.assertRaisesRegex(ValueError,'invalid_proactive_policy'):
+            self.store.prepare_proactive(self.did,request_id='p3-bad2',interval_seconds=3600,
+                expires=self.now+86400,token_budget=2000,max_runs=5,notify_when='completion',notify_channel='feishu')
+
+    def test_proactive_confirmation_and_policy_expiry_are_enforced(self):
+        preview=self.store.prepare_proactive(self.did,request_id='p3-expiry',interval_seconds=3600,
+            expires=self.now+86400,token_budget=2000,max_runs=5,notify_when='none')
+        self.now+=901
+        with self.assertRaisesRegex(ValueError,'confirmation_invalid'):
+            self.store.control_proactive(self.did,'authorize',confirmation_token=preview['confirmation_token'])
+        # Re-create a fresh confirmation, activate, then let the policy expire.
+        self.now+=1
+        preview=self.store.prepare_proactive(self.did,request_id='p3-expiry-2',interval_seconds=3600,
+            expires=self.now+86400,token_budget=2000,max_runs=5,notify_when='none')
+        self.store.control_proactive(self.did,'authorize',confirmation_token=preview['confirmation_token'])
+        self.now+=86401
+        self.assertEqual(self.store.proactive(self.did)['state'],'expired')
+        with self.assertRaisesRegex(ValueError,'cannot_resume'):
+            self.store.control_proactive(self.did,'resume')
+
     def test_specialists_cannot_route_directly_or_cross_delegations(self):
         with self.assertRaisesRegex(ValueError, 'supervisor'):
             self.store.enqueue(self.did, 'unrouted', 'life')
