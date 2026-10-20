@@ -63,7 +63,7 @@ class AwaitingToolPermission(Exception):
 
 
 def validate_context(home, state):
-    if state.get('model_protocol') == 'chat-tools-v1':
+    if state.get('model_protocol') in ('chat-tools-v1', 'chat-tools-v2'):
         from .conversation_tools import validate_context as validate_tools
         return validate_tools(home, state)
     if state['evidence']:
@@ -230,6 +230,11 @@ def inspect(home, sid, tid=None):
             value['permission']=json.loads(row['state']).get('pending_permission')
         if row['state']:
             value['work_refs']=json.loads(row['state']).get('work_refs',[])
+        if row['error'] and row['error'].startswith('chat_answer_'):
+            layer, _, reason = row['error'][len('chat_answer_'):].partition(':')
+            value['validation_error'] = {'layer':layer, 'reason':reason,
+                'recovery':{'paid_response_saved':bool(row['state']), 'automatic_retry':False,
+                            'action':'inspect_saved_response_locally_or_supply_more_context'}}
         return value
 
 
@@ -467,6 +472,17 @@ class ConversationHost:
         if tail.get('role') != 'assistant' or tail.get('stopReason') != 'stop':
             raise ValueError('chat_incomplete_turn_limit')
         content = text_content(tail['content'])
+        answer = self.validate_final(content)
+        result = {**answer, 'usage_tokens': self.state['usage'], 'evidence': self.state['evidence'],
+                  'searches': self.search_count(), 'model_calls': sum(a['key'].startswith('model:') for a in self.state['actions']),
+                  'history_truncated': self.state['history_truncated'] or self.state.get('history_trimmed', False),
+                  'protocol': VERSION}
+        result.update(self.result_metadata())
+        self.store.save(self.row['id'], self.state, 'completed', result)
+        return result
+
+    def validate_final(self, content):
+        """Legacy validation remains unchanged for saved paid turns."""
         try:
             parsed = json.loads(content)
         except ValueError:
@@ -477,13 +493,7 @@ class ConversationHost:
         else:
             answer = validate_answer({'finish_reason': 'stop', 'tool_calls': None, 'content': content},
                                      ContextBundle(self.state['question'], 'mimo', self.state['evidence'], 'lexical'))
-        result = {**answer, 'usage_tokens': self.state['usage'], 'evidence': self.state['evidence'],
-                  'searches': self.search_count(), 'model_calls': sum(a['key'].startswith('model:') for a in self.state['actions']),
-                  'history_truncated': self.state['history_truncated'] or self.state.get('history_trimmed', False),
-                  'protocol': VERSION}
-        result.update(self.result_metadata())
-        self.store.save(self.row['id'], self.state, 'completed', result)
-        return result
+        return answer
 
     def __call__(self, kind, event):
         return {'model': self.model, 'tool': self.tool, 'done': self.done}[kind](event)
@@ -522,7 +532,7 @@ def send(home, sid, message=None, *, turn_id=None, resume=False, provider=None, 
                 raise ValueError('chat_previous_turn_unfinished_use_resume_or_cancel')
             if len(rows) >= 128:
                 raise ValueError('chat_session_limit_start_new')
-            history, ids, truncated = history_context(store, sid, include_uncertainty=protocol=='chat-tools-v1')
+            history, ids, truncated = history_context(store, sid, include_uncertainty=protocol in ('chat-tools-v1','chat-tools-v2'))
             data = pa1.settings(home)
             state = {'version': VERSION, 'model_protocol': MODEL_PROTOCOL,
                      'question': message, 'settings': fingerprint(data),
@@ -531,6 +541,11 @@ def send(home, sid, message=None, *, turn_id=None, resume=False, provider=None, 
             if protocol=='chat-tools-v1':
                 from .conversation_tools import initialize
                 initialize(state)
+            elif protocol=='chat-tools-v2':
+                from .conversation_tools import initialize_v2
+                previous = next((json.loads(r['state']).get('answer_policy') for r in reversed(rows)
+                                 if r['id'] in ids and r['state']), None)
+                initialize_v2(state, previous)
             elif protocol!=MODEL_PROTOCOL:
                 raise ValueError('chat_model_protocol_unsupported')
             row = {'id': tid, 'session': sid, 'run': str(uuid.uuid4())}
@@ -542,6 +557,9 @@ def send(home, sid, message=None, *, turn_id=None, resume=False, provider=None, 
         if state.get('model_protocol')=='chat-tools-v1':
             from .conversation_tools import ToolConversationHost
             host_class=ToolConversationHost
+        elif state.get('model_protocol')=='chat-tools-v2':
+            from .conversation_tools import PolicyConversationHost
+            host_class=PolicyConversationHost
         host = host_class(store, row, state, provider, on_event, step_limit)
         if services is not None and host_class is not ConversationHost:
             host.services=services

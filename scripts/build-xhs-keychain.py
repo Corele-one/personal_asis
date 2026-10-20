@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the pinned upstream MCP with keychain storage and read-only surface."""
+"""Build the pinned upstream MCP with keychain storage and bounded read/write surface."""
 import argparse
 import hashlib
 import json
@@ -17,7 +17,7 @@ EXPECTED = {
 }
 
 
-def patch(root):
+def patch(root, allow_writes=False):
     for name, expected in EXPECTED.items():
         if hashlib.sha256((root/name).read_bytes()).hexdigest() != expected:
             raise ValueError('pinned_upstream_source_mismatch:' + name)
@@ -31,6 +31,8 @@ def patch(root):
     p = root/'mcp_server.go'
     s = p.read_text()
     allowed = {'check_login_status', 'list_feeds', 'search_feeds', 'get_feed_detail', 'get_my_profile'}
+    if allow_writes:
+        allowed |= {'like_feed', 'favorite_feed', 'post_comment_to_feed'}
     names = set(re.findall(r'Name:\s*"([a-z_]+)"', s))
     denied = sorted(names - allowed)
     assert allowed <= names and denied
@@ -57,11 +59,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--source', type=Path, required=True)
     parser.add_argument('--go', type=Path, required=True)
+    parser.add_argument('--allow-writes', action='store_true', help='Only like/favorite/comment; native UI confirmation required by source_write')
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
-    report = patch(args.source)
+    report = patch(args.source, args.allow_writes)
     subprocess.run([str(args.go), 'build', '-mod=readonly', '-trimpath',
-        '-ldflags', '-X main.version=v2.5.5-asis-keychain-readonly', '-o', str(args.output), '.'],
+        '-ldflags', '-X main.version=v2.5.5-asis-keychain-' + ('bounded' if args.allow_writes else 'readonly'), '-o', str(args.output), '.'],
         cwd=args.source, env={**os.environ, 'GOTOOLCHAIN': 'local', 'CGO_ENABLED': '0'}, check=True)
     report['binary_sha256'] = hashlib.sha256(args.output.read_bytes()).hexdigest()
     print(json.dumps(report), flush=True)

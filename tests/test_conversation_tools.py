@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 
 from personal_asis import conversation as core, pa1
-from personal_asis.conversation_tools import (submit, permission_reply, initialize, validate_context, PROTOCOL,
+from personal_asis.conversation_tools import (submit, permission_reply, initialize, validate_context, CURRENT_PROTOCOL as PROTOCOL,
                                              ToolConversationHost, LIMITS)
 from personal_asis.tool_registry import registry_v1, Tool, ToolRegistry, obj, text
 from test_conversation import Provider, PI_AVAILABLE
@@ -328,7 +328,7 @@ class ToolConversationTests(unittest.TestCase):
         with Index(self.home/'index.sqlite3',load_config(path)) as index:index.reconcile()
         window={'start':'2026-10-18','end':'2026-10-18','basis':'question','unknown_dates':'excluded'}
         provider=Provider([action('search_notes',query='cache'),supported()])
-        with patch('personal_asis.conversation_tools.question_window',return_value=window):
+        with patch('personal_asis.answer_policy.question_window',return_value=window):
             result=self.ask('请回看昨天笔记',provider)
         self.assertEqual(result['status'],'completed',result)
         wire=json.dumps(provider.calls)

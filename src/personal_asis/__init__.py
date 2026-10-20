@@ -1,1 +1,1 @@
-"""PA0 local evidence search; no models or network listener."""
+"""Mac knowledge Agent, AstrBot life capabilities, and confirmed daily sync."""

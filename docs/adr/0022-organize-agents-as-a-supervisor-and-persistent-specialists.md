@@ -1,5 +1,7 @@
 # Organize agents as a supervisor and persistent specialists
 
+> 历史决策：本文保留原决定与日期。2026-10-20 的当前节点分工、数据驻留与入口以 [ADR 0037](0037-use-two-agents-and-confirmed-daily-sync.md) 和 [当前规格](../../SPECIFICATION.md) 为准；旧远程服务已退役。
+
 2026-10-19 scope revision: [ADR 0035](0035-prefer-local-conversations-and-opt-in-specialists.md) makes a single main conversational agent the default. This decision remains applicable to explicitly selected specialist collaboration; the original decision below is retained as history.
 
 The first agent-capable architecture uses one Supervising Agent plus three Specialist Agent roles with continuing responsibilities for knowledge research, applications and career, and life records and review, rather than routing every domain through a single agent role. This supports sustained domain work while leaving work, data, and permission authority in the assistant system; persistent roles do not imply continuous model activity or broader access, and their contexts are separated as specified in ADR 0023. Cross-domain collaboration is routed through the supervisor as specified in ADR 0025; independent specialist work may run with bounded parallelism under a shared budget and browser operations using the same account are queued separately. Concrete limits and model assignments remain undecided, and the existing PA1 single-online-node execution boundary remains in force until explicitly revised.

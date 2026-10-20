@@ -1,0 +1,19 @@
+[Unit]
+Description=Personal Asis two-agent read-only dashboard
+After=network-online.target
+[Service]
+Type=simple
+User=mac
+WorkingDirectory=/home/mac/personal-asis-v2
+Environment=PYTHONPATH=/home/mac/personal-asis-v2/src
+ExecStart=/usr/bin/python3 -m personal_asis.dashboard --origin https://35.209.202.207 --port 8766
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/mac/.local/share/personal-asis-life
+[Install]
+WantedBy=multi-user.target

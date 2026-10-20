@@ -1,0 +1,95 @@
+{
+  "date": "2026-10-20",
+  "scope": "Mac checkout only; no deployment, grants, private-answer generation or paid provider calls",
+  "protocol": {
+    "new_turns": "chat-tools-v2",
+    "answer_policy": "answer-policy-v1",
+    "legacy_preserved": [
+      "chat-json-actions-v1",
+      "chat-tools-v1",
+      "legacy Agent/WorkStore",
+      "agent-web-v1/v2/v3"
+    ]
+  },
+  "commands": [
+    "scripts/test-local-agent",
+    "PYTHONPATH=src python3 -m unittest discover -s tests -v",
+    "PYTHONPATH=src:tests python3 -m unittest test_answer_policy -v"
+  ],
+  "checks": {
+    "local": {
+      "tests": 182,
+      "passed": 182,
+      "skipped": 0,
+      "failures": 0,
+      "seconds": 30.111
+    },
+    "compatibility": {
+      "tests": 642,
+      "passed": 562,
+      "skipped": 80,
+      "failures": 0,
+      "seconds": 64.48
+    },
+    "answer_policy_final": {
+      "tests": 17,
+      "passed": 17,
+      "skipped": 0,
+      "failures": 0,
+      "seconds": 2.953
+    }
+  },
+  "fixture_comparison": {
+    "chat-tools-v1": {
+      "fixture_refusals": 2,
+      "questions": 4,
+      "mean_scripted_usage_tokens": 75.0,
+      "ordinary_searches": 1,
+      "all_searches": 2,
+      "weekly_selected_dates": [],
+      "maximum_prompt_bytes": 4162
+    },
+    "chat-tools-v2": {
+      "fixture_refusals": 0,
+      "questions": 4,
+      "mean_scripted_usage_tokens": 50.0,
+      "ordinary_searches": 0,
+      "all_searches": 1,
+      "weekly_selected_dates": [
+        "2026-10-14",
+        "2026-10-18"
+      ],
+      "maximum_prompt_bytes": 4253
+    }
+  },
+  "acceptance": [
+    "greeting and capability response: zero retrieval",
+    "bounded subjective impression without note citations",
+    "dated weekly partial summary and no-record nonfabrication",
+    "specific research-record recall",
+    "second-direction follow-up from current session",
+    "derive/sort/deduplicate citation index from existing inline IDs",
+    "unknown evidence IDs rejected",
+    "source deletion/revocation purge dependent history",
+    "legacy and v2 paid checkpoint replay adds zero calls",
+    "classification cannot grant tools or bypass verification",
+    "protocol/presentation/policy/attribution failure categories",
+    "mere greeting history cannot establish personal facts"
+  ],
+  "quality_limits": {
+    "fixture_refusal_rate": "scripted paths only, not measured model refusal rate",
+    "personal_fact_correctness": "synthetic source recall and no-evidence fabrication guards pass; real semantic correctness not measured",
+    "partial_coverage": "two known dated records selected out of seven calendar dates, not exhaustive activities",
+    "average_tokens": "fixed synthetic usage of 50 per provider reply; real mean tokens unknown",
+    "prompt_bytes": "fixture maximum remains below original 8192; not a corpus-wide guarantee",
+    "permissions_and_duplicates": "local and compatibility regression pass, no scope/budget changes",
+    "history": "bounded current session only; cross-session recall not implemented",
+    "ui": "actual Pi loop with synthetic provider; no new real UI acceptance"
+  },
+  "diagnosis": "Only existing private local records inspected. Schema failure and model abstention distinguished; two later generic tool-unavailable receipts lack enough evidence to identify underlying cause.",
+  "environment_notes": [
+    "First sandbox run could not bind temporary loopback test ports; approved host test execution passed.",
+    "Final answer-policy tests also cover the presentation-function split and invalid status types."
+  ],
+  "rollback": "Use chat-tools-v1 for NEW submissions while retaining v2 recovery support and all state/billing tombstones; never roll back private databases to bypass paid identities."
+}

@@ -238,16 +238,6 @@ class WebAgentTests(unittest.TestCase):
         self.assertEqual(sum(c[0]=='fetch' for c in self.backend.calls),3)
         self.assertIn('budget_exhausted',json.dumps(model.calls))
 
-    def test_channel_validation_dispatches_public_evidence_and_renders_urls(self):
-        from personal_asis.analysis_channel import validate_result
-        from personal_asis.feishu import analysis_summary
-        result,_=self.run_agent(citations=['E1'])
-        clean=validate_result(self.home,result['result'],'feishu')
-        text=analysis_summary({'task_id':'synthetic','result':clean})
-        self.assertIn(URL,text)
-        self.assertIn('公开网页',text)
-        self.assertIn('partial',text)
-        self.assertNotIn(str(self.home),text)
 
     def test_local_revocation_during_model_call_discards_result(self):
         def revoke(payload):

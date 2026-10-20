@@ -17,8 +17,15 @@ def safe_text(value):
 
 
 def error_text(code):
+    if str(code).startswith('chat_answer_'):
+        layer = str(code).split(':',1)[0]
+        names = {'chat_answer_protocol':'模型响应协议不合法', 'chat_answer_presentation':'模型展示格式不合法',
+                 'chat_answer_attribution':'模型引用无法归属或关键事实缺少来源', 'chat_answer_policy':'模型回复触发敏感信息保护'}
+        return names.get(layer,'模型回复未通过校验')+'；已保存付费步骤，/status 可查看失败类别，不自动重付费。'
     if str(code).startswith('model_output_has_invalid_evidence_references:'):
-        return '模型回复未通过证据校验，已停止显示；本次计费保留，不自动重试。'
+        stage = str(code).split(':',1)[1]
+        reason = 'JSON格式错误' if stage=='json' else '回复字段不符合约定' if stage=='schema' else '引用或证据归属不合法'
+        return '模型'+reason+'；本次计费保留，不自动重试。'
     if str(code).startswith('model_request_not_retryable_') or code == 'model_result_expired_or_revoked_no_retry':
         return '该步骤已有计费或未知结果记录，禁止重新付费执行；已提交结果可用 /status 查看。'
     messages = {

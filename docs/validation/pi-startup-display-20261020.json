@@ -1,0 +1,29 @@
+{
+  "date": "2026-10-20",
+  "scope": "Restore native Pi startup display in checkout launcher",
+  "entry": "pi / scripts/asis-pi",
+  "pi_version": "1.2.0",
+  "quiet_startup": false,
+  "resource_discovery_enabled": false,
+  "native_sdk_checks": {"passed": 4, "command": "node --test runtime/pi-terminal/terminal.test.mjs"},
+  "local_regression": {
+    "command": "scripts/test-local-agent",
+    "passed": 182,
+    "failed": 0,
+    "initial_sandbox_run": "179 passed; 3 loopback Web tests blocked by socket.bind PermissionError",
+    "rerun": "182 passed with local loopback listening permitted"
+  },
+  "tty_smoke": {
+    "config": "temporary synthetic fixture with model disabled",
+    "native_version_visible": true,
+    "startup_help_visible": true,
+    "personal_asis_label_visible": true,
+    "ctrl_o_expands_help": true,
+    "adapter_help_command": true,
+    "quit_exits_normally": true,
+    "human_visual_acceptance": false
+  },
+  "model_calls": 0,
+  "service_deployment_or_restart": false,
+  "fixed_release_launcher_updated": false
+}

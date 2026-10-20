@@ -1,0 +1,182 @@
+{
+  "date": "2026-10-20",
+  "architecture": "Mac native Pi knowledge agent + VPS AstrBot life plugin + confirmed daily sync + private read-only dashboard",
+  "status": "implemented_and_deployed_with_real_use_acceptance_remaining",
+  "tests": {
+    "full_suite": {
+      "command": "PYTHONPATH=src <existing-pa1-python> -m unittest discover -s tests -v",
+      "total": 532,
+      "passed": 529,
+      "skipped": 3,
+      "failed": 0,
+      "data": "synthetic",
+      "real_paid_generations": 0,
+      "real_platform_writes": 0
+    },
+    "local_isolation_suite": {
+      "command": "ASIS_PYTHON=<existing-pa1-python> scripts/test-local-agent",
+      "total": 204,
+      "passed": 204,
+      "skipped": 0,
+      "failed": 0,
+      "retired_remote_imports": 0
+    },
+    "life_and_dashboard": {
+      "total": 11,
+      "passed": 11,
+      "coverage": [
+        "message deduplication",
+        "timezone and corrected dates",
+        "reminder reservation and unknown-outcome no retry",
+        "preview skip/confirm/replay",
+        "date move",
+        "deletion scrubs snapshots and proposes local removal",
+        "file changes require reconfirmation",
+        "symlink and path escape rejection",
+        "noninteractive approval denied",
+        "exact/expiring external write plan and no unknown retry",
+        "private bounded Mac summary publication",
+        "Dashboard auth/origin checks and retired control routes"
+      ]
+    },
+    "native_pi_sdk": {
+      "version": "1.2.0",
+      "extension_load_errors": 0,
+      "source_write_registered": true,
+      "no_ui_rejected": true,
+      "complete_content_preview": true,
+      "cancel_does_not_execute": true,
+      "synthetic_only": true
+    },
+    "actual_astrbot_sdk": {
+      "version": "4.27.3",
+      "plugin_import": true,
+      "tools": [
+        "life_organize",
+        "life_recent",
+        "vps_workspace"
+      ],
+      "synthetic_owner_filter": true,
+      "synthetic_group_denied": true,
+      "synthetic_capture_dedup": true,
+      "synthetic_organize": true,
+      "real_chat_sent": false
+    },
+    "browser": {
+      "engine": "isolated Chrome",
+      "data": "synthetic",
+      "login": true,
+      "filters": true,
+      "logout": true,
+      "mac_summary_display": true,
+      "mobile_horizontal_overflow": false,
+      "page_errors": [],
+      "service_worker": "synthetic self-signed TLS required browser certificate override; production HTTPS path returns 200",
+      "desktop_image": "dashboard-desktop-20261020.png",
+      "mobile_image": "dashboard-mobile-20261020.png"
+    }
+  },
+  "vps": {
+    "ssh_target": "mac@35.209.202.207:22",
+    "release": "20261020_154613_372936",
+    "manifest_files": 22,
+    "manifest_verified": true,
+    "plugin_matches_release": true,
+    "active_services": [
+      "astrbot.service",
+      "personal-asis-dashboard.service"
+    ],
+    "retired_services": [
+      "personal-asis-pwa.service",
+      "personal-asis-coordinator.service"
+    ],
+    "old_plugin_removed": true,
+    "unrelated_plugins_changed": false,
+    "owner_binding_reused": true,
+    "password_hash_reused": true,
+    "old_web_sessions_invalidated_on_migration": true,
+    "nginx_and_certificate_renewal_preserved": true,
+    "life_records_at_final_check": 0,
+    "real_chat_messages_sent": 0,
+    "real_paid_generation_calls": 0,
+    "rollback_available": true
+  },
+  "mac": {
+    "native_launcher_updated": true,
+    "finder_launcher_updated": true,
+    "startup_sync_configured": true,
+    "startup_real_ssh_success": true,
+    "startup_native_ui": true,
+    "startup_exit_code": 0,
+    "startup_no_model_prompt_sent": true,
+    "real_ssh_export": true,
+    "export_events_at_check": 0,
+    "status_metadata_uploaded": true,
+    "real_vault_writes": 0,
+    "notes_approved": false,
+    "old_services_retired": [
+      "local.personal-asis.mac",
+      "local.personal-asis.pa1",
+      "local.personal-asis.tunnel"
+    ],
+    "keychain_and_originals_preserved": true,
+    "old_state_and_paid_ledger_preserved": true,
+    "rollback_in_ignored_local_directory": true
+  },
+  "xiaohongshu": {
+    "upstream": "v2.5.5",
+    "keychain_preserved": true,
+    "bind": "127.0.0.1:18060",
+    "protocol": "2024-11-05",
+    "actual_mcp_tools": [
+      "check_login_status",
+      "list_feeds",
+      "search_feeds",
+      "get_feed_detail",
+      "get_my_profile",
+      "like_feed",
+      "favorite_feed",
+      "post_comment_to_feed"
+    ],
+    "native_direct_exposure": "five read tools only; writes via confirmed source_write adapter",
+    "first_bootstrap": "failed, then explicit bootstrap and kickstart succeeded",
+    "real_platform_content_calls": 0,
+    "real_platform_writes": 0,
+    "account_freshness_verified": false
+  },
+  "public_https": {
+    "tls_verified": true,
+    "/": 200,
+    "/api/session": 200,
+    "/api/dashboard_without_auth": 401,
+    "/api/search": 404,
+    "/sw.js": 200
+  },
+  "cleanup": {
+    "retired_code_tests_scripts_and_docs_deleted_files": 94,
+    "outdated_or_duplicate_markdown_guides_removed": 44,
+    "historical_adrs_annotated": true,
+    "historical_validation_preserved": true,
+    "old_local_core_explicit_compatibility_preserved": true,
+    "broken_markdown_links": 0,
+    "high_confidence_secret_findings": 0,
+    "git_diff_check": "passed",
+    "git_commit_or_push": "not requested; not performed"
+  },
+  "remaining_real_acceptance": [
+    "natural-language life categorization/date quality with actual AstrBot model",
+    "actual scheduled reminder delivery",
+    "owner-confirmed real Obsidian batch write",
+    "WUCAI and XiaoHongShu real account write after exact confirmation",
+    "real owner-approved Mac summary publication",
+    "real personal Dashboard content"
+  ],
+  "not_implemented": [
+    "attachment/meal-photo recognition",
+    "actual sleep measurement",
+    "general VPS shell or sudo agent",
+    "social image/video publishing",
+    "automatic calendar writes",
+    "arbitrary continuing cross-agent delegation"
+  ]
+}

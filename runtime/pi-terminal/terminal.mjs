@@ -90,7 +90,7 @@ export async function createTerminal(config, invoke=worker) {
     thread=loaded.thread;selected=thread;
     scope=loaded.sources??config.sources;role=loaded.mode??config.mode;
     const settingsManager=SettingsManager.inMemory({compaction:{enabled:false},retry:{enabled:false,maxRetries:0,provider:{maxRetries:0}},
-      cacheWarming:'off',quietStartup:true,images:{blockImages:true},
+      cacheWarming:'off',quietStartup:false,images:{blockImages:true},
       enableSkillCommands:false,sessionDir:config.temporary+'/sessions'});
     const resourceLoader=new DefaultResourceLoader({cwd:config.temporary,agentDir:config.temporary,
       settingsManager,noExtensions:true,noSkills:true,noPromptTemplates:true,noThemes:true,noContextFiles:true,
@@ -134,7 +134,7 @@ export async function createTerminal(config, invoke=worker) {
   const runtime=await createAgentSessionRuntime(factory,{cwd:config.temporary,agentDir:config.temporary,
     sessionManager:SessionManager.inMemory(config.temporary)});
   ui=new InteractiveMode(runtime,{tuiMode:'fullscreen',startupDiagnostics:[{type:'info',message:
-    'Personal Asis · '+(conversation?'持续对话 · 直接输入你的问题':('本机直连 · '+scope.join(' / ')+' · '+role))+'\n/new 新聊天 · /chats 列表 · /open ID 恢复 · /status 状态 · /quit 退出'}]});
+    'Personal Asis · '+(conversation?'持续对话 · 直接输入你的问题':('本机直连 · '+scope.join(' / ')+' · '+role))+'\n/help 本入口命令 · /new 新聊天 · /chats 列表 · /open ID 恢复 · /status 状态 · /quit 退出'}]});
   // The UI's synthetic transport has no price rate. Never display its $0 as actual cloud cost.
   ui.footer.render=width=>{
     const tokens=runtime.session.agent.state.messages.filter(m=>m.role==='assistant')

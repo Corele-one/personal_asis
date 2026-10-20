@@ -22,6 +22,7 @@ from .web_deepseek import DeepSeekProvider
 from .work import fingerprint, WorkStore
 
 PROTOCOL = 'chat-tools-v1'
+CURRENT_PROTOCOL = 'chat-tools-v2'
 LIMITS = {'models':6, 'tools':6, 'local':2, 'search':2, 'fetch':2, 'specialist':1,
           'specialist_models':2, 'network_seconds':90, 'evidence':6, 'evidence_bytes':5000}
 SYSTEM = (
@@ -50,6 +51,16 @@ def initialize(state):
     window = question_window(state['question'])
     if window:
         state['temporal_scope'] = window
+
+
+def initialize_v2(state, previous=None):
+    from .answer_policy import plan
+    initialize(state)
+    state['model_protocol'] = CURRENT_PROTOCOL
+    state['answer_policy'] = plan(state['question'], previous)
+    state.pop('temporal_scope', None)
+    if state['answer_policy']['window']:
+        state['temporal_scope'] = state['answer_policy']['window']
 
 
 def validate_context(home, state):
@@ -406,6 +417,89 @@ class ToolConversationHost(ConversationHost):
         return self.commit(key,arguments,output)
 
 
+class PolicyConversationHost(ToolConversationHost):
+    """New turns only; v1 input projection, registry and limits remain frozen."""
+    model_protocol = CURRENT_PROTOCOL
+
+    def system_prompt(self):
+        from .answer_policy import SYSTEM
+        definitions = [{'name':t['name'], 'description':t['description'],
+                        'parameters':t['parameters']} for t in self.registry.definitions()]
+        return SYSTEM+dumps(definitions)+'本轮回答策略（不授予权限）：'+dumps(self.state['answer_policy'])
+
+    def result_metadata(self):
+        return {**super().result_metadata(), 'tools_protocol':CURRENT_PROTOCOL}
+
+    def validate_final(self, content):
+        from .answer_policy import validate
+        return validate(content, self.state)
+
+    def model(self, event):
+        if self.state['answer_policy']['dated_review']:
+            # Host-owned authorized context acquisition, before the first paid
+            # generation. Replay the saved receipt, never read it again to repair
+            # a model format error. This is not a model permission grant.
+            key = 'context:dated_review'
+            args = {'window':self.state['temporal_scope']}
+            if event['turn']==1:
+                receipt = self.replay(key, args)
+                if receipt is None:
+                    self.store.event(self.row['session'], self.row['id'], 'tool_start', {'tool':'search_notes'})
+                    if self.on_event:
+                        self.on_event({'kind':'tool', 'phase':'start', 'name':'search_notes'})
+                    receipt = self.local({'query':self.state['question']})
+                    self.commit(key, args, receipt)
+                    self.store.event(self.row['session'], self.row['id'], 'tool_done', {'tool':'search_notes','status':receipt['status']})
+                    if self.on_event:
+                        self.on_event({'kind':'tool', 'phase':'done'})
+            else:
+                receipt = self.state['actions'][0]['output']
+            messages = copy.deepcopy(event['messages'])
+            messages[0]['content'] = core.text_content(messages[0]['content'])+'\n'+self.tool_message(dumps(receipt))
+            event = {**event, 'messages':messages}
+        return super().model(event)
+
+    def local(self, args, connector=None):
+        # A temporal inventory cannot depend on whether a diary contains the
+        # user's words "总结/过去一周". Reuse the existing authorized date reader.
+        if not self.state['answer_policy']['dated_review'] or connector:
+            try:
+                sources = self.permitted_sources(args.get('sources'), connector)
+            except WebError as error:
+                if str(error)=='chat_source_scope_denied':
+                    return {'status':'permission_denied','evidence':[]}
+                raise
+            if not sources:
+                return {'status':'permission_denied','evidence':[]}
+            return super().local(args, connector)
+        if self.state['tool_usage']['local'] >= LIMITS['local']:
+            raise WebError('chat_local_search_limit')
+        if exclusion_reason('',args['query']) or not args['query'].strip():
+            raise WebError('chat_invalid_search_query')
+        self.state['tool_usage']['local'] += 1
+        if self.data['synthetic_only']:
+            return {'status':'unavailable','gap':'real_source_tools_disabled','evidence':[]}
+        sources = [s.id for s in self.permitted_sources(args.get('sources')) if not s.reading_cache]
+        if not sources:
+            return {'status':'permission_denied','evidence':[]}
+        from .local_review import VERSION, build
+        try:
+            bundle, coverage = build(self.home, self.state['question'],
+                {'version':VERSION, 'window':self.state['temporal_scope'], 'sources':sources},
+                max_evidence=LIMITS['evidence'])
+        except (OSError, sqlite3.Error):
+            return {'status':'unavailable','gap':'retrieval_unavailable','evidence':[]}
+        items = self.append_evidence(bundle.evidence)
+        # Report the actual appended selection, including the existing byte cap.
+        chosen = [self.state['evidence'][int(item['id'][1:])-1] for item in items]
+        coverage.update(selected_records=len({e['document_id'] for e in chosen}),
+                        selected_dates=sorted({e['record_date'] for e in chosen}), selected_passages=len(chosen))
+        coverage['all_recorded_dates_represented'] = coverage['selected_dates']==coverage['recorded_dates']
+        self.state['review_coverage'] = coverage
+        return {'status':'ok' if items else 'no_authorized_match', 'evidence':items,
+                'coverage':coverage, 'time_window':self.state['temporal_scope'], 'timezone':'Asia/Shanghai'}
+
+
 def permission_reply(home, sid, action, *, request_id=None, token=None, **execution):
     control=identifier(request_id or str(uuid.uuid4()))
     with ConversationStore(home) as store, store.lock(sid):
@@ -458,4 +552,4 @@ def submit(home,sid,message=None,*,turn_id=None,**execution):
                                 token=value['permission']['token'],**execution)
     if isinstance(message,str) and message in ('/approve','/deny'):
         raise ValueError('chat_no_pending_permission')
-    return core.send(home,sid,message,turn_id=request,protocol=PROTOCOL,**execution)
+    return core.send(home,sid,message,turn_id=request,protocol=CURRENT_PROTOCOL,**execution)

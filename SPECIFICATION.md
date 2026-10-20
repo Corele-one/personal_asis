@@ -1,337 +1,69 @@
-# Personal Assistant Specification
+# Personal Asis 总规格
 
-## Active scope override — local Pi Agent (2026-10-20)
+修订：2026-10-20。当前架构以本文件和 [ADR 0037](docs/adr/0037-use-two-agents-and-confirmed-daily-sync.md) 为准。旧 PA0–PA5／P0–P4 验收是日期快照，不定义本轮部署。
 
-The owner prioritizes a complete, usable local Pi Agent. VPS connectivity, remote PWA, AstrBot/Feishu interaction and remote communication are frozen compatibility adapters, archived for a separate next stage. Local acceptance does not require a VPS, tunnel, bot SDK, remote service, or platform UI. This section overrides remote prerequisites in older PA0/product milestones below; dated acceptance remains historical evidence.
+## 1. 分工
 
-Pi/text CLI/loopback Web → Conversation Core → local host capabilities is the dependency direction. Local CLI commands do not load remote adapters or consume coordinator configuration. Host-owned disclosure checks live independently in `disclosure.py`; remote adapters retain compatible imports. Model calls and approved public retrieval may still go directly from Mac to existing providers under unchanged permissions and budget. No deployment, shutdown, credential/state migration or grant revocation is implied.
-
-Default local acceptance uses `scripts/test-local-agent`, blocking remote module imports throughout synthetic execution. Legacy channel regressions remain separately runnable compatibility checks. P2's remote PWA and all P4 work are deferred; P3 policy records remain inert without an independently delivered executor. See [active local scope](docs/local-agent-focus.md), [remote archive](docs/archive/remote-communications-20261020.md) and [next-stage plan](docs/remote-communications-plan.md).
-
-## P1 conversational tools (2026-10-19 checkout)
-
-Native Pi and text chat now call `conversation_tools.submit`. New turns use `chat-tools-v1` with a frozen `conversation-tools-v1` registry; P0 `chat-json-actions-v1`, legacy Agent and web-v1/v2/v3 paid steps retain their saved implementations. Core interprets only explicit replies to a concrete pending tool preview; models cannot grant permissions.
-
-Tools are authorized local note search, authorized WUCAI/Folo/XiaoHongShu cache search, exact-query-approved public search, capability-scoped public body reading, and an explicitly approved one-shot specialist Work. Public discovery is not numbered evidence. HTTPS/DNS/redirect checks, source attribution, model grants, snapshot expiry, transitive invalidation and the shared billing ledger remain host-owned. No live account fetch, new source/model grant, platform write or background schedule follows from tool registration.
-
-P1 limits are 6 parent model steps, 6 tool actions, 2 local searches, 2 public searches, 2 public reads and 1 specialist Work with at most 2 child generations per turn. The original Token limits remain unchanged. Exact-query/Work approval lasts 15 minutes; new network reads require valid scope. External started markers and confirmation event IDs prevent duplicate requests after crashes or replay. The existing retrieval ranking is retained; original-question time scope and author attribution are enforced without claiming the full Retrieval Quality Gate passed. See [P1 protocol, validation and remaining gates](docs/conversation-tools-p1.md). No production deployment or service restart in this slice.
-
-## Current product direction — local conversations (2026-10-19)
-
-Personal Asis is a **Local-first, Channel-agnostic, Conversation-first Personal Agent**. The default interaction is a persistent conversation with one main agent. Simple questions use a lightweight model response; personal retrieval is model-selected within a deterministic authorized tool set. Specialists and explicit Work Delegations remain available through existing interfaces, and do not define every conversational turn. Local-first permits later VPS access without transferring private state authority.
-
-The new `conversation-v1` Core API (with versioned `chat-json-actions-v1` model-to-Pi tool actions) runs without VPS/AstrBot. The default native Pi UI (`pi` / `scripts/asis-pi`) and the simpler `scripts/asis chat` client share this Core. No role, source selection or request code is required for normal conversation; `--engine legacy` retains the earlier work-based terminal. Sessions, turns and runs have independent stable IDs; same-turn retries reuse committed results. The host revalidates source evidence and transitive history dependencies, owns the shared PA1 budget and blocks unknown paid results. Session messages, tool outputs and source citations remain distinct. Context selects at most four recent completed turns / 2800 UTF-8 bytes and can trim oldest pairs to the existing prompt limit; summaries and selective older-history recall remain P1/P2 work. Messages, checkpoints and results expire after 30 days; billing/idempotency tombstones remain.
-
-P0 uses the existing Pi loop and MiMo, up to four model steps / two searches / six evidence excerpts (160 characters each). It exposes complete responses and actual model/tool step events; provider text streaming is not implemented. Public web tools are reserved for P1 with explicit public-query disclosure controls. No new background work, source grants, model budget or channel deployment is implied. Existing PWA/Feishu request and paid replay contracts remain unchanged.
-
-Acceptance requires at least three conversational turns with reference resolution, zero retrieval for simple chat, model-selected authorized retrieval, tool-error feedback, interrupt/resume, revocation and source-change invalidation, duplicate-request zero added paid calls, independent local execution. Existing-channel regressions are separately runnable compatibility checks, outside the local acceptance prerequisite. Automated synthetic checks, actual Pi, real MiMo with synthetic data, private-answer quality and UI acceptance must be reported separately.
-
-The product milestone order is P0 audit/local chat → P1 tools/retrieval/web → P2 streaming Web Chat/Session API → P3 permission-bounded proactive work → P4 channel integration/reliability. PA0–PA5 capability IDs and their historical acceptance remain intact. See [roadmap and API boundaries](docs/local-first-agent-roadmap.md), [ADR 0035](docs/adr/0035-prefer-local-conversations-and-opt-in-specialists.md), and [P0 validation](docs/validation/local-chat-p0-20261019.json). This checkout slice does not deploy or restart production services. Following dated and PA0 channel-specific descriptions retain their original scope.
-
-2026-10-19 P2/P3 checkout additions: `conversation-session-v1` and a same-origin loopback Web Chat are available through `scripts/asis web-chat`. Persistent SSE carries step-state events only; current MiMo/Pi replies remain complete-response. P3 stores a scoped, explicitly confirmed WorkStore policy (source IDs, interval, expiry, per-run token budget, run cap, local notice condition, pause/cancel); no scheduler or proactive model execution is enabled. P4 remote adapters remain on the existing PWA/AstrBot/Feishu protocols until identity binding, per-source channel disclosure and encrypted event delivery use the new Core API. See [Core API and status](docs/conversation-core-api.md).
-
-2026-10-19本机周复盘修复：原生Pi的auto／life个人时间复盘使用已获准Life日期记录，最多七段、上下文5400字节，仍受原完整提示8192字节／生成512 Token和共享预算约束。没有日期记录时本机明确不足且不调用模型；显示记录范围和片段覆盖，不把计划写成已完成或把缺记录写成无活动。新纯文本调用启用JSON模式，历史付费协议不升级／不自动重做。实现与未通过的语义日期质量见[本轮说明](docs/pi-weekly-review-fix.md)。
-
-## 1. Purpose
-
-This project is a personal work and development system. It helps the user locate their own material, connect it to an external question when requested, and turn reviewed work into auditable tasks and reusable rules. Its long-term scope includes health observations, sleep, diet, and future career choices, connected through a record–review–action–feedback loop.
-
-The system's durable assets are source configurations, personal indexes, evidence links, task state, operation records, readable memory, and reusable rules. A model provider is replaceable reasoning infrastructure, not the authority for any of them. Domain workflows, proposed starting defaults, and acceptance scenarios are defined in [Personal development workflows](docs/personal-development.md); these extend product scope without changing PA0's delivery gate.
-
-## 2. Goals and non-goals
-
-### Goals
-
-- Preserve existing source systems. The assistant indexes them and links back to originals; it does not migrate them into a central archive.
-- Work across trusted devices that are frequently offline.
-- Let the user start searches from a phone without exposing either laptop to the public internet.
-- Make evidence, policy, state changes, confirmations, and external writes inspectable.
-- Keep source text and full indexes on Local Nodes; make the VPS a low-sensitivity coordinator.
-- Grow in independently verifiable stages.
-- Support low-burden voluntary wellbeing records and evidence-linked reviews, without requiring devices, subscriptions, or months of data before the first useful review.
-- For the current user, prioritize third-year undergraduate graduate-application choices, meal-photo capture, bedtime/wake check-ins, and authorized read-only journal reflection.
-- Compare multiple career Direction Hypotheses against interests, demonstrated abilities, available time, wellbeing constraints, and user-defined resource limits; validate them through bounded Action Trials.
-- Support optional Model Cross-Review and explicitly authorized Opportunity Subscriptions after the relevant policy and budget controls exist.
-
-### Non-goals for PA0
-
-- No LLM call, semantic vector index, file watcher, OCR, image understanding, email, calendar write, task candidate extraction, personal model, automatic memory, or reusable-rule execution.
-- No source migration, NAS, central PostgreSQL, Redis, Elasticsearch, Qdrant, Kafka, Kubernetes, or a public service on either laptop.
-- No QQ interface or AstrBot reasoning/task authority. Feishu is the only chat interface; the existing AstrBot-hosted Feishu transport may be reused by a scoped PA0 plugin (see [transport boundary](docs/pa0-feishu.md)).
-
-## 3. System boundary
-
-```text
-Feishu bot ──┐
-             ├── VPS Coordination Node ── outbound polling ── Mac Local Node
-Private PWA ─┘
+```mermaid
+flowchart LR
+  User[本人] --> Pi[Mac · 原生 Pi]
+  User --> Bot[VPS · AstrBot]
+  Pi <--> Sources[Obsidian / WUCAI / 小红书]
+  Bot <--> Plugin[生活增量插件]
+  Plugin --> Events[VPS 生活事件库]
+  Events -->|SSH 拉取| Preview[Mac 启动时预览]
+  Preview -->|本人确认后写入| Daily[Life 对应日期日记]
+  Events --> Dashboard[私人只读 Dashboard]
+  Pi -->|同步状态与配置摘要| Dashboard
 ```
 
-### Coordination Node (VPS)
+Mac 与 VPS 各自执行职责，均可在另一端不在线时使用。没有旧协调队列、跨节点模型综合、全库复制或替代 AstrBot 的自建模型循环。
 
-The VPS provides task coordination, node status, a private HTTPS PWA, Feishu event handling, and a policy-authorized federated metadata catalog. It does not store source originals, complete indexes, full text, summaries, vectors, local credentials, or decryption keys.
+## 2. Mac 知识 Agent
 
-### Local Nodes
+原生 Pi 管理模型、会话、shell／文件工具、资源与 MCP。Study／Life 按需读取；WUCAI 中国区使用既有缓存和官方 API；小红书复用现有回环 MCP 与 Keychain 会话。来源正文不在启动时加载整库，SQLite 是可选发现途径。Folo、知乎和公众号不加入本轮主线。
 
-The owner-local [native Pi terminal](docs/pi-terminal.md) is a direct Mac transport to the existing bounded AgentHost. It uses a separately pinned Pi coding-agent SDK UI with a deterministic host tool, no direct provider generation, no default coding/file/shell tools, no discovered extensions or project context, and no independent credentials or budget. UI messages stay in memory; local chat storage holds bounded Work Delegation references, not a second transcript. New local follow-ups may use at most two freshly revalidated prior-answer excerpts as orientation, with old citation labels removed and current-source retrieval required. Current-message conversation replies retain their no-history behavior. Paid-step identity, unknown-result no-retry and 30-day/revocation cleanup remain authoritative in Python. This transport does not switch retrieval defaults or satisfy the broader retrieval-quality gate.
+笔记写入前显示目标与改动，获得本次用户确认。平台写入通过窄 `source_write` 扩展：WUCAI 日记追加、页面笔记更新、文章状态；小红书点赞／取消、收藏／取消、发表评论。每次原生 UI 显示完整参数并确认，计划五分钟有效，执行前落盘一次占位。未知结果保留防重，不自动重试。不包含发布图文／视频、删平台文章、自动社交互动或后台抓取。
 
-The current PA0 deployment runs on Mac only, following the user's explicit scope change on 2026-10-14. ROG WSL remains an optional, disabled node. Each enabled node:
+扩展不限制 Pi 的正常回答、检索、模型选择或上下文。原生 shell 不是受控 OS 沙箱，不能声称仅凭此扩展就封锁了绕过操作。原生 Pi／AstrBot 的费用各归原提供商，旧 Asis 预算并不覆盖；保留旧账本数值和未知请求标记。
 
-- reads only its local Source Configurations;
-- owns its SQLite index and transactional state;
-- initiates authenticated outbound polling to the VPS;
-- executes assigned local searches and returns allowed metadata/evidence results;
-- is allowed to sleep or be offline without being treated as failed forever.
+## 3. VPS 生活 Agent
 
-The Mac runs as a user `launchd` service. ROG's WSL service is disabled and outside the current maintenance scope. Later explicitly enabled trusted devices may use the same protocol.
+AstrBot 本体保留模型、渠道与会话；`astrbot_plugin_life_agent` 补充以下能力：
 
-## 4. Data classification and storage
+- 只收录指定平台、已绑定本人的私聊文本；按平台／发送人／消息 ID 去重，不导入历史聊天或附件。
+- 原话独立保存，模型通过工具整理为日常、健康、准备睡觉、起床、时间事项。摘要注明可修正，不将推测自动确认为事实。
+- 默认以消息接收时间归档；用户补记由模型显式提供带时区的所属时间。对应日期按 Asia/Shanghai 计算，跨日可修订。
+- `/life` 查看状态，`/life list` 列近期记录，`/life delete ID` 删除 VPS 正文并产生删除标记。
+- 明确的到期事项可通过既有本人渠道提醒。每15秒检查一次，发送前持久占位；平台返回成功／未知分别记账。服务崩溃留下的 `sending` 属待核对，不自动重发。不发送本轮测试消息。
+- `life_recent` 只读近期生活记录；`vps_workspace` 仅查看系统磁盘／时间、列出和读写生活工作区 Markdown 草稿。不给任意 shell、sudo、凭据、Mac 全库或其他项目权限。
 
-### Source data
+VPS 可以持久保存本人发送的生活文本，这是本轮明确的数据驻留改变。目录0700、数据库／私密文件0600；不记录原话到项目日志。现有 AstrBot／平台自身历史遵循各自保留设置，不把插件删除报告为所有副本删除。
 
-Sources remain on their existing systems. PA0 indexes Markdown body, titles, links, tags and frontmatter, plus explicitly enabled PDF/Office text with page, paragraph, slide or cell locations. Images, audio and video are not decoded; OCR is excluded. See [text implementation](docs/pa0-text.md).
+## 4. 启动同步
 
-The initial test configuration is:
+每次交互启动 `pi`／`scripts/asis-pi`，在原生会话前通过 SSH 固定导出接口拉取新增事件。不需要云模型，不把同步文本自动交给 Pi 模型。SSH 不可用时保留已有状态并继续 Pi；`--plain`、帮助／版本、工具管理、JSON／RPC／print 模式不启动交互确认。
 
-| Source | Policy |
-|---|---|
-| `Note/` | `normal`; eligible for future restricted derived cache and personal-model proposals |
-| `Daily/` | `private`; no VPS cache, no cloud-model context, no personal-model use |
+目标来自已配置的 Life 根目录，日记相对目录 `Calendar/Journal/Daily`，文件 `YYYY-MM-DD.md`，区块 `## AstrBot 同步`。新增记录保留原话、可修正摘要、来源身份标记；修订替换该记录区块，日期改变则移至对应日期；删除只移除该事件区块，不删除日记或其他手记。
 
-Wellbeing sources and derived material retain private classification. Under the user's confirmed [standing authorization](docs/private-data-authority.md) and [ADR 0033](docs/adr/0033-use-standing-personal-data-and-maintenance-authorizations.md), the current Study/Life roots and future files inside them may be indexed, retrieved and analyzed by approved providers, including diaries and health records. Credentials and explicit user exclusions take precedence; new roots or providers require one scoped confirmation. A private classification controls processing and disclosure rather than unconditionally disabling the assistant. Directory traversal and symlinks do not extend permission beyond a configured root.
+启动时先展示全部日期、文件与完整 diff。只有输入“确认写入”才执行整批；跳过的记录仍待同步。先复核批次文件未改变，再逐文件原子替换；已有内容改变、越界、符号链接、排除项均停止。同步锁防多进程，事件标记与本机收据防重复；中途失败可在下次重新预览，不能声称多个文件整体事务。Mac 本轮启动时没有预批准任何真实日记写入。
 
-The live Mac sources are Study and Life. Their separately configured metadata, encrypted-reader and model permissions reflect the same confirmed scope while remaining individually inspectable and revocable; authorization does not cause a full-corpus cloud upload. Old Note/Daily test roots were removed and ROG is inactive; earlier permissions and tests remain historical, not automatic authorization for other roots. No cloud sensitivity classifier is used.
+本机缓存与收据保存在忽略的私密 Pi 配置目录。删除在下一次成功拉取时覆盖本机待同步正文；离线 Mac、旧备份和平台副本需分别处理。每轮拉取有页数／大小／超时限制，超出留下一轮处理。
 
-`sources.yaml` and the PA1 policy remain authoritative on their owning Mac. Authenticated owner inputs from local conversation, bound Feishu private chat or PWA may express grants and revocations for Mac to verify, persist and audit. The remote authorization-management endpoints are not yet implemented.
+## 5. Dashboard
 
-### Local State Store
+认证后的只读 PWA 展示最近100条 AstrBot 生活记录、事项和提醒状态；Mac 仅上传最近检查时间、待确认／已同步数量、四个来源是否已配置，不自动上传原笔记、根路径、密钥和会话。另支持用户明确选定的一份Mac摘要，通过 `source_write` 的 Dashboard 发布操作预览完整标题／正文并确认后才上传；看板显示最近一次确认的摘要，没有自动遍历笔记或累积全文。Mac 来源配置不等于账户实时可用，上次同步不等于实时在线。
 
-Each Local Node uses SQLite for document metadata, index state, task state, confirmation scopes, reminder delivery, and operation records. Human-readable memory and reusable rules remain Markdown in later phases. Source originals are never copied into the transactional authority; the local FTS search index necessarily retains searchable text, separately from business-state and version-metadata tables. It is not an archive of source files and remains private to the owning node.
+复用现有 HTTPS 与已有本人登录密码的哈希；切换时清除旧会话。服务绑定 VPS loopback，由 nginx 转发。POST 仅用于登录／退出，检查 Origin／CSRF；API 不缓存，页面按文本渲染记录，旧 PWA service worker 缓存清除。Dashboard 无资料搜索、远程执行、授权变更或无确认写入入口。
 
-### Document identity and versions
+## 6. 退役与保留
 
-- A `document_id` is a stable UUID assigned on first discovery by the owning Local Node.
-- A `content_hash` identifies one indexed Document Version.
-- Evidence snapshots record both values, plus source location and indexing time.
-- A reconciliation may preserve a `document_id` through a confidently detected rename or move. If identity cannot be determined, it records a new document rather than silently guessing.
-- Documents with the same content version on different nodes are shown as one Replica Group with separate available evidence paths.
+移除旧 `astrbot_plugin_personal_asis`、旧搜索 PWA、协调／Relay／worker、旧飞书卡片代码与相应 CLI／部署模板／测试／运维文档。保留可回退的服务器旧发布、数据库、凭据和平台配置；不触及无关 AstrBot 插件。Mac 旧轮询／隧道退出后不再连接退役接口。
 
-### VPS catalog
+旧本地 Core、检索、角色、语义模型、付费工作状态仍供显式兼容，不迁移真实会话与账本。原始资料和既有本机缓存保留。历史 ADR 与验证记录保留日期并注明已被新架构修订。
 
-PA0 search tasks synchronize policy-authorized metadata: node status, source ID, document ID, title/path hint, update time, availability and coverage counts. The user authorized private as well as nonprivate on-demand PWA text reading. Local `remote_evidence`, additional `private_remote_evidence` for private content, metadata path permissions and fresh exclusion/version checks jointly gate access. Nodes encrypt bounded text and locations for a temporary browser key; the VPS holds only ephemeral ciphertext in memory, never source plaintext or decryption keys. The existing PA0 Feishu search implementation remains metadata-only; private analysis and excerpts are authorized for the bound owner, and a separate PA1 analyze/research owner-private endpoint now provides validated replies; see [PA1 acceptance](docs/pa1-acceptance.md). Local FTS holds extracted text; PA0 itself does not invoke models or build vectors; PA1's separate local CLI now provides those capabilities under independent policy.
+## 7. 验收
 
-## 5. Security and privacy requirements
+合成测试须覆盖消息去重、时区与补记、提醒未知防重、删除清理、拉取分页、同步跳过／确认／重复／中断、跨日期修订、目标越界／符号链接／并发变更、平台计划精确确认与防重、Dashboard 认证与无外部控制路由。
 
-- All PWA traffic uses HTTPS and independent owner authentication. The user explicitly selected static-password login for the initial IP deployment; require a long password, salted scrypt storage, rate limiting, secure cookies, session expiry, Origin and CSRF checks. Passkeys/TOTP remain optional later choices, never silently enabled or substituted.
-- Each Local Node enrolls once with a pairing code, stores its node credential in the system credential store, and uses short-lived, renewable credentials for subsequent HTTPS requests.
-- Feishu events must arrive through the authenticated platform SDK TLS socket transport or pass platform signature verification on a webhook, and be accepted only from the configured user `open_id`. The initial existing AstrBot socket adapter uses one-time private-chat binding; the PA0 plugin rejects webhook, group and other-platform events. See [Feishu implementation](docs/pa0-feishu.md).
-- Bound owner Feishu private chat may show personal analysis and relevant private excerpts, including proactive notifications for already-enabled work. The user accepts Feishu platform exposure of these replies. Group chat, other recipients and public disclosure need separate permission; this scope does not activate new background work. The PA0 search plugin currently implements metadata-only responses; expanded analysis is provided by the separately authorized PA1 owner endpoint.
-- PWA shows evidence cards with title, node, source, path, location, and minimal excerpt according to policy. Original files open only through an online owning Local Node on the user's device.
-- Source policy authority and execution remain on Mac; verified owner requests may originate from local conversation, bound private chat or authenticated PWA. Channel-originated permission management must be implemented and verified before being advertised as available.
-- Node state backups are encrypted before leaving the node; decryption keys never enter the VPS.
-- The earlier `F:\Backup` target is historical after ROG was disabled. On 2026-10-14 the user explicitly deferred independent backup placement and recovery-key preparation because source data already has user-managed cloud backups. These operations are outside the current PA0 acceptance scope. Existing encrypted state backups and OS credentials are retained; source cloud backups do not establish verified assistant-state or credential recovery. See [backup and recovery](docs/pa0-text.md).
-
-## 6. PA0 — source evidence search
-
-### Implementation status
-
-PA0 passed all seven acceptance criteria under the revised Mac-only scope on 2026-10-14, including a real user-operated hardware sleep followed by automatic heartbeat and same-task recovery. Production code is updated; independent backup placement and recovery-key preparation are explicitly deferred by the user. A full hardware reboot remains untested. PA1 now has a separate local CLI with offline semantic retrieval and independently authorized real-source analysis, documented below. See the [final acceptance record](docs/pa0-acceptance.md).
-
-On 2026-10-14 the user explicitly chose Mac-only retrieval and disabled ROG to reduce maintenance. The active production node is `mac` (448 Study/Life Markdown documents as verified on 2026-10-14); PWA, Feishu and encrypted nonprivate text reading remain enabled. ROG services, tunnel and Windows startup task are disabled, and its server registration is disabled without erasing enrollment, source files, local index or encrypted backups. New searches target only Mac; old views exclude disabled nodes and their cached results. Earlier real two-node replica/offline tests remain historical validation, not a current deployment prerequisite. Mac encrypted local backup/restore passed; its additional F-drive copy was not completed and the transfer attempt ended. See [Mac-only operation](docs/pa0-mac-only.md) and [text implementation](docs/pa0-text.md). Current Study/Life files, including private journals and health records, are separately authorized for minimal MiMo Flash analysis in the local PA1 CLI; Owner private disclosure is now authorized under ADR 0033; current endpoints and validation are tracked separately.
-
-### User flows
-
-1. The user submits a query through Feishu or PWA.
-2. The VPS creates a search task and assigns it only to enabled Local Nodes (currently Mac).
-3. Each online node performs SQLite FTS5 retrieval against its configured text sources.
-4. The VPS aggregates allowed metadata and evidence locations into result cards.
-5. PWA renders a State-First view: query, evidence cards, node availability, active/waiting tasks, and audit entry point.
-6. Feishu sends a Feishu Search Summary and links to PWA for details.
-
-### Offline and partial results
-
-If a node is sleeping or offline, the VPS marks the task as waiting for that node. It immediately returns results from online nodes as a Partial Result, explicitly naming the unavailable node. When that node polls again, it executes the pending job; the task is supplemented and the user is notified.
-
-### Indexing and reconciliation
-
-- Indexing and reconciliation are explicit PA0 operations; no filesystem watcher is used.
-- A node reconciles after startup or wake, then every six hours while it remains online.
-- Reconciliation compares metadata first and computes content hashes only for candidate changes.
-- Added, modified, renamed/moved where confidently recognized, and deleted documents update the local index. Deleted documents must cease appearing as current hits.
-
-### PA0 acceptance criteria
-
-PA0 is complete only when all of the following are demonstrated:
-
-1. The active Mac node indexes an isolated synthetic Markdown fixture. ROG is optional under the user's revised scope.
-2. Searches return stable document identities and current evidence locations from the active node.
-3. Identical content groups by version and preserves separate document identities. Real Mac/ROG same-version aggregation was already verified; reactivating ROG is not a current acceptance condition.
-4. When an enabled node is offline, PWA and Feishu show waiting/partial state and resume the same task after recovery. Disabled ROG must never cause waiting or expose its old results. Real multi-node offline/recovery is retained as prior evidence.
-5. Automated fixture tests create, modify, and delete Markdown files and verify reconciliation behavior.
-6. A read-only manual search is performed against `/Users/corleone/Documents/test_for_asis`; it must not mutate that source.
-7. Feishu and PWA expose only the information each channel is permitted to show.
-
-## 7. PA1 — contextual exploration
-
-Current independent MCP and Folo subscriptions (2026-10-16): Mac release `reading-mcp-e181642291535fcc` runs a pinned v2.5.5 XiaoHongShu variant with OS-keychain session/seed storage, authenticated loopback MCP, five registered read tools and no REST mutation routes. Real homepage/saved/detail/local-search checks and graceful service restart with session reuse passed; eight cached items including prior OpenCLI items, two selections. OpenCLI is retained inactive with no automatic fallback. Owner-approved ordinary Folo subscriptions for arXiv cs.AR+cs.DC, SIGARCH and LLVM are verified in category 研究与工程 (38 to 41 subscriptions); two metadata entries per feed were indexed, nine Folo items total. No new model/remote grants, paid model calls or assistant background fetching. No complete history/follow stream, deletion sync, OCR/video or full-machine reboot acceptance. Independent release: 395 tests, 379 passed, 16 skipped. See [acceptance](docs/validation/xhs-mcp-feeds-20261016.json), [MCP setup](docs/xiaohongshu-setup.md), and [feeds](docs/source-recommendations.md). All following dated source slices retain their historical scope.
-
-Previous XiaoHongShu live slice (2026-10-16): Mac release `reading-xhs-b30942b3bb2b28c3` adds an allowlisted OpenCLI adapter reusing the owner-controlled, manually authenticated Chrome session. Two homepage items, two saved items, two search items and one selected note text passed real validation; six local cached/indexed items, two selections, specific-item search verified. Signed note locators stay in OS keychain and anonymous stdin, outside OS argv and evidence. Independent MCP v2.5.5 remains installed but inactive. No complete follow timeline, history paging, followed-only filter, OCR or video understanding is claimed. No new model/remote grants or background work. Independent release: 386 tests, 370 passed, 16 skipped. Owner no longer wants collection-only Zhihu CLI setup; WeChat remains excluded. See [setup](docs/xiaohongshu-setup.md), [acceptance](docs/validation/xiaohongshu-live-20261016.json) and [source candidates](docs/source-recommendations.md). Following dated releases are historical.
-
-Previous Folo live slice (2026-10-16): Mac release `reading-folo-5450f19d0ed1dc1c` adds official-protocol browser login with nonce-bound loopback callbacks, verified sessions and OS-keychain-only persistence. Real acceptance returned 38 subscription-list entries, 3 visible timeline items and 0 collection items; one feed-content detail, cursor advancement on resume and specific-item local search passed. Complete history, populated-collection pagination and full-original text remain unverified. No new model/remote grants or background work were enabled; Zhihu/XiaoHongShu remain deferred. Independent release: 380 tests, 364 passed, 16 skipped. See [live evidence](docs/validation/folo-live-20261016.json). The following dated notes retain their historical scope.
-
-Previous WUCAI live slice (2026-10-16): Mac release `reading-wucai-14c1e0e0dc57194e` fixes verified real WUCAI field names, nullable highlights, annotation spelling, wrapped details and cursor-only paging. A July 2026 historical window and single-item detail passed, as did two current-window pages and local-index/search integration (24 cached items). Fourteen days bounds one date query, not the age of accessible records. Complete account history and clipped full text remain unverified; no model generation or new model/remote grants occurred. The user is configuring WUCAI, Folo, Zhihu and XiaoHongShu sequentially and no longer needs WeChat. See [live evidence](docs/validation/wucai-live-20261016.json). The following release notes retain their historical scope.
-
-External-source preparation (2026-10-16): current Mac PA0/PA1 release is `reading-connectors-181945e7fb11c8d1`. Folo CLI 0.0.5, official Zhihu CLI 0.6.1 and the selected XiaoHongShu MCP v2.5.5 binaries are installed. Zhihu favorites, allowlisted local MCP reading and explicit public WeChat share links now connect to the existing local cache/index. Per user instruction, Folo/Zhihu/XiaoHongShu account access is deferred; status does not inspect credentials, and platform operations stop before credential lookup or execution. No login, account verification, XiaoHongShu server/browser startup, actual platform reading, model/remote grants or background work occurred. Existing Study/Life/WUCAI configurations and model policy are retained. Real schemas, pagination, coverage, full follow timelines and deletion synchronization remain unverified or unimplemented. See [current setup and limits](docs/external-reading-setup.md) and [validation](docs/validation/reading-connectors-20261016.json). The following dated slice remains historical.
-
-External reading slice (2026-10-15): Mac PA0/PA1 now run `reading-sources-311c9f3870b96a0f` with read-only WUCAI/Folo protocol adapters, bounded paging/checkpoints, attribution, local generated Markdown caches and existing-index integration. WUCAI CN and Folo configurations exist, but both credentials are missing, item counts are zero, and no live account reads occurred; Folo CLI installation failed. Account schemas, pagination and historical coverage are unverified. Unclassified items remain private, model/remote grants remain absent, subscription bodies expire after 30 days, and selections retain separate provenance. Every evidence read/replay checks the cache manifest and expiry; existing maintenance clears expired files and derived data. No continuing schedule, automatic selection, platform deletion synchronization or remote source-management UI was enabled. See [implementation and limits](docs/external-reading.md) and [validation](docs/validation/reading-sources-20261015.json).
-
-PA1 follows a passing PA0. It adds local hybrid retrieval, Context Bundles, and model-based analysis.
-
-Implementation status (2026-10-15): the Mac CLI provides FTS5 plus real offline multilingual-e5-small retrieval, paragraph-window vector caching, independent source/provider/private grants, fresh minimal Context Bundles, transactional token reservations, a MiMo adapter, and citation validation. The user-selected model is `mimo-v2.6-flash`, with 100,000 tokens/day, 1,000,000/month, ordinary maximum completion 512 and research maximum completion 3,072. The user confirmed root-scoped standing access to Study/Life, including future files, journals and health records; separate local PA1 policy applies to approved providers and synthetic-only mode is disabled. Credentials and explicit exclusions are checked locally before indexing and use. Private owner-channel disclosure and attributable automatic memory are authorized under ADR 0033; their implementation status is distinct from permission. Owner PWA/Feishu analysis and bounded on-demand public research now have separate endpoints. Real private HTTPS analysis and the first owner Feishu analysis with a successful platform-send receipt have passed; manual browser reading of a successful report and unattended sleep/reboot recovery for the new analysis worker remain unverified. See [PA1 acceptance](docs/pa1-acceptance.md). Bounded serial multi-role execution is implemented below; full domain continuity, role parallelism, continuing delegations and remote permission management remain unimplemented. See [PA1 implementation and live evidence](docs/pa1-local.md).
-
-The complete target Personal Agent, beyond the currently deployed on-demand subset, is intended to plan within bounded permissions, select tools, and adapt to execution results, supporting user requests, explicitly delegated continuing work, and Proactive Preparation within agreed topics, sources, and budgets. The assistant owns work, data, permissions, and results while integrating a replaceable agent runtime; Pinned Pi is used by the deployed on-demand subset; broader execution requires separate validation. See [Agent architecture discussion](docs/agent-architecture.md), [runtime boundary ADR](docs/adr/0019-keep-assistant-authority-outside-the-agent-runtime.md), and [proactive preparation ADR](docs/adr/0020-allow-bounded-proactive-preparation.md). Concrete triggers, limits, notification and stop conditions, and delivery stages remain under design. This direction does not enable new subscriptions or alter existing source-policy, model-disclosure, external-write, or PA0 restrictions; the bounded local implementation below uses pinned Pi; the runtime for broader multi-role and continuing work remains a separate decision.
-
-Runtime foundation status (2026-10-15): the checkout now provides an owner-local Work Delegation CLI and SQLite authority for runs, distinct roles/sessions, fenced expiring claims, foreground capacity reservation, pause/resume/cancel, checkpoints, and unknown execution/account-lock markers. Checkpoint/result payloads expire after 30 days and ordinary body-free events after 180 days; minimal no-retry markers remain. An optional pinned Pi agent-core 1.2.0 subprocess adapter passed real tool-loop tests with a fake provider and synthetic, policy-filtered evidence. The checkout also implements an owner-local on-demand MiMo tool client, real PA1 policy reuse and durable step replay; these passed actual Pi/fake-provider tests. The initial trials failed; subsequent actual MiMo synthetic tool execution and cross-process replay passed, and an authorized Study retrieval correctly abstained on insufficient evidence. Shared provider cooldown/diagnostics, bounded finalization, stable replay serialization and session cleanup shipped to the existing Mac services as agent-local-51e8faaa94990dbb. Historical unknown reservations remain. Owner PWA and bound-private Feishu on-demand Agent entries now add encrypted foreground execution, status, pause/resume/cancel, independent responsive control polling and durable command replay suppression; both retain their existing PA1 analysis paths. New channel work starts with a host-controlled authorized search counted within the same retrieval bound, while historical sessions keep their original paid protocol. Cross-channel resume preserves the original work and transcript and rechecks the current recipient. Feishu persists routing/delivery identities without plaintext or decryption keys, and outcome-unknown submissions/sends are not repeated. Source/model and remote/private-evidence permissions are checked before tool disclosure, model reuse and result return. Actual rollout and verification are recorded in [owner channel Agent](docs/agent-channels.md). Explicit local related-work history is now implemented as described below; full domain continuity, role parallelism, browser/script isolation and continuous scheduling remain pending; bounded serial specialist execution is implemented below. See [on-demand implementation and live limits](docs/agent-on-demand.md). The work source list restricts scope without granting source/model access; the local CLI starts no automatic work. See [runtime implementation and limits](docs/agent-runtime-local.md).
-
-Owner on-demand role collaboration (2026-10-15): explicit auto/research/career/life/team mode now creates serial specialist child runs under the supervisor, using only this work’s authorized bootstrap evidence and matching explicitly selected domain goals. Each specialist has one text-only model call (at most 768 output tokens); the supervisor then runs the existing bounded Pi loop. Roles share source/channel checks, budget reservations, fenced work control, 30-day retention and paid-step replay. Owner PWA and Feishu can select modes; bare `/asis` opens a JSON 2.0 form card with asynchronous dispatch and updates to the original card. Full domain continuity, role parallelism, generic automation and continuing work remain pending. See [roles](docs/agent-roles.md), [cards](docs/feishu-cards.md) and [validation](docs/validation/agent-roles-20261015.json).
-
-Continuing work is managed as an independent Work Delegation with associated Delegation Runs; chat is an entry point rather than the sole progress record. The chosen agent organization is one Supervising Agent with three continuing Specialist Agent roles: knowledge research, applications and career, and life records and review. Each specialist keeps separate Domain Working Context; the supervisor receives necessary results and cross-domain sharing is policy-filtered. See [delegation lifecycle ADR](docs/adr/0021-track-continuing-delegations-outside-chat-sessions.md), [agent organization ADR](docs/adr/0022-organize-agents-as-a-supervisor-and-persistent-specialists.md), and [specialist context ADR](docs/adr/0023-separate-specialist-contexts-and-filter-cross-domain-sharing.md). These roles do not change PA1's current single-online-node execution boundary or the private-source model restrictions.
-
-Specialist context combines confirmed domain goals and constraints with independent delegation work records and relevant historical retrieval, rather than one indefinitely growing domain conversation. Role, delegation, and runtime-session identities remain distinct; tentative analyses do not automatically become confirmed personal facts. See [delegation context ADR](docs/adr/0029-organize-specialist-context-around-delegations.md).
-
-The 2026-10-15 [local domain-context slice](docs/agent-domain-context.md) implements explicit owner-set goals/constraints, local-only by default, with per-record MiMo consent, source-root binding, 90-day review, revision checks and deletion of affected paid-session payloads. Only an explicit local `agent run --domain` selects the context; resume retains the original revision. Updating or forgetting it prevents continuation under the previous revision while preserving billing and no-repeat markers. The [related-work history slice](docs/agent-work-history.md) adds opt-in local retrieval of at most two related records from the latest 200 completed runs under the same domain revision and authorized source scope. Prior analysis stays distinct from confirmed facts and new source evidence. Frozen snapshots, fresh source/channel checks, 30-day payload retention and bounded transitive invalidation prevent stale history from surviving deletion or revocation. Serial specialist execution and supervisor collaboration are implemented; owner remote goal editing and opt-in per-role history are added in the continuity slice below. Role parallelism and continuing schedules remain unimplemented.
-
-Supported capabilities include domain tools, scripts/commands, and browser operations. Scripts write code and artifacts in dedicated workspaces; original sources remain read-only, and existing-file modification, software installation, and system changes need separately defined permission. Browser reading and content preparation may use explicitly approved authenticated sites; remote changes remain subject to confirmation. Independent specialist work may execute with bounded parallelism under a shared budget, while browser operations using the same account are queued separately. See [general automation boundary ADR](docs/adr/0024-bound-general-automation-to-workspaces-and-approved-sites.md). Parallelism limits, concrete schedules, retention, execution isolation, site/account configurations, and credential/session integration remain undecided; the capability choices do not authorize unrestricted machine or account access.
-
-Cross-domain specialist requests are routed and consolidated by the supervisor. A delegation may adjust its check frequency within user-set bounds and budget, with visible reasons and next-check time and a user override. Ordinary results are digested; required user intervention, impending deadlines, and persistent failures prompt timely policy-filtered notifications. The first version waits for the original execution node after an interruption, with no automatic in-flight cross-node takeover. See [supervisor routing ADR](docs/adr/0025-route-specialist-collaboration-through-the-supervisor.md) and [owning-node recovery ADR](docs/adr/0026-resume-interrupted-runs-on-the-owning-node.md). Exact triggers, thresholds, schedules, checkpoint mechanisms, and unknown-result handling remain to be designed.
-
-Stopping a continuing delegation defaults to pausing it and its child work, retaining results and awaiting explicit resumption; stopping only the current run and cancelling the delegation are separate explicit actions. Active user requests receive an early acknowledgement/plan and state entry point, then preliminary evidence-aware results as available before background completion. They receive priority and reserved capacity over ordinary background work, subject to total budget limits and configured deadline exceptions.
-
-Reading inputs use separate Subscription Discovery and Personal Selection entry paths. WUCAI directly adapts its official read interfaces; Folo includes all existing subscriptions screened for delegation topics; WeChat initially uses existing clips, shared links, and available subscriptions. Zhihu uses its official CLI, with followed-content coverage still to be verified; Xiaohongshu uses the user-selected `xpzouying/xiaohongshu-mcp` behind a controlled read adapter for keyword searches, shared notes, visible favorites, and the home recommendation feed. Personal selections remain searchable, while subscription bodies are retrieved and cached when relevant rather than fully archived. Ordinary articles and nonsensitive user annotations may enter minimal MiMo Context Bundles; ungranted private/health material remains restricted and uncertain sensitivity must be resolved locally before disclosure. Current Study/Life private files have a separate MiMo Flash grant under [ADR 0032](docs/adr/0032-allow-private-model-context-with-explicit-provider-grants.md). See [information-source investigation and design choices](docs/information-sources.md), [reading-retention ADR](docs/adr/0027-retain-personal-selections-and-cache-relevant-subscription-content.md), and [reading-disclosure ADR](docs/adr/0028-allow-minimal-mimo-context-for-nonsensitive-reading-content.md). Obsidian remains optional. Current WUCAI/Folo/XiaoHongShu adapters, generated local caches, manual paging, classification and 30-day expiry checks are implemented in the workspace and the existing Mac release. Account/history coverage, automatic incremental scheduling, platform deletion synchronization and general indexed/live routing remain incomplete. Current counts and independent provider/channel grants are recorded in the information-source status matrix; connector installation or a cached item never grants cloud disclosure.
-
-Personal selections use best-effort backfill of all accessible history with explicit coverage limits; subscription streams are mainly incremental from activation. Ordinary body caches expire after 30 days, while selected content follows its own retention rules and cited minimal evidence follows audit policy. The Agent may automatically promote bodies under user-approved rules, with explicit Agent Selection provenance, reasons, and revocation. Removing a local selection does not automatically exclude future rule-based selection; source deletion, permission revocation, and fresh policy checks still apply. Exact rules, expiry calculation, and evidence-retention mechanics remain to be implemented. Local promotion does not write favorites back to platforms or imply user endorsement. See [selection-rule ADR](docs/adr/0030-promote-reading-cache-under-approved-selection-rules.md).
-
-Successful temporary scripts and workflows may generate Capability Proposals containing purpose, dependencies, permissions, validation, and rollback. User confirmation of a specific version is required before registration as a long-term tool or skill; registration does not expand data permissions or authorize future external writes. Material capability-version or permission changes require renewed review. See [capability-registration ADR](docs/adr/0031-review-capability-proposals-before-registration.md); this capability remains unimplemented and its delivery slice is not yet assigned.
-
-### Retrieval and model execution
-
-- The opt-in [2026-10-19 quality slice](docs/retrieval-quality.md) adds bounded offline cross-encoder comparison and version/root-bound private qrels evaluation. Explicit local reranking uses `retrieval-v2.2`, filters source/provider/channel permissions before scoring, preserves literal-query discovery anchors, accounts for quality metadata in the context byte budget, and never treats a relevance logit as answer sufficiency. Ordinary `retrieval-v2.1`, PA1/Pi and historical paid inputs remain unchanged. Retrieval-only tests and known-span probes do not authorize a production-default replacement or prove answer faithfulness.
-- Hybrid retrieval combines exact/full-text search with local semantic vector retrieval. Either path may degrade independently.
-- The opt-in [Retrieval V2 slice](docs/retrieval-v2.md) adds a disposable local Chunk sidecar, independent lexical/semantic/hybrid modes, explainable RRF, exact-query protection, bounded paragraph/neighbour expansion and a byte-budget Context Bundle. It is implemented and tested; the later retrieval-v2-de593bc25486b7cc release deploys an explicit bound-owner Feishu lexical candidate-reading command over the existing encrypted relay, without model calls or work/billing records. Normal production PA1 and paid Agent sessions do not use V2. PA0 and saved tool definitions, field ordering, evidence fingerprints and work checkpoints remain unchanged.
-- V2 Evidence binds source/item, Document UUID/version, Chunk version, exact decoded-text offsets, section/native extraction locations, attribution, completeness and source dates. An external author's text, a user's highlight, a user's annotation, an arrival/selection and a confirmed user fact are separate concepts. Duplicate arrivals of one original work cannot count as independent corroboration; metadata/summary/partial content cannot be represented as full text. Unknown dates stay unknown.
-- Current source/provider/channel permission and original content are verified before encoding, before building provider input and again when exporting a V2 bundle. Source deletion, root change, revocation, expiry or invalid position stops reuse; the sidecar is rebuildable and the existing clean entry removes invalid V2 rows when present. Local lexical authorization is distinct from provider disclosure.
-- The explicit [quality continuation](docs/retrieval-context-quality.md) adds `retrieval-v2.3` only when a lexical-support profile or an explicit no-inferred-time policy is requested. Legacy defaults and historical paid wire inputs remain unchanged. `quality-answer-v1` is a local opt-in single-generation extraction experiment: at most two literal quotes, current permission/version checks, shared budget, unknown-result no-retry, cached paid identity and 30-day/revocation cleanup. Its full messages must fit both the existing prompt cap and the same-query/source legacy lexical prompt size; it stops before payment if no evidence fits. Literal quote validation does not prove entailment, relevance or conflict semantics, and two observed real samples do not pass the production replacement gate.
-- Retrieval Quality Gate: freeze at least 30 synthetic/de-identified questions and compare the same data/modes using Evidence Recall@K, Precision@K, failure stage, forbidden-evidence leaks and budget/location/attribution tests. Record skips and real-model versus synthetic-encoder coverage. New routing, reranking or tool integration cannot replace production before this gate and a versioned new-session/replay test pass. Answer faithfulness/relevancy need separate generation evaluation; valid citation IDs do not prove them.
-- Query planning/decomposition, source-aware indexed/live routing, rerankers, semantic coverage checks, bounded follow-up, specialist-independent retrieval and hierarchical navigation are Phase 2 designs, not delivered capabilities. Expensive planning/reranking must be conditional on query needs and existing budgets. GraphRAG is only a later candidate; no new standing infrastructure is introduced.
-- One online Local Node is selected for each PA1 analysis. It builds the minimal Context Bundle and calls the model provider directly.
-- The VPS does not aggregate source text. Cross-node model synthesis is deliberately deferred.
-- The first provider is Xiaomi MiMo through a documented OpenAI-compatible API adapter. API endpoint, model ID, and pricing plan are deployment configuration, not business rules.
-- The current Mac-only PA1 plan stores MiMo credentials only in Mac's system credential store. ROG receives no credential or model work. The earlier shared-key decision applies only if another inference node is explicitly restored; rotation then updates all holders.
-- Each node enforces configurable daily/monthly Token or cost limits, warns near the threshold, and stops new model jobs at the threshold. Local search remains available.
-
-### Owner channel execution
-
-The PWA now submits PA1 queries through authenticated, CSRF-checked routes. A separate Mac semantic worker executes calls without blocking PA0 heartbeats. The VPS holds requests and encrypted results only in bounded RAM; outputs bind request identity, nonce and channel using RSA-OAEP/AES-GCM. Feishu decrypts only inside the bound-owner adapter before sending; plaintext output never enters the coordinator database or ordinary logs. Completed ciphertext expires after 30 seconds, transport requests after 15 minutes. Local durable model records retain idempotency and accounting independently; unknown or invalid calls are never automatically paid again. Page/server restart recovery limits and deployment evidence are documented in [PA1 acceptance](docs/pa1-acceptance.md).
-
-### External research
-
-Live increment (2026-10-18): release `web-live-cfb5d209d8b32103` deploys explicit owner public-web commands and an optional DeepSeek Search Provider; MiMo generation/model limits remain unchanged. The new `agent-web-v3` public-only route performs one approved query and bounded local-verified read before one JSON generation, because MiMo supports auto tool choice and may otherwise skip grounding. Saved web-v1/v2 and default Agent payloads remain recoverable. DeepSeek search body snapshots are distinct from snippets and require local public URL/redirect checks; remote arbitrary-URL Fetch is not exposed. Jina's actual anonymous401 remains a failure/fallback, not a successful conversion claim. The [live record](docs/web-search-live-deployment.md) separates real calls, negative cases, cost accounting, tests, production relay, and unverified Feishu UI.
-
-Checkout increment (2026-10-18, **not deployed**): an explicitly new `agent-web-v1` session adds `search_web` and `fetch_web` alongside `search_notes`; the default and saved Agent protocol remain unchanged. Reuse Exa through a replaceable Provider and Jina through locally fetched, sanitized inert HTML, with static-text fallback. Only separately approved exact public queries reach search; private questions and note excerpts cannot be automatically added. Public discovery snippets are not body Evidence. Local V2 Chunk Evidence and public Web Evidence use separate freshness/permission/location checks, including before owner-channel disclosure; web snapshots never go through local-file ContextBundle validation. See [integration contract](docs/web-search-integration.md).
-
-Acceptance requires synthetic tests for local/public/mixed routes, private-query rejection, untrusted-page isolation, DNS-pinned public HTTPS and safe redirects, independent search/read/time/length limits, citation provenance, body completeness, deleted/revoked account data, and both legacy and versioned paid replay. Real Provider/model quality and Feishu UI acceptance are additional gates, not implied by mocks. This slice does not enable background networking, raise MiMo budgets, replace production retrieval, or grant accounts/model/channel permissions.
-
-Account increment: explicit `reading retrieve --fetch-body` may fetch one WUCAI/Folo/Xiaohongshu item through its existing read-only connector, rebuild its derived index, and select bounded V2 chunks. Optional model and channel checks are independent; no automatic classification or disclosure grant. Zhihu/WeChat are excluded. Autonomous account fetching, remote web-work creation, complete cross-public/account deduplication and planner/reranker integration remain pending.
-
-In the initial on-demand PA1 flow, external research starts only for questions explicitly requesting current information, trends, research, or lookup. Later, an activated continuing-work or proactive-preparation scope may also trigger external research when that scope explicitly permits it. Research strategy must record question decomposition, source routes, citation tracing, cross-checks, fallback paths, and remaining evidence gaps.
-
-Primary vendor material, papers, standards bodies, and independent benchmarks may support a conclusion. Media, forums, and social discussions are Signal Sources only: they may surface claims or disagreement but cannot alone substantiate a key conclusion.
-
-Every time-sensitive external conclusion records publication date, retrieval time, and freshness policy. Product, financial, and market claims refresh faster than durable technical foundations.
-
-This PA1 flow remains On-Demand Research. Later Opportunity Subscriptions are a separate opt-in workflow: each subscription defines its topic, sources, schedule, budget, expiry, and pause control before background research starts. A product specification does not authorize any live subscription.
-
-### AI-chip exploration acceptance case
-
-Input: the user asks about the current AI-chip landscape and future trends, states that they have deep-learning and inference-engine material, and asks for a direction worth pursuing.
-
-The Exploration Report must contain:
-
-1. evidence-linked account of relevant existing knowledge and its limits;
-2. dated current external evidence, clearly separated from Signal Sources;
-3. identified knowledge gaps;
-4. two or three Direction Hypotheses, each with a connection to existing knowledge, capability gap, opportunity/risk, and next validation step;
-5. uncertainty, disagreement, and any unretrieved evidence caused by source or backend failure.
-
-The report offers direction hypotheses; it does not automatically create a learning task or calendar event.
-
-## 8. Later phases
-
-| Phase | Capability | Required guardrail |
-|---|---|---|
-| PA2 | Extract Task Candidates from user-provided material | Candidate is not a Task until user confirms it |
-| PA3 | Project time-bound confirmed tasks to Google Calendar | Service-owned OAuth; exact, expiring Confirmation Scope; no bidirectional sync |
-| PA4 | Memory Ledger and Reusable Rules | Layered readable Markdown; rule proposals show scope, counterexamples, and impact before confirmation |
-| PA5 | Email Adapter | Provider-neutral adapter; continuous receipt, history association, draft only before explicit send confirmation, and duplicate prevention |
-
-The assistant owns Task Authority. Google Calendar is only a projection for confirmed, time-bound arrangements.
-
-### Domain delivery alongside the infrastructure phases
-
-The phase numbers describe infrastructure, not an order in which life domains become important. Wellbeing records, weekly reviews, and career comparison may start immediately as user-owned Markdown and manual actions. PA0 can retrieve permitted text; PA1 can analyze permitted career evidence, while restricted wellbeing data stays local. Simple local summaries must preserve missing-data information and require no model. PA2/PA3 later connect reviewed actions to tasks and calendar projections; PA4 retains reviewed goals and corrections. PA5 email is not a prerequisite for these workflows.
-
-Wearable integrations, nutrient/portion estimation beyond visible food recognition, scheduled opportunity collection, and additional model adapters are separate enhancements. None is required for the first development review. Free consumer models may be used manually only with deliberately selected, policy-permitted context; they are not assumed to provide free APIs or automatic background execution. Model Cross-Review uses a fixed evidence snapshot, provider-specific disclosure controls, a combined review budget, and visible disagreement; it never promotes consensus into evidence.
-
-Health workflows organize observations and prepare user-reviewed questions for professionals. They do not diagnose, prescribe, recommend medication changes, or turn a device estimate into a medical fact. Career briefs present scenarios and validation steps rather than guaranteed employment or income predictions.
-
-### First domain pilot — graduate applications and low-burden wellbeing capture
-
-The first domain pilot combines a Graduate Application Decision Brief with Meal Capture, Sleep Check-Ins, and Journal Reflection. The target scenario is a third-year microelectronics undergraduate exploring computer systems design, hardware/software co-design, and high-performance computing, prioritizing mainland China and then Hong Kong. Outreach starts in 2026, recommendation-based admission is the primary route, and September 2027 is the user's offer target, not an assumed official deadline or guaranteed result. The dietary goal is healthy eating with fat loss; it does not imply a preset weight target or calorie deficit.
-
-Food recognition is a narrowly scoped photo workflow, not a relaxation of PA0's text-only indexing gate. It requires a verified vision-capable adapter and a source-specific permission for any image sent to that provider; the existing MiMo adapter is not assumed to support it. If vision is unavailable or disallowed, the photo remains a user-owned record with an optional short description.
-
-Sleep events retain user/message time, timezone, corrections, and unpaired states. A bedtime/wake interval is reported as a self-reported schedule interval, not actual sleep duration. The user has authorized full local read-only access to Obsidian `daily` for journal reflection; the actual vault path is still deployment configuration. Reviews use relevant recent entries and retrieve older evidence when needed rather than injecting the entire corpus. Reading, model processing, memory and disclosure remain distinct permission axes. The user has now explicitly granted those axes for Study/Life under the standing policy, including attributable automatic memory; PA4 memory implementation is still pending.
-
-Feishu is the selected capture channel and an explicit source-specific extension of the current search-only interface: submitted wellbeing messages and photos reach Feishu and transit its event handler. The VPS must not persist their plaintext payloads or log them. It may forward an encrypted payload for the owning Local Node with finite retention, deduplication, and a delivery receipt; transient event-handler plaintext exposure and Feishu's own storage are part of the disclosed boundary. Capture replies may show food-recognition candidates from the submitted photo, correction prompts, and the user's own recorded check-in time. The later standing authorization separately permits relevant private analysis and excerpts in bound owner replies and already-enabled notifications. These paths still require owner identity, fresh policy checks, finite retention and transport that avoids VPS plaintext persistence; expanded Feishu analysis is not yet implemented.
-
-Until this capture path has passed its offline and privacy checks, direct recording into an authorized user-owned source is the available fallback. A model or node failure must not be reported as successful recognition or successful local recording. Automatic meal identification may remain provisional; user corrections and explicit unknowns are retained.
-
-## 9. Audit, retention, and recovery
-
-Operation Records capture the trigger, evidence used, result, confirmation, external-write result, and failures. Evidence Snapshots retain the original location, excerpt, content hash, index version, and read time required to explain a past conclusion.
-
-The confirmed retention rules are:
-
-- attributable self-reports, preferences and experiences: continuing retention, reviewed every 90 days;
-- tentative interpretations: require review after 30 days before further use;
-- complete model Q&A and temporary context payloads: 30 days;
-- ordinary audit records without source bodies: 180 days;
-- necessary billing, request-idempotency and external-write confirmation markers: minimal records, never retaining withdrawn body content solely for audit.
-
-Source originals follow their own source-system retention and remain read-only. Deletion or revocation stops further use, purges associated caches and invalidates memory whose only support was withdrawn; other authorized evidence may continue to support a statement. External provider/Feishu history and offline or backup copies have separately reported cleanup coverage, never a claimed automatic recall. Current implementation covers PA1 response expiry and local cache cleanup; automatic long-term memory and its reviews are not implemented.
-
-Within the existing project Mac/VPS environment, dependency installation, configuration changes, tests, tested deployment, existing-service restart and rollback have standing authorization with target checks, rollback preparation and audit. New servers/providers/roots, increased budgets, deleting originals and third-party/public/calendar writes require separate scoped authorization. Trusted owner replies and already-enabled notifications use their existing approved scope. Project-specific Codex review supplements express these grants without replacing host-enforced rules.
-
-Code, specifications, reusable rules, and sanitized fixtures are versioned in a private Git repository. Originals, indexes, context bundles, operation records, and personal memory are excluded.
-
-## 10. Deferred deployment choices
-
-The following are intentionally not decided until deployment, and must not be silently assumed:
-
-- independent backup placement and recovery-key preparation, explicitly deferred by the user on 2026-10-14; the old ROG F-drive target is historical;
-- MiMo endpoint, model ID, plan, and current quotas;
-- future PWA passkey/provider migration, if requested; the current static-password method was explicitly selected;
-- calendar OAuth account configuration;
-- email provider and protocol;
-- future derived-cache enablement;
-- cross-node model synthesis;
-- general OCR/multimodal ingestion beyond the scoped meal-photo pilot, additional model providers, and additional Local Nodes;
-- the implementation of Feishu capture and private remote display, including offline behavior, ciphertext queue retention, and transport that prevents VPS plaintext persistence/logging and limits Feishu disclosure to its approved capture scope;
-- wearable/health-app integrations and per-provider permission for any sensitive model context;
-- topics, schedules, sources, expiry, and aggregate budget for Opportunity Subscriptions and Model Cross-Review.
-
-Any choice that changes data residency, source policy, credentials, or external-write authority requires a new documented decision before implementation.
-
-Owner response routing and evidence dates (2026-10-15): new simple support requests in auto/life mode, or explicit conversation mode, use only the current message with one shared-budget model call and no note tools, encoder or specialist context. Grounded requests retain retrieval; supported relative date windows are frozen per new run and filter by explicit filename/frontmatter note dates, excluding unknown/conflicting dates without old-note fallback. Cards distinguish the user question, system status, Agent answer and historical quotations with dates. Existing paid sessions preserve their original wire protocol and cached answers. General intent planning, arbitrary time-language parsing and broad retrieval-quality acceptance remain pending. See [routing and limitations](docs/agent-response-routing.md).
-
-Opt-in specialist continuity (2026-10-15): owner PWA and bound Feishu cards can inspect, replace and forget explicit per-role goals with revision-conflict and command replay checks; no model call or source grant occurs. New role runs may select approved matching goals and up to two relevant same-role specialist records, retaining source/channel freshness, 30-day history TTL and frozen paid-session inputs. Sibling goals/history and raw specialist goals are not directly injected into supervisor context; current specialist outputs remain tentative and may quote their goal. Source scope must cover the selected run. Missing or unavailable goals are explicitly reported without inferred replacements. Existing singular-domain CLI protocols remain unchanged. Parallel roles, progressive delivery, continuing schedules, account sources and PA4 automatic memory remain pending. See [continuity implementation](docs/agent-role-continuity.md).
+现场检查实际 SDK 注册、VPS 服务／旧服务下线、SSH 导出、Mac 启动入口和 MCP 工具目录。真实聊天、模型整理质量、到期消息投递、真实 Obsidian 写入与真实平台操作单独验收，禁止合成成功冒充现场完成。详见[状态](docs/project-status.md)与[验证记录](docs/validation/two-agent-20261020.json)。

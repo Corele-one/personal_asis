@@ -1,12 +1,14 @@
+> 历史只读／旧本地路径说明：保留原日期与验收边界。当前双 Agent 分工见[总规格](../SPECIFICATION.md)，平台写入能力见[平台读写](source-writes.md)，不得用本页旧部署快照代替当前服务状态。
+
 # 首批外部阅读信源：WUCAI 与 Folo
 
-2026-10-16当前状态：WUCAI中国区、Folo和独立小红书MCP已完成真实只读接通。新增三条Folo普通订阅及MCP会话／服务重启验证见[最新验收](validation/xhs-mcp-feeds-20261016.json)；配置见[接入记录](external-reading-setup.md)。下文最初切片中的零条目、未登录和旧发布状态是历史快照，不覆盖当前状态。完整历史、自动增量和平台删除同步仍未实现。
+2026-10-16当前状态：WUCAI中国区、Folo和独立小红书MCP已完成真实只读接通。新增三条Folo普通订阅及MCP会话／服务重启验证见[最新验收](validation/xhs-mcp-feeds-20261016.json)；配置见接入记录（旧说明已退役，见[当前规格](../SPECIFICATION.md)）。下文最初切片中的零条目、未登录和旧发布状态是历史快照，不覆盖当前状态。完整历史、自动增量和平台删除同步仍未实现。
 
 2026-10-16 Folo真实接通：Folo已完成本人浏览器登录，会话验证成功并仅存Mac钥匙串；订阅列表返回38项，当前时间线3条已入本机索引，收藏接口本次返回0条；单篇feed_content、实际游标续页和特定条目搜索通过。完整历史及有内容的收藏分页仍未验收。未新增模型／远程展示许可或后台工作，知乎／小红书仍待后续登录，公众号不再推进。Mac发布 `reading-folo-5450f19d0ed1dc1c`，380项回归364通过、16跳过，见[现场验收](validation/folo-live-20261016.json)。
 
 2026-10-16真实续验：用户已录入WUCAI中国区凭据，实际读取近期和2026-07-05—18历史窗口，旧记录详情及next_cursor续页成功；24条已进入本机缓存并验证搜索，整库历史尚未回溯。真实字段映射／空划线／详情包装已修复，见[现场验收](validation/wucai-live-20261016.json)。官方14天限制是单次日期跨度，可指定历史日期，不是只读最近14天；已取得文章信息、划线和批注，不承诺剪藏全文。下文首批记录中的“凭据缺失／字段未验”仅保留当时状态。
 
-2026-10-16续配：Folo CLI下载问题已解决，官方0.0.5已安装；另已准备知乎CLI、小红书MCP和公众号分享入口。按用户要求暂缓登录／授权／账户验证，当前状态见[续配说明](external-reading-setup.md)和[最新验收](validation/reading-connectors-20261016.json)。下文保留首批日期的安装／验收快照。
+2026-10-16续配：Folo CLI下载问题已解决，官方0.0.5已安装；另已准备知乎CLI、小红书MCP和公众号分享入口。按用户要求暂缓登录／授权／账户验证，当前状态见续配说明（旧说明已退役，见[当前规格](../SPECIFICATION.md)）和[最新验收](validation/reading-connectors-20261016.json)。下文保留首批日期的安装／验收快照。
 
 日期：2026-10-15。本轮交付本机只读适配器、分页检查点、出处／内容类型、30 天缓存与现有索引／PA1 的连接。用户选择 **WUCAI 中国区**，凭据稍后补充。**代码与合成验收不等于真实账户接通**；WUCAI 实际响应字段、会员条件及可读覆盖仍需 Token 就绪后核验，Folo 官方 CLI 尚未安装成功。知乎、小红书及公众号独立适配未在本切片实现。
 
@@ -40,7 +42,7 @@ WUCAI 中国区从[官方 Token 页面](https://marker.dotalk.cn/#/personSetting
 scripts/asis reading key --source wucai
 ```
 
-Folo也可使用 `scripts/asis reading login --source folo` 在官方浏览器完成登录并直接保存到系统凭据库，详见[安全登录入口](external-reading-setup.md#folo-本人浏览器登录)。
+Folo也可使用 `scripts/asis reading login --source folo` 在官方浏览器完成登录并直接保存到系统凭据库，详见安全登录入口（旧说明已退役，见[当前规格](../SPECIFICATION.md)）。
 
 命令不回显，使用既有系统凭据库服务 `local.personal-asis.reading`，账号 `wucai:cn`；区域不能在同一缓存上切换。Folo 使用该凭据服务中的 `folo` 账号，通过子进程环境 `FOLO_TOKEN` 传给官方 CLI，不写参数、源码或日志。工具不会读取浏览器 Cookie 或代替用户登录。
 

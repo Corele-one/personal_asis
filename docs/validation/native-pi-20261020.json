@@ -1,0 +1,66 @@
+{
+  "date": "2026-10-20",
+  "scope": "native Pi CLI with owner-selected source instructions and existing read-only MCP; no new personal-data tool extension",
+  "implementation": {
+    "pi_version": "1.2.0",
+    "default_engine": "native",
+    "personal_data_extension": false,
+    "conversation_core_in_native_path": false,
+    "private_profile_gitignored": true,
+    "source_ids": ["study", "life", "reading_wucai"],
+    "mcp_servers_added": ["xiaohongshu"],
+    "source_bodies_preloaded": false,
+    "existing_secrets": "OS Keychain to child environment only; no argv/config secret values",
+    "legacy_engines_retained": ["conversation", "legacy"],
+    "asis_budget_enforces_native": false,
+    "new_profile_model_retries": false
+  },
+  "verification": {
+    "native_check": "pass; no credential read or generation",
+    "native_version_and_help": "pass",
+    "old_engine_diagnostics": "both pass; no generation",
+    "new_unit_tests": {"run": 11, "passed": 11},
+    "local_suite": {"command": "scripts/test-local-agent", "run": 193, "passed": 193, "skipped": 0},
+    "sandbox_first_run": "3 loopback Web tests failed due to socket bind PermissionError; authorized rerun with local listening passed",
+    "actual_native_tty": {
+      "fixture": "synthetic source configuration and synthetic credentials; sockets and fetch disabled",
+      "exit_code": 0,
+      "native_version_visible": true,
+      "model_selector_opened": true,
+      "source_context_file_loaded": true,
+      "mcp_in_tty_test": "disabled; independently checked against real existing service",
+      "generation_prompts": 0
+    },
+    "real_xiaohongshu_mcp": {
+      "client": "native Pi mcp list",
+      "exit_code": 0,
+      "connected": true,
+      "registered_tools": ["check_login_status", "list_feeds", "search_feeds", "get_feed_detail", "get_my_profile"],
+      "platform_content_calls": 0
+    },
+    "existing_keychain_availability": {"mimo": true, "wucai_cn": true, "xiaohongshu_mcp": true, "values_printed": false},
+    "readonly_index_smoke": {
+      "study": {"sampled": 6, "current_original_matches": 6, "literal_self_found": 6},
+      "life": {"sampled": 6, "current_original_matches": 6, "literal_self_found": 6, "self_found_with_naive_first_100_cap": 3},
+      "life_ambiguous_probe_match_counts": [116, 134, 134, 134, 2, 134],
+      "semantic_or_answer_quality_test": false
+    },
+    "live_index_counts": {"study": 267, "life": 187, "reading_wucai": 24, "reading_xiaohongshu": 8, "reading_folo_not_connected_to_native": 9},
+    "reading_body_coverage": {
+      "wucai": {"metadata_only": 21, "highlights_only": 3},
+      "xiaohongshu": {"metadata_only": 7, "note_text": 1}
+    }
+  },
+  "real_model_calls": 0,
+  "new_provider_authentication": false,
+  "private_source_cloud_disclosure": false,
+  "remote_service_restart_or_deploy": false,
+  "original_source_modification": false,
+  "remaining": [
+    "real personal multi-turn answer quality and source sufficiency",
+    "real generation with native MiMo transport and other selected providers",
+    "fresh WUCAI account reads and Xiaohongshu content/login validation in native UI",
+    "full account history/body coverage and semantic retrieval quality",
+    "native sessions are governed by Pi configuration, not old Asis retention/revocation/budget/replay"
+  ]
+}

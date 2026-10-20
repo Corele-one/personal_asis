@@ -65,7 +65,7 @@ def init(home, root, node_id):
 def main(argv=None):
     # Also restrict SQLite WAL/SHM sidecars and temporary output.
     os.umask(0o077)
-    parser = argparse.ArgumentParser(description="本机 Pi Agent、证据检索与受控分析；远程命令保留兼容")
+    parser = argparse.ArgumentParser(description="Mac 知识 Agent；本机检索与历史会话兼容工具")
     parser.add_argument("--home", type=Path, default=DEFAULT_HOME, help="本机私密运行数据目录")
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("doctor")
@@ -88,7 +88,6 @@ def main(argv=None):
     commands.add_parser("status")
     commands.add_parser("catalog")
     commands.add_parser("audit")
-    commands.add_parser("daemon")
     p = commands.add_parser('reading', help='外部阅读来源：只读拉取、本机索引与30天缓存；不启用后台工作')
     p.add_argument('action', choices=['configure', 'activate', 'login', 'import-session', 'mcp-install', 'key', 'status', 'sync', 'fetch', 'retrieve', 'share', 'discover', 'classify', 'clean', 'forget', 'revoke'])
     p.add_argument('--fetch-body',action='store_true',help='retrieve 前通过账户只读连接器按需读取该条目；不自动分类或增加披露许可')
@@ -122,35 +121,8 @@ def main(argv=None):
     p.add_argument("--archive", type=Path)
     p.add_argument("--node-id", help="使用本机凭据库中指定节点的备份密钥")
     p.add_argument("--use-recovery-key", action="store_true", help="隐藏输入离线恢复密钥，不放在命令参数中")
-    p = commands.add_parser("service")
-    p.add_argument("action", choices=["install", "uninstall"])
-    p = commands.add_parser("tunnel", help="Mac／WSL 常驻 SSH 回环隧道")
-    p.add_argument("action", choices=["install", "uninstall"])
-    p.add_argument("--host")
-    p.add_argument("--ssh-port", type=int, default=22)
-    p.add_argument("--local-port", type=int, default=18765)
-    p.add_argument("--remote-port", type=int, default=8765)
-    p = commands.add_parser("node")
-    p.add_argument("action", choices=["enroll", "poll"])
-    p = commands.add_parser("coordinator", help="协调服务本机管理；不提供公网管理接口")
-    p.add_argument("action", choices=["serve", "pair", "submit", "task", "audit", "revoke", "enable", "disable"])
-    p.add_argument("--nodes", nargs="+", default=["mac"])
-    p.add_argument("--node-id")
-    p.add_argument("--port", type=int, default=8765)
-    p.add_argument("--query")
-    p.add_argument("--channel", choices=["pwa", "feishu"], default="pwa")
-    p.add_argument("--limit", type=int, default=20)
-    p.add_argument("--request-id", help="调用方保存的幂等键")
-    p.add_argument("--task-id")
-    p = commands.add_parser("feishu", help="服务器本机飞书绑定与通知状态管理")
-    p.add_argument("action", choices=["pair", "audit"])
-    p.add_argument("--platform-id")
-    p = commands.add_parser("pwa", help="私有 PWA 服务和一次性用户设置")
-    p.add_argument("action", choices=["serve", "bootstrap"])
-    p.add_argument("--port", type=int, default=8766)
-    p.add_argument("--reset", action="store_true", help="重设 Web 用户并撤销全部 Web 会话")
     p = commands.add_parser("pa1", help="本机最小上下文、MiMo 与预算；默认仅合成联调")
-    p.add_argument("action", choices=["init", "configure", "authorize", "revoke", "clean", "key", "models", "retrieve", "bundle", "analyze", "research", "channel-worker", "channel-install", "budget", "self-test", "semantic-test"])
+    p.add_argument("action", choices=["init", "configure", "authorize", "revoke", "clean", "key", "models", "retrieve", "bundle", "analyze", "research", "budget", "self-test", "semantic-test"])
     p.add_argument('--public-query',help='明确公开的检索词，仅此外发给搜索服务')
     p.add_argument('--url',action='append',default=[],help='公开HTTPS原始证据链接，最多三条')
     p.add_argument("--query")
@@ -572,13 +544,6 @@ def main(argv=None):
                     result=run(encoder)
                     emit(result)
                     return 0 if result['passed'] else 1
-                elif args.action=='channel-install':
-                    from .service import install_analysis
-                    result=install_analysis(home)
-                elif args.action == 'channel-worker':
-                    from .analysis_channel import serve_worker
-                    serve_worker(home,emit)
-                    return 0
                 elif args.action in ('analyze','research'):
                     if not args.query or not args.request_id:
                         raise ValueError("analysis_requires_query_and_request_id")
@@ -623,91 +588,6 @@ def main(argv=None):
                         recovery_key=getpass.getpass("离线恢复密钥（不回显）: ") if args.use_recovery_key else None)
         elif args.command == "init":
             result = init(home, args.test_root, args.node_id)
-        elif args.command == "service":
-            from .service import install, uninstall
-            result = install(home) if args.action == "install" else uninstall()
-        elif args.command == "tunnel":
-            from .service import install_tunnel, uninstall_tunnel
-            if args.action == "install":
-                if not args.host:
-                    raise ValueError("需要 --host user@hostname")
-                result = install_tunnel(home, args.host, args.ssh_port, args.local_port, args.remote_port)
-            else:
-                result = uninstall_tunnel()
-        elif args.command == "daemon":
-            from .service import daemon
-            daemon(home, emit)
-            return 0
-        elif args.command == "node":
-            from .node import Client, Poller, connection_config
-            if args.action == "enroll":
-                config = load_config(home / "sources.yaml")
-                client = Client(connection_config(home), config.node_id)
-                result = client.enroll(getpass.getpass("一次性配对码（不回显）: "))
-            else:
-                poller = Poller(home)
-                try:
-                    result = poller.once()
-                finally:
-                    poller.close()
-        elif args.command == "pwa":
-            from .pwa import server as pwa_server, settings as pwa_settings
-            from .web_auth import WebAuth
-            config = pwa_settings(home)
-            if args.action == "serve":
-                with pwa_server(home, args.port) as http:
-                    emit({"event": "pwa_listening", "host": "127.0.0.1", "port": http.server_port})
-                    try:
-                        http.serve_forever()
-                    except KeyboardInterrupt:
-                        pass
-                return 0
-            with WebAuth(home, otp_required=config["auth_method"] == "password_totp") as auth:
-                setup = auth.bootstrap(args.reset)
-            result = {"setup_url": config["origin"] + "/#setup=" + setup["setup_token"], "expires_in": setup["expires_in"]}
-        elif args.command == "feishu":
-            from .feishu import FeishuBridge
-            bridge = FeishuBridge(home)
-            try:
-                if args.action == "pair":
-                    if not args.platform_id:
-                        raise ValueError("需要 --platform-id")
-                    result = bridge.pairing(args.platform_id)
-                else:
-                    result = {"bound": bool(bridge.db.execute("SELECT open_id FROM binding WHERE singleton=1").fetchone()[0]),
-                              "deliveries": [dict(r) for r in bridge.db.execute("SELECT * FROM deliveries ORDER BY created DESC LIMIT 50")]}
-            finally:
-                bridge.close()
-        elif args.command == "coordinator":
-            from .coordinator import Coordinator
-            path = home / "coordinator.sqlite3"
-            if args.action == "serve":
-                from .transport import server
-                with server(path, args.port, tuple(args.nodes)) as http:
-                    emit({"event": "listening", "host": "127.0.0.1", "port": http.server_port,
-                          "node_api_only": True})
-                    try:
-                        http.serve_forever()
-                    except KeyboardInterrupt:
-                        pass
-                return 0
-            with Coordinator(path, tuple(args.nodes)) as coordinator:
-                if args.action in {"pair", "revoke", "enable", "disable"}:
-                    if not args.node_id:
-                        raise ValueError("需要 --node-id")
-                    if args.action in {"enable", "disable"}:
-                        result = coordinator.set_enabled(args.node_id, args.action == "enable")
-                    else:
-                        result = (coordinator.pair(args.node_id) if args.action == "pair"
-                                  else coordinator.revoke(args.node_id))
-                elif args.action == "submit":
-                    if not args.query or not args.request_id:
-                        raise ValueError("需要 --query 和持久化的 --request-id")
-                    result = coordinator.submit(args.query, args.channel, args.limit, args.request_id)
-                elif args.action == "task":
-                    result = coordinator.view(args.task_id)
-                else:
-                    result = coordinator.audit()
         else:
             config = load_config(home / "sources.yaml")
             with Index(home / "index.sqlite3", config) as index:

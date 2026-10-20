@@ -1,0 +1,5 @@
+# Use native Pi without a personal data extension
+
+> 历史决策：本文保留原决定与日期。2026-10-20 的当前节点分工、数据驻留与入口以 [ADR 0037](0037-use-two-agents-and-confirmed-daily-sync.md) 和 [当前规格](../../SPECIFICATION.md) 为准；旧远程服务已退役。
+
+Accepted 2026-10-20 after the owner rejected the constrained Pi UI/Core experience and explicitly cancelled the proposed personal-data extension. The default launcher delegates to the installed, unmodified Pi CLI: Pi owns its conversation, model selection, tools, resources and session context. The owner then explicitly selected Study, Life, WUCAI and the existing XiaoHongShu MCP. Native source instructions and MCP configuration provide access without a custom retrieval extension; originals are read on demand, and SQLite remains optional discovery. Existing Asis permissions, budgets and paid replay remain available through explicit compatibility engines; they do not govern native Pi. This revises ADR 0035's default-client/Core dependency without migrating historical sessions or credentials. See [entry and accounting boundaries](../native-pi.md).

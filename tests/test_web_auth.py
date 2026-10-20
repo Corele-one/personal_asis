@@ -2,7 +2,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from personal_asis.coordinator import ProtocolError
+from personal_asis.http_errors import ProtocolError
 from personal_asis.web_auth import WebAuth, otp
 
 

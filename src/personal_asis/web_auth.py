@@ -11,7 +11,7 @@ import sqlite3
 import struct
 import time
 
-from .coordinator import ProtocolError, fingerprint
+from .http_errors import ProtocolError, fingerprint
 
 
 def otp(secret, step, digits=6):

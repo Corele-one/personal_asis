@@ -43,7 +43,7 @@ def validate(value, sources):
     in_window(None,value['window'])
 
 
-def build(home, query, value):
+def build(home, query, value, *, max_evidence=7):
     validate(value,value['sources'])
     candidates=[];records=set();dates=set()
     with Index(Path(home)/'index.sqlite3',load_pa1_config(Path(home))) as index:
@@ -87,7 +87,7 @@ def build(home, query, value):
         import json
         if len(json.dumps(trial.cloud_input(),ensure_ascii=False).encode())>5400:continue
         evidence.append(e)
-        if len(evidence)==7:break
+        if len(evidence)==max_evidence:break
     selected_dates=sorted({e['record_date'] for e in evidence})
     coverage={'window':value['window'],'eligible_records':len(records),'recorded_dates':sorted(dates),
               'selected_records':len({e['document_id'] for e in evidence}),'selected_dates':selected_dates,

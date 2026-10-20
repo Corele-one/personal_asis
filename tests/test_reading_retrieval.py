@@ -6,7 +6,6 @@ import unittest
 from personal_asis import reading
 from personal_asis.reading_sources import Article
 from personal_asis.reading_retrieval import snapshot
-from personal_asis.retrieval_channel import snapshot as channel_snapshot
 from personal_asis.retrieval_v2 import ContextBundleV2
 
 
@@ -54,13 +53,6 @@ class ReadingRetrievalTests(unittest.TestCase):
             self.assertEqual(value['evidence'], [])
         self.assertEqual(snapshot(self.home, 'folo', 'one', 'cache')['status'], 'ok')
 
-    def test_remote_read_is_independent_from_model_disclosure(self):
-        snapshot(self.home, 'folo', 'one', 'cache', fetch_body=True, source_client=Detail())
-        self.policy(remote=True)
-        value = channel_snapshot(self.home, {'query': 'cache', 'source_ids': ['reading_folo'], 'channel': 'feishu'})
-        self.assertTrue(value['evidence'])
-        self.assertEqual(value['model_calls'], 0)
-        self.assertFalse(snapshot(self.home, 'folo', 'one', 'cache', provider='mimo')['evidence'])
 
     def test_metadata_only_never_becomes_body(self):
         with reading.ReadingCache(self.home, 'folo') as cache:
