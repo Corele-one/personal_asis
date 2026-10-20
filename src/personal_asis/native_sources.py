@@ -112,7 +112,7 @@ def prepare(home=HOME, profile=PROFILE, python=None):
                               'source_ids': ['study', 'life', 'reading_wucai', 'reading_xiaohongshu']}, ensure_ascii=False),
                   '如直接查询索引，使用 SQLite mode=ro，并限定上列 source_ids；不查询会话、健康审计、凭据或其他未指定来源。',
                   '当前原生默认为已获准 MiMo Flash。更换提供商前先明确其可接触的个人资料；原生历史可能带着旧正文，必要时新建会话。',
-                  'VPS AstrBot 独立负责生活记录；本机负责知识资料，不转发整库。若用户明确要求将选定的Mac摘要展示在看板，用source_write的dashboard/publish_summary，原生UI确认完整标题和正文后才上传。启动同步仅经用户预览确认写入 Life 日记。\n这些是使用规则，不是操作系统沙箱或旧 Asis 的程序授权检查。原生调用不经 Asis 预算和防重。'])
+                  'VPS AstrBot 独立负责生活记录；本机负责知识资料，不转发整库。若用户明确要求将选定的Mac摘要展示在看板，用source_write的dashboard/publish_summary，原生UI确认完整标题和正文后才上传。pi 启动不执行同步；用户单独运行 pi_sync，经预览确认后才写入 Life 日记。\n这些是使用规则，不是操作系统沙箱或旧 Asis 的程序授权检查。原生调用不经 Asis 预算和防重。'])
     profile.mkdir(parents=True, exist_ok=True, mode=0o700)
     context = profile / 'personal-sources.md'
     private_write(context, '\n'.join(lines) + '\n')

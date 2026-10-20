@@ -1,4 +1,4 @@
-"""Pull life events at Pi startup; show the exact local edits before any vault write."""
+"""Explicitly sync life events; show the exact local edits before any vault write."""
 import argparse
 import fcntl
 import hashlib
@@ -152,7 +152,7 @@ def startup(home=HOME, profile=PROFILE, *, interactive=None):
     if not config.get('enabled', False):
         return 'disabled'
     interactive = sys.stdin.isatty() and sys.stdout.isatty() if interactive is None else interactive
-    # RPC/JSON/noninteractive Pi must never consume an approval from piped input.
+    # Never consume a vault-write approval from piped input.
     if not interactive:
         return 'interactive_sync_required'
     lock_path = profile / 'life-sync.lock'
@@ -193,7 +193,7 @@ def startup(home=HOME, profile=PROFILE, *, interactive=None):
         answer = input('\n确认将以上整批内容写入 Obsidian？输入“确认写入”，其他输入跳过：')
         if answer != '确认写入':
             publish_status(config, state, sources, home=home)
-            print('已跳过；下次启动 Pi 仍会询问。')
+            print('已跳过；下次运行 pi_sync 仍会询问。')
             return 'skipped'
         current = next(s for s in load_config(Path(home) / 'sources.yaml').sources if s.id == 'life')
         if not current.index or current.root != root or any(current.excludes(f['path'].relative_to(root).as_posix()) for f in files):
@@ -222,7 +222,7 @@ def publish_status(config, state, sources, *, now=None, home=HOME):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='交互预览并确认 AstrBot → Obsidian 同步')
+    parser = argparse.ArgumentParser(prog='pi_sync', description='交互预览并确认 AstrBot → Obsidian 同步')
     parser.parse_args()
     try:
         return 0 if startup() not in ('offline',) else 1

@@ -2,16 +2,16 @@
 
 ## Mac
 
-`~/.local/bin/pi` 和既有 Finder／固定启动器均指向本仓库的 `scripts/asis-pi`，使用既有私密生产Python。私密profile为 `.local/pi-agent`；`life-sync.json` 已启用目标 `mac@35.209.202.207:22` 与相对日记目录 `Calendar/Journal/Daily`。Life根目录仍从既有本机 `sources.yaml` 获取，不在Git记录真实路径。
+`~/.local/bin/pi_sync` 指向仓库 `scripts/pi_sync`，独立执行同步；系统 `sync` 保持原有行为。`~/.local/bin/pi` 和既有 Finder／固定启动器均指向本仓库的 `scripts/asis-pi`，使用既有私密生产Python。私密profile为 `.local/pi-agent`；`life-sync.json` 已启用目标 `mac@35.209.202.207:22` 与相对日记目录 `Calendar/Journal/Daily`。Life根目录仍从既有本机 `sources.yaml` 获取，不在Git记录真实路径。
 
 ```sh
 pi --check
 pi --setup-sources
-scripts/asis-life-sync
+pi_sync
 scripts/test-local-agent
 ```
 
-交互启动先同步，未确认不写库。非交互／print／RPC／JSON需单独在终端运行同步。SSH使用现有本人认证和known_hosts，不自动接受新主机密钥，不把密钥放参数或配置。断网时继续Pi，后续启动重试读取；没有模型付费重试。
+`pi` 的所有启动模式直接打开本地 Agent，不触发同步。`pi_sync` 需单独在交互终端运行，未确认不写库，非交互不拉取或提问。SSH使用现有本人认证和known_hosts，不自动接受新主机密钥，不把密钥放参数或配置。断网时同步保留状态，后续手动运行 `pi_sync` 重试读取；没有模型付费重试。
 
 旧 `local.personal-asis.mac`、`.pa1`、`.tunnel` 已bootout并移出自动启动目录，原plist与固定启动器在忽略目录 `.local/migration-two-agent-20261020`。本机库、旧状态、语义模型和账本保留。小红书 `.xiaohongshu` 继续运行，使用原Keychain和新的固定版受限读写二进制；旧二进制保留。首次bootstrap失败后已重新bootstrap／kickstart核验，不将首次尝试当作一次成功。
 

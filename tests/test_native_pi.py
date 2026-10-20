@@ -26,6 +26,7 @@ class NativePiTests(unittest.TestCase):
         self.assertFalse(status['personal_data_extension'])
         self.assertFalse(status['asis_budget_enforced'])
         self.assertEqual(status['credential_reads'], 0)
+        self.assertFalse(status['startup_sync'])
 
     def test_explicit_old_engine_and_source_flags_keep_compatibility(self):
         with patch('personal_asis.pi_terminal.main', return_value=17) as old:
@@ -61,3 +62,16 @@ class NativePiTests(unittest.TestCase):
         with patch.object(native_pi.os, 'execvpe') as execute, contextlib.redirect_stderr(io.StringIO()):
             self.assertEqual(native_pi.main(['--engine', 'unknown']), 2)
         execute.assert_not_called()
+
+    def test_personal_sessions_launch_without_sync_or_ssh(self):
+        from personal_asis import native_sources
+        for args in ([], ['--continue'], ['--mode', 'json'], ['--print', 'hello']):
+            with self.subTest(args=args), patch.object(native_sources, 'prepare', return_value={
+                    'context': '/private/sources.md', 'xiaohongshu_mcp': False}), patch.object(
+                    native_sources, 'credential_environment', return_value={}), patch(
+                    'personal_asis.life_sync.startup') as sync, patch(
+                    'subprocess.run', side_effect=AssertionError('Pi launch must not wait for SSH')), patch.object(
+                    native_pi.os, 'execvpe') as execute:
+                native_pi.main(args)
+                sync.assert_not_called()
+                execute.assert_called_once()

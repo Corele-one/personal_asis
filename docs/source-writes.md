@@ -18,7 +18,7 @@ Mac 原生 Pi 保留原有读取方式；写入使用 `source_write`，不直接
 
 WUCAI 操作来自[官方接入](https://doc.wucai.site/tools/openclaw.html)、[官方接口列表](https://github.com/makediff/wucai-openclaw/blob/main/SKILL.md)与[官方请求示例](https://github.com/makediff/wucai-openclaw/blob/main/scripts/wucai_api.py)。小红书工具参数按[固定版本实现](https://github.com/xpzouying/xiaohongshu-mcp/blob/v2.5.5/mcp_server.go)核对。已有读取适配器仍拒绝写操作；写入许可不从缓存自动继承。
 
-当前没有发布图文／视频、修改社交身份、删除平台内容、任意图片下载或通用浏览器写入。Obsidian 的普通编辑由 Pi 原生工具在显示目标／改动并获确认后完成；启动日记同步由独立的终端确认流程执行。
+当前没有发布图文／视频、修改社交身份、删除平台内容、任意图片下载或通用浏览器写入。Obsidian 的普通编辑由 Pi 原生工具在显示目标／改动并获确认后完成；日记同步由独立 `pi_sync` 命令的终端确认流程执行。
 
 这些检查不把原生 Pi 变成 OS 沙箱，也不覆盖手动绕过接口的 shell 操作。真实平台写入未作为部署测试执行。原生 UI 扩展／模拟防重与平台账户真实验收分别记录在[状态](project-status.md)。
 

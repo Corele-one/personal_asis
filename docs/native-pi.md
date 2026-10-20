@@ -2,7 +2,7 @@
 
 2026-10-20：`pi`／`scripts/asis-pi` 启动固定安装的 `@earendil-works/pi-coding-agent` 1.2.0。Pi 管理模型、原生工具、会话、压缩与 MCP；Study／Life 直接按需读原库，SQLite 仅作可选发现。私密资料说明与 MCP 配置位于忽略目录 `.local/pi-agent`，或显式 `PI_CODING_AGENT_DIR`。
 
-本轮增加两个独立步骤：交互启动前进行[日记同步确认](daily-sync.md)；加载 `runtime/pi-terminal/source-write.ts` 窄写入扩展，以 Pi UI 确认[平台写入](source-writes.md)。它们不接管普通问答／检索／会话，不引入旧 Core 的回答裁剪和强制 JSON。`--plain` 跳过个人配置、同步和写入扩展。
+Pi 启动直接进入本地会话，不等待 SSH 或同步；[日记同步确认](daily-sync.md)由独立 `pi_sync` 命令执行。会话加载 `runtime/pi-terminal/source-write.ts` 窄写入扩展，以 Pi UI 确认[平台写入](source-writes.md)。扩展不接管普通问答／检索／会话，不引入旧 Core 的回答裁剪和强制 JSON。`--plain` 跳过个人配置和写入扩展。
 
 ```sh
 pi --check
@@ -14,7 +14,7 @@ pi --setup-sources
 pi --plain
 ```
 
-`--check` 不读取凭据、不调用模型；`--setup-sources` 只生成私密定位说明。帮助／版本／MCP管理不触发同步；JSON／RPC／print 模式不弹终端同步问题。正常交互会话先通过 SSH 拉取，未确认的记录不写入来源。同步文本不附加给模型。
+`--check` 不读取凭据、不调用模型；`--setup-sources` 只生成私密定位说明。所有 Pi 启动模式均不触发同步。运行 `pi_sync` 才通过 SSH 拉取并预览日记改动，未确认的记录不写入来源。同步文本不附加给模型。
 
 原生 profile 生成文件0600／目录0700。MiMo Key 和小红书 MCP 鉴权仅在实际会话中从既有 Keychain 临时注入子进程环境，不进参数、Git 或日志。WUCAI 凭据由调用接口时读取。现有模型设置不覆盖；首次默认 MiMo Flash、关闭自动重试与缓存预热。
 

@@ -7,7 +7,7 @@
 - Mac 使用原生 Pi，负责 Obsidian Study／Life、WUCAI、小红书。模型、会话、原生工具和资源发现由 Pi 管理；不强制经过旧 Conversation Core。资料原库保留，不迁移整库。
 - VPS 使用既有 AstrBot 的模型与对话，通过增量插件补充生活记录、睡眠／健康、时间事项和受限 VPS 工作区。不得另造一个 VPS 主 Agent 或将旧 Mac 角色引擎装回机器人。
 - AstrBot 本人私聊的文本可作为生活原始记录持久保存于 VPS；模型整理与原话分开。该明确授权替代旧“VPS 不持久化生活正文”规则；不授权将 Mac 全库上传 VPS。
-- Mac 每次交互式启动 Pi 先通过 SSH 拉取事件；按 Asia/Shanghai 归入 Life 的 `Calendar/Journal/Daily/YYYY-MM-DD.md`，在“AstrBot 同步”区块展示完整修改。用户输入“确认写入”后才写入；拒绝、断网、非交互运行均不自动写库。启动时的确认只适用于显示的整批内容。
+- Mac 的 `pi` 命令直接打开本地原生 Pi，不触发同步；独立 `pi_sync` 命令通过 SSH 拉取 VPS 事件并上传允许的状态摘要；按 Asia/Shanghai 归入 Life 的 `Calendar/Journal/Daily/YYYY-MM-DD.md`，在“AstrBot 同步”区块展示完整修改。用户输入“确认写入”后才写入；拒绝、断网、非交互运行均不自动写库。同步时的确认只适用于显示的整批内容。
 - PWA 是认证后的只读 Dashboard，展示 AstrBot 生活内容和 Mac 最近同步／来源配置状态。另可显示本人通过原生UI确认发布的选定Mac摘要；没有远程笔记搜索、原文自动回传或执行控制；不得把 Mac 上次检查当作实时在线。
 - 旧协调／Relay／轮询／自建飞书卡片／助手插件和旧搜索 PWA 已退役。历史本地 Core／检索／账本仍为显式兼容入口，不能重新依赖退役模块。参考 [ADR 0037](docs/adr/0037-use-two-agents-and-confirmed-daily-sync.md)。
 

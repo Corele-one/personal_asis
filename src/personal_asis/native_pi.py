@@ -43,7 +43,8 @@ def main(argv=None):
             'conversation_core': False, 'asis_budget_enforced': False,
             'personal_profile_configured': (PROFILE / 'personal-sources.md').is_file(),
             'credential_reads': 0, 'model_generation_calls': 0,
-            'platform_write_confirmation': True, 'startup_sync_configured': (PROFILE / 'life-sync.json').is_file()}))
+            'platform_write_confirmation': True, 'startup_sync': False,
+            'daily_sync_configured': (PROFILE / 'life-sync.json').is_file()}))
         return 0
     environment = os.environ.copy()
     plain = '--plain' in args[:args.index('--') if '--' in args else len(args)]
@@ -65,12 +66,6 @@ def main(argv=None):
             environment.update(credential_environment(home, model=is_session,
                 xhs=configured['xiaohongshu_mcp'] and '--no-mcp' not in args))
             if is_session:
-                if not any(x in args for x in ('--mode', '--print', '-p')):
-                    from .life_sync import startup
-                    try:
-                        startup(home, profile)
-                    except (OSError, ValueError, KeyError, EOFError, sqlite3.Error):
-                        print('AstrBot 同步未完成；未确认的内容不会写入 Obsidian。', file=sys.stderr)
                 args = ['--append-system-prompt', configured['context'], '--extension', str(Path(__file__).resolve().parents[2] / 'runtime/pi-terminal/source-write.ts'), *args]
         except (OSError, ValueError, sqlite3.Error):
             # Never echo paths, upstream error bodies or credential values.

@@ -1,0 +1,4 @@
+#!/bin/sh
+# Explicit Mac/VPS life sync, independent of Pi startup.
+ASIS_REPO_ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+exec "$ASIS_REPO_ROOT/scripts/asis-life-sync" "$@"
