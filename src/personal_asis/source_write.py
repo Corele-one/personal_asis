@@ -7,7 +7,7 @@ import sqlite3
 import sys
 import time
 import uuid
-from .native_sources import PROFILE, HOME, private_write, xhs_configuration
+from .native_sources import PROFILE, HOME, private_write, xhs_configurations
 
 WUC = {'append_diary': {'content'}, 'update_article_note': {'note_idx','note'},
        'set_article_status': {'note_idx','status'}}
@@ -17,8 +17,14 @@ XHS = {'like_feed': {'feed_id','xsec_token','unlike'},
 
 
 def validate(request):
-    if set(request) != {'source','operation','arguments'} or not isinstance(request['arguments'],dict):
+    if (set(request) not in ({'source','operation','arguments'}, {'source','operation','arguments','account'})
+            or not isinstance(request['arguments'],dict)):
         raise ValueError('invalid_write_request')
+    if 'account' in request:
+        from .xhs_accounts import account_id
+        if request['source'] != 'xiaohongshu':
+            raise ValueError('write_account_only_for_xiaohongshu')
+        account_id(request['account'])
     allowed = (WUC if request['source']=='wucai' else XHS if request['source']=='xiaohongshu'
                else {'publish_summary': {'title','content'}} if request['source']=='dashboard' else {})
     if request['operation'] not in allowed or set(request['arguments']) != allowed[request['operation']]:
@@ -33,8 +39,17 @@ def validate(request):
     return request
 
 
-def prepare(request, profile=PROFILE):
+def prepare(request, profile=PROFILE, home=HOME):
     request=validate(request)
+    account_label = None
+    if request['source'] == 'xiaohongshu':
+        accounts = xhs_configurations(home)
+        if 'account' not in request and len(accounts) > 1:
+            raise ValueError('xiaohongshu_explicit_account_required')
+        request = dict(request, account=request.get('account', 'default'))
+        if request['account'] not in accounts:
+            raise ValueError('xiaohongshu_account_unavailable')
+        account_label = accounts[request['account']]['label']
     for previous in (Path(profile)/'write-plans').glob('*.json'):
         if time.time()-previous.stat().st_mtime > 300:
             previous.unlink(missing_ok=True)
@@ -43,7 +58,8 @@ def prepare(request, profile=PROFILE):
     key=uuid.uuid4().hex
     value=dict(request=request,expires=time.time()+300,digest=hashlib.sha256(canonical.encode()).hexdigest())
     private_write(Path(profile)/'write-plans'/(key+'.json'),json.dumps(value,ensure_ascii=False))
-    return dict(plan=key,digest=value['digest'],preview=canonical,expires_in=300)
+    preview = canonical if account_label is None else f"账号：{account_label} ({request['account']})\n{canonical}"
+    return dict(plan=key,digest=value['digest'],preview=preview,expires_in=300)
 
 
 def execute(plan_id, confirmation, profile=PROFILE, home=HOME):
@@ -55,6 +71,8 @@ def execute(plan_id, confirmation, profile=PROFILE, home=HOME):
     if time.time()>value['expires'] or confirmation!=value['digest']:
         raise ValueError('write_confirmation_expired_or_mismatch')
     request=validate(value['request'])
+    if request['source']=='xiaohongshu' and 'account' not in request and len(xhs_configurations(home)) > 1:
+        raise ValueError('xiaohongshu_explicit_account_required')
     canonical=json.dumps(request,ensure_ascii=False,sort_keys=True)
     if hashlib.sha256(canonical.encode()).hexdigest()!=confirmation:
         raise ValueError('write_plan_changed')
@@ -82,9 +100,12 @@ def execute(plan_id, confirmation, profile=PROFILE, home=HOME):
             if result.get('saved') is not True:raise ValueError('dashboard_publication_unconfirmed')
         else:
             from .social_reading import XiaoHongShu
-            endpoint=xhs_configuration(home)
-            if not endpoint:raise ValueError('xiaohongshu_mcp_unavailable')
-            client=XiaoHongShu(endpoint)
+            from .credentials import CredentialStore
+            from .xhs_accounts import credential, SERVICE
+            account=request.get('account','default')
+            accounts=xhs_configurations(home)
+            if account not in accounts:raise ValueError('xiaohongshu_mcp_unavailable')
+            client=XiaoHongShu(accounts[account]['endpoint'], store=CredentialStore(credential(account,'mcp'),SERVICE))
             init=client._rpc('initialize',{'protocolVersion':client.protocol,'capabilities':{},'clientInfo':{'name':'personal-asis-confirmed-write','version':'2'}})
             client.protocol=init['protocolVersion']
             client._rpc('notifications/initialized',{},notification=True)
@@ -110,7 +131,7 @@ def main():
         data=json.loads(sys.stdin.read(128000))
         profile=Path(os.environ.get('PI_CODING_AGENT_DIR',str(PROFILE)))
         home=Path(os.environ.get('ASIS_PERSONAL_HOME',str(HOME)))
-        result=prepare(data,profile) if args.action=='prepare' else execute(data['plan'],data['digest'],profile,home)
+        result=prepare(data,profile,home) if args.action=='prepare' else execute(data['plan'],data['digest'],profile,home)
         print(json.dumps(result,ensure_ascii=False))
         return 0
     except Exception as error:

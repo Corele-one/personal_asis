@@ -235,6 +235,18 @@ class ReadingTests(unittest.TestCase):
 
 
 class ProtocolTests(unittest.TestCase):
+    def test_wucai_null_articles_is_terminal_only_with_explicit_empty_cursor(self):
+        api = Wucai(store=Key())
+        with patch.object(api, 'call', return_value={'articles': None, 'next_cursor': ''}):
+            page = api.page('selections', '2026-07-23', '2026-08-05')
+        self.assertEqual(page.articles, [])
+        self.assertFalse(page.more)
+        for value in ({'articles': None}, {'articles': None, 'next_cursor': 'more'},
+                      {'articles': None, 'next_cursor': '', 'has_more': True}, {'next_cursor': ''}):
+            with self.subTest(value=value), patch.object(api, 'call', return_value=value):
+                with self.assertRaises(SourceError):
+                    api.page('selections', '2026-07-23', '2026-08-05')
+
     def test_wucai_live_field_names_nullable_highlights_and_no_invented_fulltext(self):
         row = {'note_idx':'one','page_title':'Observed schema fixture',
                'page_url':'https://example.org/observed','page_note':'User note',

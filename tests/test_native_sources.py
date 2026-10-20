@@ -63,3 +63,14 @@ class NativeSourcesTests(unittest.TestCase):
             db.execute("UPDATE meta SET value='https://example.com/mcp' WHERE key='xhs_endpoint'")
         with self.assertRaisesRegex(ValueError, 'loopback'):
             native_sources.prepare(self.home, self.profile)
+
+    def test_initialized_library_is_discovered_without_reading_its_content(self):
+        path = self.home / 'reading-library/library.sqlite3'
+        path.parent.mkdir()
+        path.touch()
+        value = native_sources.prepare(self.home, self.profile)
+        context = Path(value['context']).read_text()
+        self.assertIn('asis-library', context)
+        self.assertIn('search --query', context)
+        self.assertIn('read --source', context)
+        self.assertIn('fetch --source', context)

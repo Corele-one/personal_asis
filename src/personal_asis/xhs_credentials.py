@@ -1,15 +1,16 @@
 """Explicit owner import and a private stdin bridge for independent XHS MCP."""
 
 import json
+import os
 import re
 import sys
 
 from .credentials import CredentialStore, CredentialNotFound
 from .reading_sources import SourceError
+from .xhs_accounts import credential, SERVICE
 
 
 ACCOUNT = 'xiaohongshu-session'
-SERVICE = 'local.personal-asis.reading'
 MAX_SESSION = 128 * 1024
 
 
@@ -44,7 +45,7 @@ def normalize_cookies(value):
     return result
 
 
-def import_export(raw, store=None):
+def import_export(raw, store=None, account='default'):
     if not isinstance(raw, str) or not 1 <= len(raw) <= MAX_SESSION:
         raise SourceError('xhs_cookie_export_invalid')
     raw = raw.strip()
@@ -68,7 +69,7 @@ def import_export(raw, store=None):
             name, value = part.strip().split('=', 1)
             cookies.append({'name': name, 'value': value, 'domain': '.xiaohongshu.com'})
     session = {'version': 2, 'cookies': normalize_cookies(cookies)}
-    store = store or CredentialStore(ACCOUNT, SERVICE)
+    store = store or CredentialStore(credential(account), SERVICE)
     try:
         previous = json.loads(store.get())
         seed = previous.get('seed') if isinstance(previous, dict) else None
@@ -82,7 +83,7 @@ def import_export(raw, store=None):
 
 
 def bridge(request, store=None):
-    store = store or CredentialStore(ACCOUNT, SERVICE)
+    store = store or CredentialStore(credential(os.environ.get('ASIS_XHS_ACCOUNT', 'default')), SERVICE)
     if not isinstance(request, dict) or request.get('action') not in ('read', 'write'):
         raise SourceError('xhs_keychain_operation_denied')
     if request['action'] == 'read':

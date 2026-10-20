@@ -16,7 +16,7 @@ export default function(pi: ExtensionAPI) {
   pi.registerTool(defineTool({
     name:'source_write', label:'确认平台写入',
     description:'Propose a WUCAI or XiaoHongShu write. Human UI confirmation is mandatory. WUCAI: append_diary(content), update_article_note(note_idx,note), set_article_status(note_idx,status). XiaoHongShu: like_feed(feed_id,xsec_token,unlike), favorite_feed(feed_id,xsec_token,unfavorite), post_comment_to_feed(feed_id,xsec_token,content). Dashboard: publish_summary(title,content) publishes only the confirmed text to the private VPS dashboard. No social posts, deletion, or automatic retries.',
-    parameters:Type.Object({source:Type.Union([Type.Literal('wucai'),Type.Literal('xiaohongshu'),Type.Literal('dashboard')]),operation:Type.String(),arguments:Type.Record(Type.String(),Type.Union([Type.String(),Type.Boolean()]))}),
+    parameters:Type.Object({source:Type.Union([Type.Literal('wucai'),Type.Literal('xiaohongshu'),Type.Literal('dashboard')]),account:Type.Optional(Type.String({description:'XiaoHongShu account identifier, e.g. default or second. Required with multiple accounts; shown in confirmation.'})),operation:Type.String(),arguments:Type.Record(Type.String(),Type.Union([Type.String(),Type.Boolean()]))}),
     async execute(_id,params,_signal,_update,ctx){
       const result=(v:unknown)=>({content:[{type:'text' as const,text:JSON.stringify(v)}],details:{}});
       if(!ctx.hasUI)return result({state:'interactive_confirmation_required'});

@@ -14,6 +14,8 @@ Mac 原生 Pi 保留原有读取方式；写入使用 `source_write`，不直接
 
 小红书使用固定 v2.5.5 MCP 加入上述三个写工具的本机构建，仍使用 Keychain 会话与独立 loopback 鉴权，原生 MCP 配置只直接暴露已知读工具；写工具由确认适配器调用。禁止自动登录、读取浏览器 Cookie 或绕过验证码。点赞／收藏是明确开关而非自动切换；失败不连续点击重试。
 
+多账号时，小红书请求须在顶层提供 `account` 标识（例如 `default`、`second`）。原生 UI 显示配置的账号名和标识，内容哈希绑定该标识；执行使用对应端口及钥匙串鉴权。未明确账号的旧计划在多账号启用后停止执行。账号不明确时先询问用户，不能凭收藏或旧缓存替用户选择身份。账号配置见[小红书接入](xiaohongshu-setup.md)。
+
 WUCAI 操作来自[官方接入](https://doc.wucai.site/tools/openclaw.html)、[官方接口列表](https://github.com/makediff/wucai-openclaw/blob/main/SKILL.md)与[官方请求示例](https://github.com/makediff/wucai-openclaw/blob/main/scripts/wucai_api.py)。小红书工具参数按[固定版本实现](https://github.com/xpzouying/xiaohongshu-mcp/blob/v2.5.5/mcp_server.go)核对。已有读取适配器仍拒绝写操作；写入许可不从缓存自动继承。
 
 当前没有发布图文／视频、修改社交身份、删除平台内容、任意图片下载或通用浏览器写入。Obsidian 的普通编辑由 Pi 原生工具在显示目标／改动并获确认后完成；启动日记同步由独立的终端确认流程执行。

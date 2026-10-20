@@ -189,10 +189,15 @@ class Wucai:
         if not isinstance(data, dict):
             raise SourceError('reading_wucai_page_schema_unverified')
         rows = data.get('articles', data.get('list', data.get('items')))
-        if not isinstance(rows, list):
-            raise SourceError('reading_wucai_page_schema_unverified')
         next_cursor = data.get('next_cursor', data.get('nextCursor'))
         more = data.get('has_more', data.get('hasMore', data.get('hasNext')))
+        # Verified live terminal response: articles:null plus an explicit empty
+        # next_cursor. Null alone or an unknown/more-pages cursor is not an end.
+        if ('articles' in data and rows is None and next_cursor == ''
+                and (more is None or more is False)):
+            rows = []
+        if not isinstance(rows, list):
+            raise SourceError('reading_wucai_page_schema_unverified')
         if more is not None and type(more) is not bool:
             raise SourceError('reading_wucai_pagination_schema_unverified')
         # Unknown pagination stays unknown, including a short page.

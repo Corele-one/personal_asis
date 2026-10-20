@@ -1,0 +1,97 @@
+{
+  "date": "2026-10-20",
+  "scope": "owner-authorized local WUCAI 90-day and two-account visible favorites initialization",
+  "implementation": {
+    "database": "local private SQLite, schema v1",
+    "separate_content_and_account_relations": true,
+    "deduplicate_only_identical_payloads": true,
+    "account_visible_versions_kept_independent": true,
+    "unknown_collection_times_remain_null": true,
+    "partial_lists_do_not_imply_removal": true,
+    "lexical_index": "FTS5 trigram; short queries use literal substrings",
+    "native_pi_discovers_library_without_preloading_bodies": true,
+    "credentials": "existing OS Keychain only, including account-scoped page access tokens",
+    "legacy_source_caches_modified": false,
+    "background_fetch_enabled": false
+  },
+  "synthetic_validation": {
+    "new_library_tests": {
+      "run": 13,
+      "passed": 13
+    },
+    "reading_protocol_and_retrieval_tests": {
+      "run": 45,
+      "passed": 45
+    },
+    "local_isolation_suite": {
+      "run": 231,
+      "passed": 231
+    },
+    "final_full_suite": {
+      "run": 560,
+      "passed": 557,
+      "skipped": 3
+    },
+    "skipped": [
+      "PDF test dependency",
+      "LibreOffice Calc/Impress and system UNO",
+      "LibreOffice Writer and system UNO"
+    ]
+  },
+  "live_validation": {
+    "backup_before_first_write": true,
+    "original_documents_backed_up": 32,
+    "original_documents_unchanged": true,
+    "original_manifests_unchanged": true,
+    "original_source_configuration_unchanged": true,
+    "database_integrity_and_foreign_keys": "pass",
+    "private_directory_0700_and_database_0600": true,
+    "wucai": {
+      "region": "cn",
+      "since": "2026-07-23",
+      "until": "2026-10-20",
+      "date_windows": 7,
+      "all_requested_windows_exhausted": true,
+      "account_history_complete": false,
+      "items": 153,
+      "highlights_only": 60,
+      "metadata_only": 93,
+      "query_pages_including_terminal_pages": 23,
+      "terminal_page_protocol_fix": "Observed articles:null with explicit next_cursor empty; accepted only with no contradictory more-pages flag. Unknown/null pagination remains unverified."
+    },
+    "xiaohongshu": {
+      "original_account": {
+        "visible_favorites": 20,
+        "legacy_temporary_discoveries_retained": 6,
+        "real_detail_samples": 1
+      },
+      "second_account": {
+        "visible_favorites": 20,
+        "real_detail_samples": 1
+      },
+      "coverage": "visible_page_only for each account",
+      "full_favorites_history_complete": false,
+      "page_tokens_stored_in_database": false
+    },
+    "account_observations": 199,
+    "distinct_payloads": 198,
+    "real_title_query_samples": 12,
+    "title_queries_found_sampled_record": 12,
+    "scoped_reads_succeeded": 12,
+    "semantic_or_generated_answer_quality_test": false,
+    "native_pi_library_instructions_present": true,
+    "library_status_cli_ok": true,
+    "native_pi_check_ok": true
+  },
+  "platform_mutations": 0,
+  "model_calls": 0,
+  "remote_uploads": 0,
+  "original_note_changes": 0,
+  "remaining": [
+    "XiaoHongShu favorites beyond the currently visible page",
+    "WUCAI history before the explicitly selected 90-day window and clipped full text",
+    "on-demand body coverage beyond the two real samples and previously cached material",
+    "real personal question relevance and answer quality",
+    "scheduled incremental collection, platform deletion synchronization, OCR and video transcription"
+  ]
+}

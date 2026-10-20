@@ -1,0 +1,65 @@
+{
+  "date": "2026-10-20",
+  "scope": "isolated owner accounts in local Keychain MCP and native Pi",
+  "implementation": {
+    "session_and_seed_storage": "OS Keychain, independent entries by account",
+    "service_authentication": "independent Keychain token by account",
+    "service_address": "independent loopback port and launchd label",
+    "native_read_tools_per_account": 5,
+    "confirmed_write_requires_account_when_multiple": true,
+    "confirmation_displays_account_label_and_identifier": true,
+    "original_single_account_cache_retained": true,
+    "second_account_merged_into_legacy_cache": false,
+    "browser_cookie_extraction": false,
+    "automatic_login": false,
+    "secrets_in_argv_or_console": false
+  },
+  "synthetic_verification": {
+    "new_account_tests": {
+      "run": 7,
+      "passed": 7
+    },
+    "local_suite": {
+      "run": 216,
+      "passed": 216
+    },
+    "full_suite": {
+      "run": 544,
+      "passed": 536,
+      "skipped": 8
+    },
+    "skipped_dependencies": [
+      "backup dependency: 5",
+      "PDF format dependency: 1",
+      "LibreOffice and system UNO: 2"
+    ],
+    "sandbox_first_local_suite": "loopback bind denied; authorized local-socket rerun passed",
+    "actual_pi_sdk_extension_load": true,
+    "source_write_account_schema_registered": true
+  },
+  "live_verification": {
+    "private_configuration_rollback_saved": true,
+    "original_account_label_configured": true,
+    "original_mcp_handshake": true,
+    "original_mcp_tools_count": 8,
+    "original_logged_in": true,
+    "original_nickname_matches_owner_specification": true,
+    "second_owner_import": "completed via hidden owner input to independent OS Keychain entry",
+    "second_service": "running",
+    "second_login": "logged_in",
+    "both_accounts_in_native_pi": "connected; 5 direct read tools per account",
+    "second_mcp_handshake": true,
+    "second_mcp_tools_count": 8,
+    "both_launchd_services_running": true,
+    "second_nickname_read": true,
+    "second_nickname_equals_owner_alias": false,
+    "second_nickname_contains_owner_alias": true,
+    "configured_label_kept_as_owner_alias": true,
+    "both_sessions_present": true,
+    "sessions_distinct": true,
+    "service_auth_tokens_distinct": true
+  },
+  "platform_mutations": 0,
+  "paid_model_calls": 0,
+  "original_note_changes": 0
+}

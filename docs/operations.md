@@ -17,6 +17,10 @@ scripts/test-local-agent
 
 回退Mac入口可恢复该备份的 `previous-asis-pi` 和三个plist再bootstrap；**只有同时回退VPS旧服务才恢复旧轮询／隧道**。小红书旧plist在私密运行目录的 `upgrade-rollback`；回退前核对其目标为原只读二进制。日记、源配置与真实账本不随入口回退覆盖。
 
+本机[阅读资料库](reading-library.md)是显式CLI，不新增launchd或VPS服务。实际数据位于既有PersonalAsis home下的 `reading-library/library.sqlite3`；代码使用当前仓库和既有Python，不需要重新构建小红书二进制。`scripts/asis-library status` 检查账号条数和覆盖，检索／阅读不发网络请求，`fetch` 才按指定条目访问平台。
+
+本次阅读初始化前的32份旧缓存、两个manifest和来源配置已备份到忽略目录 `.local/reading-library-backup-时间戳`，最新备份定位保存在 `.local/reading-library-latest-backup.txt`；未导出Keychain。回退新资料入口时，先关闭使用该库的进程、保留当前数据库副本，再恢复备份的私密资料说明或回退相应代码；旧缓存、旧数据库和平台原记录未被迁移修改，无需用旧副本覆盖它们。备份含私人正文，不进入Git或VPS；遗忘／撤权时须单独处理备份。
+
 ## VPS
 
 当前入口 `https://35.209.202.207`，使用已有本人密码。保留nginx、原证书及续期timer。新服务：`personal-asis-dashboard.service`，loopback8766；AstrBot沿用 `astrbot.service`。旧协调8765、旧PWA服务和 `astrbot_plugin_personal_asis` 已从活动部署移除。
