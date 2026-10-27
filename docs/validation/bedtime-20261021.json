@@ -1,0 +1,67 @@
+{
+  "date": "2026-10-21",
+  "scope": "AstrBot owner-scoped bedtime reminder",
+  "plugin_version": "2.1.0",
+  "rules": {
+    "timezone": "Asia/Shanghai",
+    "start_time": "01:00",
+    "interval_minutes": 5,
+    "stop": "owner goodnight or explicit rule disable",
+    "daytime_cutoff": false,
+    "night_boundary": "12:00",
+    "backlog_catchup": false,
+    "unknown_attempt_retried": false,
+    "subsequent_independent_nudges_continue": true,
+    "uses_llm_or_cron": false
+  },
+  "synthetic_tests": {
+    "local_isolation": {"total": 249, "passed": 249, "failed": 0},
+    "full_regression": {"total": 578, "passed": 570, "skipped": 8, "failed": 0},
+    "coverage": [
+      "disabled by default and 01:00 boundary",
+      "evening and post-midnight goodnight",
+      "continues through daytime until goodnight",
+      "five-minute interval across separate/restarted store connections",
+      "sending/unknown attempt not repeated",
+      "downtime causes one current nudge, no backlog",
+      "goodnight transport replay idempotency",
+      "persistent disable and enable honoring goodnight",
+      "owner binding change and private-chat isolation",
+      "full-message whitelist excludes negation, history, quotes and questions",
+      "natural and prefixed goodnight records without model",
+      "slash-stripped life command excluded from journal",
+      "capture-disabled goodnight does not save message body",
+      "synthetic dispatch to the bound private origin"
+    ]
+  },
+  "actual_sdk": {
+    "version": "4.27.3",
+    "import": true,
+    "four_tools_registered": true,
+    "synthetic_goodnight_and_prefixed_alias": true,
+    "synthetic_command_switches": true,
+    "worker_initialize_terminate": true,
+    "real_send_interface_forbidden_in_fixture": true
+  },
+  "deployment": {
+    "release": "20261021_114642_038232",
+    "rollback": "20261021_114642_038232",
+    "prior_life_database_backup": true,
+    "installed_hashes_match_release_manifest": true,
+    "original_records_changes_reminders_unchanged": true,
+    "astrbot_service_active": true,
+    "dashboard_service_active": true,
+    "live_plugin_startup_and_four_tools_seen": true,
+    "existing_owner_binding_checked": true,
+    "bedtime_enabled": true,
+    "next_due": "2026-10-22T01:00:00+08:00",
+    "production_test_messages_sent": 0,
+    "production_bedtime_attempts_during_verification": 0,
+    "computer_use_runtime": "none"
+  },
+  "not_verified": [
+    "real Feishu due-time delivery",
+    "owner UI acceptance of commands and natural goodnight",
+    "real model interpretation of other life messages"
+  ]
+}

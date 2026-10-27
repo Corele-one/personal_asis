@@ -8,9 +8,11 @@
 | [使用指南](assistant-usage.md) | Pi、AstrBot、Dashboard 与写入操作 |
 | [运行与回退](operations.md) | 配置、部署、检查与恢复 |
 | [当前状态](project-status.md) | 已实现、已验证、仍待验收 |
+| [习惯、学习与持续跟进](habits-learning.md) | 飞书证据整理、开放学习主题、Habit／Learning投影、早间简报与周报 |
 | [实施计划](implementation-plan.md) | 本轮交付与后续事项 |
 | [原生 Pi](native-pi.md) | 模型／会话、资料说明、窄写入扩展与费用 |
 | [同步协议](daily-sync.md) | 事件、修订、删除与确认细节 |
+| [双向共享资料库](shared-library.md) | 三阶段pi_sync、SQLite增量副本、来源归属与恢复 |
 | [平台读写](source-writes.md) | WUCAI／小红书具体操作与一次确认 |
 | [资料授权](private-data-authority.md) | 已授权范围、凭据和保留边界 |
 | [原生来源检查](native-source-status.md) | 之前只读抽查的日期与覆盖 |

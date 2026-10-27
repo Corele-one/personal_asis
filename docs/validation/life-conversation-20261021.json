@@ -1,0 +1,74 @@
+{
+  "date": "2026-10-21",
+  "plugin_version": "2.2.0",
+  "scope": "Natural conversation for prefixed life entries and opt-in sourced owner profile",
+  "synthetic_tests": {
+    "local_isolation": {"total": 261, "passed": 261, "failed": 0},
+    "full_regression": {"total": 590, "passed": 582, "skipped": 8, "failed": 0},
+    "coverage": [
+      "prefixed daily text saves once and enters native conversation",
+      "multiline text and selected conversation preserved",
+      "reserved management commands do not become journal entries",
+      "owner/private-chat isolation",
+      "short goodnight receipt and persistent bedtime stop",
+      "capture disabled still allows conversation without success receipt",
+      "SQLite failure still allows conversation without false success receipt",
+      "draft profile cannot load as approved memory",
+      "source paths, evidence, size and brief limits",
+      "small approved brief is owner-only; full context is on demand",
+      "forget-context removes current profile",
+      "profile loading does not create records or reminders"
+    ]
+  },
+  "actual_sdk": {
+    "version": "4.27.3",
+    "import": true,
+    "four_tools_registered": true,
+    "real_command_filter_parsing": true,
+    "real_native_provider_request_created": true,
+    "synthetic_selected_conversation_preserved": true,
+    "synthetic_multiline_preserved": true,
+    "synthetic_record_deduplication": true,
+    "synthetic_worker_lifecycle": true,
+    "real_model_calls": 0,
+    "real_messages_sent": 0
+  },
+  "deployment": {
+    "release": "20261021_122522_475678",
+    "rollback": "20261021_122522_475678",
+    "code_only": true,
+    "private_life_database_backup_prepared": true,
+    "installed_hashes_match_manifest": true,
+    "live_plugin_loaded": true,
+    "four_tools_registered_in_service": true,
+    "astrbot_and_dashboard_services_active": true,
+    "existing_life_and_bedtime_tables_unchanged": true,
+    "existing_life_bootstrap_preserved": true,
+    "new_personal_profile_uploaded": false
+  },
+  "profile_preparation": {
+    "draft_only_on_mac": true,
+    "facts": 10,
+    "brief_facts": 4,
+    "source_system_notes_modified": false,
+    "specific_study_summary_approval_pending": true,
+    "original_notes_or_whole_library_uploaded": false
+  },
+  "computer_use_inspection": {
+    "owner_active_config": "default",
+    "runtime": "local",
+    "require_admin": true,
+    "owner_is_admin": false,
+    "runner": "local",
+    "max_agent_step": 30,
+    "tool_call_timeout": 120,
+    "service_user": "mac",
+    "permissions_changed_by_this_task": false
+  },
+  "not_verified": [
+    "real model natural-response quality",
+    "owner Feishu UI acceptance",
+    "real native Computer Use execution",
+    "real bedtime delivery"
+  ]
+}

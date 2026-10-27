@@ -25,6 +25,15 @@ class ReadingLibraryTests(unittest.TestCase):
         self.library = lib.Library(self.home, accounts=ACCOUNTS, clock=lambda: self.now)
         self.addCleanup(self.library.close)
 
+    def test_explicit_refresh_rechecks_completed_window_and_keeps_pagination_budget(self):
+        client=Mock();client.page.return_value=Page([article('new')],'',False)
+        self.library.coverage('wucai','cn','2026-10-20','2026-10-26','window_exhausted','',1,0)
+        lib.sync_wucai(self.library,'2026-10-20','2026-10-26',client=client,max_pages=2,pause=lambda _:None)
+        client.page.assert_not_called()
+        lib.sync_wucai(self.library,'2026-10-20','2026-10-26',client=client,max_pages=2,pause=lambda _:None,refresh=True)
+        self.assertEqual(client.page.call_count,1)
+        self.assertEqual(self.library.read('wucai','cn','new')['content']['item_id'],'new')
+
     def test_payload_dedup_keeps_account_relations_and_versions_independent(self):
         for account in ('default', 'second'):
             self.library.put('xiaohongshu', account, article(), 'favorite')

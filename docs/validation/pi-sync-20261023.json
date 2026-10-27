@@ -1,0 +1,40 @@
+{
+  "date": "2026-10-23",
+  "scope": "Mac pi_sync diary projection and terminal preview",
+  "changes": [
+    "Readable complete additions/removals grouped by diary date; raw diff available through d or --diff",
+    "Chinese labels, Asia/Shanghai HH:MM, Obsidian callouts, hidden stable identity comments",
+    "Exclude sleep_bed, sleep_wake and unambiguous journal goodnight/wakeup acknowledgements",
+    "Previously projected sleep cleanup and existing format upgrades require fresh preview approval",
+    "Versioned receipts preserve replay, date moves and deletion; identical files reconcile without empty approvals",
+    "Keep VPS collection, reminders, independent profile approval and Pi startup behavior"
+  ],
+  "synthetic_validation": {
+    "life_tests": {"run": 42, "passed": 42},
+    "local_agent_suite": {"run": 282, "passed": 282},
+    "tty_preview_skip": "passed; actual terminal input, synthetic data, zero diary files created",
+    "coverage": [
+      "Typed sleep exclusion, short acknowledgements and sleep keyword false positives",
+      "Legacy sleep cleanup preview, handwritten content preservation and later reclassification",
+      "Same-revision legacy format upgrade, local timezone and Chinese task status",
+      "Replay after receipt loss, deletion, date move, skip and explicit confirmation",
+      "Full multiline preview, raw diff, no noninteractive approvals, exclusions and path checks",
+      "Damaged or duplicate markers and concurrent diary edits stop writes",
+      "Pending counts exclude new sleep entries but include outstanding cleanup"
+    ],
+    "sandbox_note": "Initial dashboard loopback bind was denied by sandbox; authorized rerun passed without application changes"
+  },
+  "live_readonly_validation": {
+    "installed_command_points_to_checkout": true,
+    "ssh_fixed_export": "passed",
+    "projection_plan_against_current_sources": "passed",
+    "vault_writes": 0,
+    "cache_writes": 0,
+    "model_calls": 0,
+    "vps_deployment_required": false
+  },
+  "pending_acceptance": [
+    "User approval of actual diary modifications",
+    "User review of rendered Obsidian appearance"
+  ]
+}

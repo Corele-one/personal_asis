@@ -1,0 +1,71 @@
+{
+  "date": "2026-10-26",
+  "scope": "Three-stage pi_sync and one logical SQLite library replicated over existing SSH",
+  "authorization": {
+    "user_selected": "Two SQLite replicas; indexed Life/Study note text, WUCAI highlights/annotations, already-collected Xiaohongshu text and provenance",
+    "excluded": ["original attachments", "cookies", "keys", "sessions", "absolute machine paths"],
+    "scope_pinned": "Current source root identities and three configured reading accounts",
+    "original_note_writes": "Still require exact diary preview and user confirmation"
+  },
+  "implementation": {
+    "database_schema": 1,
+    "authority": "Mac owns notes/reading, VPS owns life; each owns independent annotations",
+    "merge": "Origin revisions, idempotent current snapshots, tombstones and expected-version annotation updates",
+    "transport": "Fixed SSH JSON exchange, <=200 records and about 1MB/page, default <=50 pages/run",
+    "source_refresh": "Incremental existing file index; recent seven-day WUCAI <=2 pages; per-account currently visible Xiaohongshu favorites",
+    "safety": "No arbitrary path/SQL/command in the fixed exchange, no original source writeback, no whole-library model preload",
+    "rollback": "Existing VPS release rollback, first-run local index/reading-store backup, keep replicas and cursors"
+  },
+  "synthetic": {
+    "shared_suite": {"run": 18, "passed": 18},
+    "local_agent_suite": {"run": 325, "passed": 325},
+    "complete_suite": {"run": 654, "passed": 646, "skipped_optional_dependencies": 8},
+    "tty_three_phases": "Passed with synthetic stores; Enter skips diary and still refreshes/synchronizes; original note unchanged",
+    "cases": [
+      "Lost SSH receipt after remote commit resumes without duplicate rows",
+      "Bounded large pages continue, unchanged runs transfer zero records",
+      "Delete plus old-page replay does not resurrect source text",
+      "Source withdrawal hides and tombstones dependent supplements",
+      "CAS rejects stale supplement changes and origin spoofing",
+      "Credential exclusion, path sanitization, URL token removal, account separation",
+      "Disabled accounts and explicit exclusions withdraw shared text",
+      "Offline roots retain existing data and are reported unavailable",
+      "Changed roots do not expand the approved shared scope",
+      "Unchanged notes are not reread or retransmitted",
+      "Noninteractive invocations never fetch or consume approvals",
+      "Only bound owner can search/read/save supplements"
+    ]
+  },
+  "live": {
+    "vps_plugin_version": "2.4.0",
+    "actual_sdk": {
+      "registered_tool_methods": 8,
+      "synthetic_owner_search_read_annotation": true,
+      "synthetic_stranger_rejected": true
+    },
+    "source_refresh": {"reading_accounts": 3, "failed_accounts": 0},
+    "replicas": {
+      "logical_rows_each": 714,
+      "fingerprints_match": true,
+      "mac_file_mode": "0600",
+      "vps_file_mode": "0600",
+      "life_notes": 195,
+      "study_notes": 266,
+      "wucai_account_records": 161,
+      "xiaohongshu_account_records": 51,
+      "vps_life_records": 14,
+      "excluded_chunks": 2
+    },
+    "unchanged_recheck": {"uploaded": 0, "downloaded": 0, "pages": 1, "local_index_unchanged": 503},
+    "vps_search_read_sources": ["life", "study", "wucai", "xiaohongshu", "astrbot"],
+    "services": {"astrbot": "active", "dashboard": "active"},
+    "pi_shared_source_instructions_updated": true,
+    "actual_diary_hashes_unchanged": true,
+    "real_model_calls": 0,
+    "real_test_messages_sent": 0
+  },
+  "pending_acceptance": [
+    "Owner's real chat choosing and using the shared knowledge tool",
+    "Owner's actual Obsidian diary write confirmation"
+  ]
+}

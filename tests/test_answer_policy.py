@@ -238,7 +238,11 @@ class PolicyIntegrationTests(unittest.TestCase):
     def test_v2_checkpoint_replays_prefetch_and_paid_payload_exactly(self):
         self.records()
         first=Provider([reply('partial','记录中的部分内容 [E1]')])
-        r=self.ask('总结我过去一个礼拜',first,step_limit=2)
+        window={'start':'2026-10-14','end':'2026-10-20','basis':'question','unknown_dates':'excluded'}
+        # The checkpoint fixture has fixed October evidence; freeze its question
+        # window rather than letting the host date age all evidence out.
+        with patch('personal_asis.answer_policy.question_window',return_value=window),patch('personal_asis.conversation_tools.question_window',return_value=window):
+            r=self.ask('总结我过去一个礼拜',first,step_limit=2)
         self.assertEqual(r['status'],'interrupted',r)
         with c.ConversationStore(self.home) as store:
             original=json.loads(store.get(self.sid,'p1')['state'])['actions']

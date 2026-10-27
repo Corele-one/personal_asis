@@ -25,6 +25,8 @@ def main(stage):
         p=stage/name
         if not p.resolve().is_relative_to(stage) or p.is_symlink() or hashlib.sha256(p.read_bytes()).hexdigest()!=expected:
             raise ValueError('release_integrity_failed')
+    # Validate native tool schemas and synthetic behavior before stopping services.
+    run('/home/mac/.local/share/uv/tools/astrbot/bin/python', str(stage/'validate-life-sdk.py'), str(stage))
     stamp=datetime.datetime.now().strftime('%Y%m%d_%H%M%S_%f')
     backup=Path('/home/mac/personal-asis-v2-rollbacks')/stamp;backup.mkdir(parents=True,mode=0o700)
     plugins=Path('/home/mac/astrbot/data/plugins');config_dir=plugins.parent/'config'
@@ -66,6 +68,15 @@ def main(stage):
     (backup/'rollback.sh').write_text('#!/bin/sh\nexec python3 "$(dirname "$0")/rollback.py"\n');(backup/'rollback.sh').chmod(0o700)
     try:
         run('sudo','systemctl','stop','astrbot.service')
+        life_db = home/'life.sqlite3'
+        if life_db.exists():
+            src = sqlite3.connect(life_db.as_uri()+'?mode=ro', uri=True)
+            dest = sqlite3.connect(backup/'life-before.sqlite3')
+            try:
+                src.backup(dest)
+            finally:
+                dest.close(); src.close()
+            (backup/'life-before.sqlite3').chmod(0o600)
         for name in managed:
             if previous_units[name]:run('sudo','systemctl','disable','--now',name)
         for name in names:

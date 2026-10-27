@@ -1,0 +1,48 @@
+{
+  "date": "2026-10-26",
+  "scope": "Diary prose before Freewrite horizontal rule, outside multi-column cards, without astrbot identity comments",
+  "implementation": {
+    "projection_version": 4,
+    "placement": "Freewrite ends at its first standalone horizontal rule outside code fences; body ends with exactly one blank line before the rule",
+    "identity": "Private local receipts hold record revisions, owned paragraph locations, snapshots and file hashes; Markdown has no generated astrbot comments",
+    "recovery": "Persist confirmed pending batch before file replacement; reconcile actual before/after hashes after interruption, including partial cross-day moves",
+    "manual_edits": "Preserve unrelated edits; reject changed or ambiguous owned prose rather than guessing",
+    "other_sections": "Keep handwritten text, highlight, column settings, Habit/Learning and footer bytes"
+  },
+  "synthetic_validation": {
+    "diary_unit_suite": {"run": 33, "passed": 33},
+    "local_agent_suite": {"run": 333, "passed": 333},
+    "coverage": [
+      "Realistic YAML, task and Freewrite separators, highlight callout and column-settings layout",
+      "Migration of legacy paragraphs out of cards and removal of identity comments",
+      "Exact blank line before horizontal rule",
+      "Duplicate record text shares one paragraph and remains until last source withdrawn",
+      "A paragraph that is a prefix of another retains independent ownership",
+      "Receipt loss and all-files-written recovery do not duplicate prose",
+      "Both partial cross-day interruption orders recover correctly",
+      "Manual prose edits stop replacement, unrelated handwriting is preserved",
+      "Code-fenced sample headings remain untouched",
+      "Untracked greeting/sleep fragments do not rebuild current prose"
+    ]
+  },
+  "live_validation": {
+    "full_diff_previews_prepared_before_approval": true,
+    "user_answer": "确认写入",
+    "approved_days": ["2026-10-23", "2026-10-25"],
+    "frozen_preview_and_source_config_checked_before_write": true,
+    "files_written": 2,
+    "original_synced_paragraphs_preserved_exactly": 3,
+    "generated_astrbot_comments_after_write": 0,
+    "before_multi_column_start": true,
+    "exact_blank_line_before_rule": true,
+    "recheck_proposed_file_changes": 0,
+    "recheck_receipt_updates": 0,
+    "shared_library_refreshed_after_write": true,
+    "shared_replication_complete": true,
+    "private_original_file_backup_retained": true,
+    "original_note_content_in_git": false,
+    "real_model_calls": 0,
+    "real_test_messages": 0
+  },
+  "visual_acceptance": "Verified exact Markdown structure against the actual daily template; owner can review rendered Obsidian appearance"
+}

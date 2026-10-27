@@ -289,7 +289,7 @@ def xhs_client(home, account):
                       access_store=lambda item: CredentialStore('library:' + account + ':' + identity(item), 'local.personal-asis.reading-access'))
 
 
-def sync_wucai(library, since, until, *, client=None, max_pages=10, pause=time.sleep, notify=lambda v: None):
+def sync_wucai(library, since, until, *, client=None, max_pages=10, pause=time.sleep, notify=lambda v: None, refresh=False):
     library.require('wucai', 'cn')
     if type(max_pages) is not int or not 1 <= max_pages <= 50:
         raise SourceError('library_invalid_page_budget')
@@ -297,9 +297,11 @@ def sync_wucai(library, since, until, *, client=None, max_pages=10, pause=time.s
     for start, end in windows(since, until):
         old = library.db.execute('''SELECT * FROM coverage WHERE source='wucai' AND account='cn'
             AND stream='selections' AND since=? AND until=?''', (start, end)).fetchone()
-        if old and old['status'] == 'window_exhausted':
+        if old and old['status'] == 'window_exhausted' and not refresh:
             notify(dict(source='wucai', since=start, until=end, status='already_checked'))
             continue
+        if old and old['status'] == 'window_exhausted' and refresh:
+            old = None
         cursor, pages, received = (old['cursor'], old['pages'], old['received']) if old else ('', 0, 0)
         seen = {cursor} if cursor else set()
         for count in range(max_pages):

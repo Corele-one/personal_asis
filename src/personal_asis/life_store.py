@@ -95,6 +95,8 @@ class LifeStore:
         return new
 
     def delete(self, rid):
+        from .life_attention import LifeAttention
+        attention = LifeAttention(self)
         with self.db:
             self.db.execute('BEGIN IMMEDIATE')
             value = self.get(rid)
@@ -102,6 +104,9 @@ class LifeStore:
                 return value
             value.update(text='', summary='', due_at=None, deleted=True,
                          revision=value['revision']+1, updated_at=timestamp())
+            if 'tracking' in value:
+                value['tracking'] = {'habits': [], 'learning': []}
+            attention.scrub(rid)
             # Remove prior plaintext snapshots; retain sequence and a tombstone for sync.
             self.db.execute('UPDATE changes SET payload=? WHERE id=?', (json.dumps(value), rid))
             self.db.execute('DELETE FROM reminders WHERE id=?', (rid,))

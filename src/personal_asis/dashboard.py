@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, parse_qs
 from .http_errors import ProtocolError
 from .web_auth import WebAuth
 from .life_store import LifeStore
@@ -13,12 +13,16 @@ from .life_status import validate as validate_status
 ASSETS = Path(__file__).parent / 'web'
 
 
-def snapshot(home):
+def snapshot(home, day=None):
     store = LifeStore(Path(home) / 'life.sqlite3')
     try:
         records = store.recent(100)
         reminders = dict(store.db.execute('SELECT state,count(*) FROM reminders GROUP BY state'))
         records = [{k:r[k] for k in ('id','day','kind','text','summary','occurred_at','due_at','task_status')} for r in records]
+        from .life_tracking import LifeTracking
+        from .life_attention import LifeAttention
+        tracking = LifeTracking(store).day(day)
+        attention = LifeAttention(store).dashboard()
     finally:
         store.close()
     status = Path(home) / 'mac-status.json'
@@ -31,7 +35,8 @@ def snapshot(home):
         content={k:content[k] for k in ('title','content','updated_at')}
     from .bootstrap_context import load as load_bootstrap
     baseline=load_bootstrap(Path(home)/'bootstrap.json')
-    return dict(version=2, astrbot={'records': records, 'reminders': reminders}, mac=mac, mac_content=content, life_baseline=baseline)
+    return dict(version=2, astrbot={'records': records, 'reminders': reminders}, mac=mac,
+                mac_content=content, life_baseline=baseline, tracking=tracking, attention=attention)
 
 
 def server(home, origin, port=8766):
@@ -84,7 +89,15 @@ def server(home, origin, port=8766):
                         return self.write(dict(initialized=auth.initialized(),**info))
                     if route == '/api/dashboard':
                         auth.session(self.token())
-                        return self.write(snapshot(home))
+                        day = parse_qs(urlsplit(self.path).query).get('day', [None])[0]
+                        if day:
+                            from datetime import date
+                            try:
+                                if date.fromisoformat(day).isoformat() != day:
+                                    raise ValueError()
+                            except ValueError:
+                                raise ProtocolError('invalid_day', 400)
+                        return self.write(snapshot(home, day))
                 files = {'/':('dashboard.html','text/html'), '/dashboard.js':('dashboard.js','application/javascript'),
                          '/dashboard.css':('dashboard.css','text/css'), '/sw.js':('dashboard-sw.js','application/javascript'),
                          '/manifest.webmanifest':('dashboard.webmanifest','application/manifest+json'),

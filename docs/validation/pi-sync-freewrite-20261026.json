@@ -1,0 +1,41 @@
+{
+  "date": "2026-10-26",
+  "scope": "Freewrite selection, H4 prose projection and complete paragraph previews",
+  "implementation": {
+    "destination": "Life daily ### Freewrite / #### 聊天随记",
+    "source_text": "Preserve personal prose; strip historical life command prefix only for display",
+    "omit": ["greetings", "management commands", "standalone time clarification", "tasks and reminder requests", "sleep acknowledgements", "structured-only activity duplicated in other sections"],
+    "habits_learning": "Keep existing independent projection and approval",
+    "migration": "Version 3 receipts; existing managed blocks move or are removed only after preview approval",
+    "preview": "Complete before/after paragraphs, section context, exact raw diff available",
+    "upstream": "Automatic status metadata and separately approved summaries; no Life/Study vault replication"
+  },
+  "synthetic": {
+    "life_suite": {"run": 66, "passed": 66},
+    "local_agent_suite": {"run": 306, "passed": 306},
+    "final_markdown_boundary_and_selection_suite": {"run": 25, "passed": 25},
+    "actual_tty_preview_skip": "passed; synthetic Freewrite note unchanged after Enter",
+    "coverage": [
+      "Filter greeting, command, reminder and date fragments; retain short reflective prose",
+      "Use existing Freewrite H4 section and preserve handwritten notes, task/habit sections and footer bytes",
+      "Migrate version 2 cards without duplicate paragraphs or empty approval prompts",
+      "Complete old/new paragraph previews without unrelated footer churn",
+      "Ignore fenced example headings, reject duplicate target sections and escape identity marker spoofing",
+      "Close unfinished code snippets before following daily template sections",
+      "Keep structured-only activity in Habits/Learning and preserve additional reflective prose",
+      "Existing deletion, date move, source boundary, concurrency, skip and confirmation protections"
+    ]
+  },
+  "live_readonly": {
+    "ssh_event_export": "passed",
+    "profile_readback": "passed",
+    "approved_profile_summary_count": 10,
+    "profile_citation_sources": ["life", "study"],
+    "diary_plan": "passed",
+    "vault_unchanged": true,
+    "cache_unchanged": true,
+    "remote_writes": 0,
+    "model_calls": 0
+  },
+  "pending": ["User confirmation of actual diary writes", "User review in Obsidian"]
+}

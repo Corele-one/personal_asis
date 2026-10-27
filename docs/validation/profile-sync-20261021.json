@@ -1,0 +1,76 @@
+{
+  "date": "2026-10-21",
+  "scope": "Owner administrator configuration, approved profile publication, and confirmed profile sync",
+  "authorization": {
+    "owner_administrator_requested": true,
+    "specific_ten_fact_profile_approved": true,
+    "profile_sync_check_preview_confirm_selected": true
+  },
+  "owner_configuration": {
+    "existing_bound_owner_added_to_active_default_admins": true,
+    "other_administrators_preserved": true,
+    "computer_use_runtime": "local",
+    "require_admin": true,
+    "private_configuration_backup_prepared": true
+  },
+  "approved_profile": {
+    "facts": 10,
+    "brief_facts": 4,
+    "unique_cited_files_revalidated": 9,
+    "source_hashes_matched_before_publication": true,
+    "uploaded_content_matched_approved_copy": true,
+    "vps_file_mode": "0600",
+    "original_notes_modified": false,
+    "whole_library_uploaded": false,
+    "existing_life_bootstrap_preserved": true
+  },
+  "profile_sync": {
+    "mode": "confirm",
+    "fixed_ssh_interface": "profile_transfer",
+    "candidate_requires_full_preview_and_confirmation": true,
+    "obsidian_confirmation_is_separate": true,
+    "conditional_replacement_by_content_version": true,
+    "automatic_unknown_retry": false,
+    "deleted_remote_profile_automatically_restored": false,
+    "automatic_summary_generation_or_new_note_scan": false,
+    "noninteractive_network_or_writes": false
+  },
+  "synthetic_tests": {
+    "profile_sync_specific": {"total": 13, "passed": 13},
+    "local_isolation": {"total": 274, "passed": 274, "failed": 0},
+    "full_regression": {"total": 603, "passed": 595, "skipped": 8, "failed": 0},
+    "coverage": [
+      "skip, exact separate confirmation, and idempotent publication",
+      "local candidate and source changes after preview",
+      "concurrent VPS edit rejected without overwrite",
+      "unknown result readback without automatic resend",
+      "remote deletion reflected in current snapshot without restoration",
+      "source exclusions, path boundaries, symlink denial",
+      "draft and arbitrary remote path rejection",
+      "invalid snapshot hash rejection",
+      "noninteractive no network or writes",
+      "life sync integration preserves diary confirmation"
+    ]
+  },
+  "actual_verification": {
+    "release": "20261021_132131_972504",
+    "actual_sdk_administrator_permission_check": true,
+    "actual_sdk_synthetic_owner_brief_injection": 4,
+    "current_service_plugin_loaded": true,
+    "real_ssh_pi_sync_run": true,
+    "real_profile_snapshot_matches_approved_copy": true,
+    "real_source_hash_check": true,
+    "real_life_event_pull": true,
+    "real_mac_status_upload": true,
+    "real_diary_write_skipped": true,
+    "pi_discovery_pointer_prepared_without_body_preload": true,
+    "real_model_calls": 0,
+    "real_feishu_test_messages": 0
+  },
+  "not_verified": [
+    "real model tool selection and native command execution",
+    "Feishu UI acceptance and natural-response quality",
+    "real bedtime delivery",
+    "new candidate publication through real interactive pi_sync"
+  ]
+}

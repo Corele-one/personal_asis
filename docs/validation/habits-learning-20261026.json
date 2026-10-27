@@ -1,0 +1,89 @@
+{
+  "date": "2026-10-26",
+  "plugin_version": "2.3.0",
+  "scope": "Owner-selected goals, evidence-backed habits, open-ended learning, read-only dashboard and confirmed Life daily projections",
+  "owner_choices": {
+    "habits": ["meditation", "reading", "early_sleep", "workout"],
+    "learning_topics_unrestricted": true,
+    "old_learning_list_not_seeded_as_goals": true,
+    "destination": "Life daily Habits and Learning sections",
+    "brief_interval_days": 3,
+    "window_timezone": "Asia/Shanghai",
+    "window": "08:00-09:00",
+    "weekly": "Monday, previous full Monday-Sunday",
+    "same_day_combined": true,
+    "insufficient_data_sync_prompt": true
+  },
+  "synthetic_tests": {
+    "new_tracking_and_followup_tests": 17,
+    "local_isolation": {"total": 299, "passed": 299, "failed": 0},
+    "full_regression": {"total": 628, "passed": 620, "skipped": 8, "failed": 0},
+    "coverage": [
+      "plans, negations, quotes, questions and goodnight do not imply habit completion",
+      "verbatim source evidence, correction and message replay",
+      "open learning topics, separate start/progress/end and conservative pairing",
+      "at most three explicit active goals, owner checks, stop and selection replay protection",
+      "existing goals available to native conversation for continuing updates",
+      "08:00-09:00, three-day brief, Monday previous-week report and same-day merge",
+      "pause, snooze, persistent reservation, crash and unknown delivery no retry",
+      "grounded learning outline, unresolved questions and missing-data sync prompt",
+      "delete scrubs tracking, dependent goals and retained report bodies",
+      "template checkbox provenance, handwritten content preservation, cross-day move and damaged markers",
+      "pi_sync full preview, skip, confirm, replay and concurrent-file refusal",
+      "tracking failure preserves truthful original-message receipt"
+    ],
+    "additional_maintenance": "An existing paid-checkpoint fixture used fixed October evidence with a live last-week window. Its synthetic window is now frozen; production citation rules are unchanged."
+  },
+  "actual_sdk": {
+    "import_and_native_tool_schema_registration": true,
+    "registered_tools": 7,
+    "synthetic_owner_tracking_goal_and_prompt": true,
+    "synthetic_stranger_rejection": true,
+    "transport_forbidden_in_fixture": true
+  },
+  "deployment": {
+    "release": "20261026_170342_889711",
+    "rollback": "20261026_170342_889711",
+    "actual_sdk_preflight_before_service_stop": true,
+    "sqlite_backup_before_schema_use": true,
+    "database_and_backup_mode": "0600",
+    "original_life_records_preserved": true,
+    "release_manifest_and_installed_plugin_match": true,
+    "astrbot_service_active": true,
+    "dashboard_service_active": true,
+    "live_plugin_and_new_tools_seen": true,
+    "new_dashboard_sections_served": true,
+    "unauthenticated_dashboard_status": 401,
+    "policy_enabled_for_existing_bound_private_origin": true,
+    "first_brief_local": "2026-10-29T08:00:00+08:00",
+    "first_weekly_local": "2026-11-02T08:00:00+08:00",
+    "production_attention_attempts_during_verification": 0
+  },
+  "actual_readonly_sync": {
+    "real_ssh_pull": true,
+    "projection_planning_succeeded": true,
+    "real_notes_unchanged": true,
+    "cache_saved": false,
+    "real_diary_write": false
+  },
+  "ui": {
+    "synthetic_chrome_desktop_visually_reviewed": true,
+    "synthetic_390px_iframe_layout_visually_reviewed": true,
+    "no_observed_horizontal_overflow": true,
+    "real_owner_mobile_acceptance": false
+  },
+  "real_model_calls": 0,
+  "real_feishu_test_messages": 0,
+  "not_verified": [
+    "real model classification and goal update quality for complex owner messages",
+    "real due-time brief and weekly delivery",
+    "owner confirmation and final appearance in real Obsidian notes"
+  ],
+  "boundaries": [
+    "Background preparation uses recorded content, without extra paid generation or autonomous research",
+    "No missing-record failure inference or measured sleep/focus claims",
+    "No whole-library upload or unconfirmed Obsidian writes",
+    "Sent platform copies and backups require separate deletion handling",
+    "Existing uncommitted work was retained; no Git commit or push performed"
+  ]
+}

@@ -11,9 +11,13 @@ pi_sync
 scripts/test-local-agent
 ```
 
-`pi` 的所有启动模式直接打开本地 Agent，不触发同步。`pi_sync` 需单独在交互终端运行，未确认不写库，非交互不拉取或提问。SSH使用现有本人认证和known_hosts，不自动接受新主机密钥，不把密钥放参数或配置。断网时同步保留状态，后续手动运行 `pi_sync` 重试读取；没有模型付费重试。
+`pi`的所有启动模式直接打开本地Agent，不触发同步。`pi_sync`需在交互终端运行，真实日记未确认不写，派生资料库按本人既有共享授权刷新；非交互不拉取、刷新或提问。SSH复用本人认证及known_hosts，不自动接受新主机密钥，不把密钥放参数或配置。断网时保留状态，后续手动pi_sync继续；没有模型付费重试。
+
+2026-10-26起，生活自述写入既有Freewrite下H4“聊天随记”，替代此前卡片；问候、命令、日期澄清、提醒和作息回执过滤，习惯／学习归原栏目。旧副本清理及迁移先预览确认。共享库按本人明确选择同步Life／Study笔记索引文本和阅读资料；不自动改写精选背景。`d`／`pi_sync --diff`查看精确原始diff，不重置日记游标。
 
 旧 `local.personal-asis.mac`、`.pa1`、`.tunnel` 已bootout并移出自动启动目录，原plist与固定启动器在忽略目录 `.local/migration-two-agent-20261020`。本机库、旧状态、语义模型和账本保留。小红书 `.xiaohongshu` 继续运行，使用原Keychain和新的固定版受限读写二进制；旧二进制保留。首次bootstrap失败后已重新bootstrap／kickstart核验，不将首次尝试当作一次成功。
+
+共享库部署随 `scripts/deploy-life-vps` 的代码清单发布，固定入口为 `personal_asis.shared_transfer`，Bot增加仅本人可用的 `shared_knowledge`。Mac的 `shared_sync_mode=text`、根目录身份及账号范围保存在忽略的life-sync.json中；首次刷新备份既有索引／阅读库，分别保留两端共享数据库。暂停将mode设off；回退使用既有VPS发布回退脚本，不删除数据库或清空游标。详见[共享库运行与限制](shared-library.md)。
 
 回退Mac入口可恢复该备份的 `previous-asis-pi` 和三个plist再bootstrap；**只有同时回退VPS旧服务才恢复旧轮询／隧道**。小红书旧plist在私密运行目录的 `upgrade-rollback`；回退前核对其目标为原只读二进制。日记、源配置与真实账本不随入口回退覆盖。
 
@@ -47,6 +51,14 @@ scripts/deploy-life-vps
 
 每次成功输出release和backup路径。后续增量回退：在对应 `personal-asis-v2-rollbacks/时间戳/` 运行 `./rollback.sh`。它只恢复前一代码／插件／unit选择，不回滚生活事件库、不删除新记录。最初迁移备份 `20261020_153545` 的脚本用于恢复旧架构；后续备份用于恢复上一v2版本。均需按目标核对，不混用回退脚本。
 
+催睡使用同一生活库中独立的 `bedtime_policy`／`bedtime_delivery`／`bedtime_ack` 表；既有记录、同步游标和一次性事项表不迁移。新安装默认关闭，生产针对既有本人平台／私聊绑定开启，后续重启／部署保留规则。用户用 `/life sleep` 查看、`/life sleep off` 停用。切换本人绑定不会继续向旧身份发送。回退到2.0.1会停止催睡，不需要回滚或删除新表。
+
+2.2.0部署新增共用的 `personal_profile.py`，保持原生活库和初始化文件；不会打包 `.local/pi-agent/initialization` 或自动上传本人背景。真正发布摘要前核对本人已确认的完整预览、来源哈希及接收范围，只写生活目录的 `personal-profile.json`（0600），保留旧版本回退。`draft` 文件不能作为记忆加载。代码回退不自动回滚私人背景；需要分别处理。
+
+本人授权后的管理员与10条背景已应用；本次私密配置回退目录保存原 `cmd_config.json`、原背景是否存在及状态，目录0700，不进入Git。恢复管理员配置需要停AstrBot、恢复该配置、重启；背景可单独恢复／移除，避免以代码回退误撤销本人后续授权。
+
+`profile_transfer` 是固定SSH接口，只读当前批准背景或按预览哈希条件替换它，锁文件为 `personal-profile.lock`。本机 `profile_sync.py` 在交互 `pi_sync` 中调用；`personal-profile-remote.json` 是最近快照，`personal-profile-next.json` 是待本人确认的完整候选，`personal-profile-sync-receipt.json` 保存发送占位及核对结果。它们都在私密忽略目录；本机启动Pi不调用SSH，也不自动加载快照正文。回退到没有 `profile_transfer` 的旧发布时，背景检查会报不可用，生活记录同步继续；不删除运行数据。
+
 ## 验证边界
 
 本轮已核验服务、实际SDK工具、SSH导出与状态上传、原生Pi的无网络合成TTY、窄写入UI拒绝、MCP工具目录和合成Dashboard浏览器。生产生活库最初检查为空，没有本人日记写入或聊天测试。真实新请求、提醒投递、账户登录有效性和平台写入需要各自场景验收。见[本轮记录](validation/two-agent-20261020.json)。
@@ -54,3 +66,10 @@ scripts/deploy-life-vps
 ## 私密初始化文件
 
 Mac：忽略目录 `.local/pi-agent/knowledge-context.md`、`initialization/evidence-manifest.json` 与VPS摘要预览；目录0700、文件0600。VPS：生活目录的 `bootstrap.json` 以及工作区的 `生活初始化背景.md`，供 `life_context` 和认证后的Dashboard读取。部署保留这些运行文件，不打包回Git。摘要含日期、相对来源与原文哈希，无Mac绝对路径；源内容改变后需重新核对，不声称已做后台失效传播。初始化不插入生活事件或提醒，不改日记。
+# 2.3.0 习惯／学习与主动简报（2026-10-26）
+
+部署包增加 `life_tracking.py`、`life_attention.py`；Mac新增 `life_projection.py`。原SQLite中生活记录兼容增加 `tracking` 字段，持续目标与主动策略／投递使用独立表；不导入历史笔记或将旧学习清单设为目标。部署在停服前使用实际AstrBot Python运行 `validate-life-sdk.py`，合成临时库的发送接口禁止调用；停服后以SQLite备份接口保存 `life-before.sqlite3`（0600）再切换，回退代码不覆盖后续产生的生活数据。
+
+本轮针对现有绑定本人启用每3天08:00–09:00简报及周一周报，首份分别为2026-10-29、2026-11-02。后续重启／代码部署保留策略，不重新计算或强制开启；停用用 `/life proactive off`，暂停用“稍后”／“这周别问”。无自动付费模型调用或新cron。投递库预先占位 `sending`，未知不重试；下次定期回顾独立执行。旧代码回退会停止新worker能力，但不删除目标／策略／学习观测，私人备份和已发送平台副本分别保留。
+
+Dashboard仍只读认证，新增日期查询只改变显示范围；未登录API必须401，不增加写入路由。现场SDK导入、服务运行及合成UI不代表真实模型识别质量、实际早间投递或真实日记确认写入通过。

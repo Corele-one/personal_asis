@@ -1,0 +1,36 @@
+{
+  "date": "2026-10-27",
+  "scope": "contextual diary layout",
+  "synthetic": {
+    "layout_tests": 14,
+    "local_tests": 347,
+    "full_tests": 676,
+    "full_passed": 668,
+    "optional_skipped": 8
+  },
+  "checked": [
+    "related prose placed after matching manual paragraph",
+    "existing H4 reused without generic chat heading",
+    "independent topic gets optional specific H4",
+    "source prose rendered locally without model replacement",
+    "all records covered exactly once; duplicate originals share text",
+    "headings cannot change parent of following handwritten paragraphs",
+    "one blank line before Freewrite divider; outside cards",
+    "private grouped receipts preserve revisions, deletions and interrupted date moves",
+    "manual paragraphs retain their heading after synchronized text deletion",
+    "successful decisions cached; unknown or invalid responses not automatically retried",
+    "four-call run bound; same input reuses completed decision",
+    "excluded sources and noninteractive runs do not reach model",
+    "model failure defers diary while shared sync continues"
+  ],
+  "existing_model_configuration_verified": {
+    "provider": "xiaomi",
+    "model": "mimo-v2.6-flash"
+  },
+  "real_model_calls": 0,
+  "real_vault_writes": 0,
+  "platform_messages_sent": 0,
+  "pending": [
+    "real model editorial quality and user approval of next diary preview"
+  ]
+}
