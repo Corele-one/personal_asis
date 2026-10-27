@@ -50,7 +50,10 @@ class LifeStore:
         self.db.execute('INSERT INTO changes(id,payload) VALUES(?,?)', (value['id'], payload))
         return value
 
-    def capture(self, platform, sender, message, text, occurred_at=None, origin=''):
+    def capture(self, platform, sender, message, text, occurred_at=None, origin='', *, capture_source='life_command'):
+        from .life_intake import SOURCES
+        if capture_source not in SOURCES:
+            raise ValueError('invalid_capture_source')
         if not all(isinstance(v, str) and 0 < len(v) <= 512 for v in (platform, sender, message)):
             raise ValueError('invalid_message_identity')
         if not isinstance(text, str) or not text.strip() or len(text.encode()) > 16000 or '\x00' in text:
@@ -59,12 +62,16 @@ class LifeStore:
         with self.db:
             self.db.execute('BEGIN IMMEDIATE')
             if self.db.execute('SELECT 1 FROM records WHERE id=?', (rid,)).fetchone():
-                return self.get(rid), False
+                current = self.get(rid)
+                if current.get('capture_source') == 'conversation' and capture_source != 'conversation' and not current['deleted']:
+                    current.update(capture_source=capture_source, revision=current['revision']+1, updated_at=timestamp())
+                    self._save(current)
+                return current, False
             at = timestamp(occurred_at)
             value = dict(id=rid, revision=1, platform=platform, sender=sender, message=message,
                          text=text, summary='', kind='journal', occurred_at=at,
                          day=datetime.fromisoformat(at).astimezone(TZ).date().isoformat(),
-                         due_at=None, task_status='pending', deleted=False, updated_at=timestamp())
+                         due_at=None, task_status='pending', deleted=False, updated_at=timestamp(), capture_source=capture_source)
             self._save(value)
         return value, True
 
@@ -113,15 +120,42 @@ class LifeStore:
             return self._save(value)
 
     def export(self, after=0, limit=200):
+        from .life_intake import sync_record
         if type(after) is not int or after < 0 or not 1 <= limit <= 200:
             raise ValueError('invalid_cursor')
         rows = self.db.execute('SELECT seq,payload FROM changes WHERE seq>? ORDER BY seq LIMIT ?', (after, limit)).fetchall()
         return dict(version=1, cursor=rows[-1]['seq'] if rows else after,
-                    changes=[dict(seq=r['seq'], record=json.loads(r['payload'])) for r in rows])
+                    changes=[dict(seq=r['seq'], record=sync_record(json.loads(r['payload']))) for r in rows])
 
-    def recent(self, limit=50):
-        rows = self.db.execute('SELECT payload FROM records ORDER BY rowid DESC LIMIT ?', (limit,)).fetchall()
-        return [json.loads(r[0]) for r in rows if not json.loads(r[0])['deleted']]
+    def recent(self, limit=50, *, include_conversation=False):
+        from .life_intake import visible
+        rows = self.db.execute('SELECT payload FROM records ORDER BY rowid DESC')
+        result = []
+        for row in rows:
+            r = json.loads(row[0])
+            if not r['deleted'] and (include_conversation or visible(r)):
+                result.append(r)
+                if len(result) >= limit:
+                    break
+        return result
+
+    def reconcile_intake(self):
+        """Retire old implicit captures and invalid derived observations, retaining originals."""
+        from .life_intake import source
+        from .life_tracking import observations
+        changed = conversations = corrections = 0
+        with self.db:
+            self.db.execute('BEGIN IMMEDIATE')
+            for row in self.db.execute('SELECT payload FROM records').fetchall():
+                r = json.loads(row[0]); mode = source(r)
+                tracking = observations(r)
+                if r.get('capture_source') == mode and r.get('tracking', {'habits':[], 'learning':[]}) == tracking:
+                    continue
+                if mode == 'conversation':conversations += 1
+                if r.get('tracking', {'habits':[], 'learning':[]}) != tracking:corrections += 1
+                r.update(capture_source=mode, tracking=tracking, revision=r['revision']+1, updated_at=timestamp())
+                self._save(r); changed += 1
+        return dict(changed=changed, excluded_conversations=conversations, corrected_tracking=corrections)
 
     def claim_reminders(self, now=None):
         with self.db:

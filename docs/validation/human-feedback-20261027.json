@@ -1,0 +1,90 @@
+{
+  "date": "2026-10-27",
+  "plugin_version": "2.5.0",
+  "scope": "Separate assistant conversation memory from explicit diary intent, grounded tracking, terminal preview and PWA feedback",
+  "boundaries": {
+    "conversation": "Retained for assistant recall, never projected into Obsidian",
+    "journal": "Only explicit /life entries; ordinary conversation cannot bypass through Habits/Learning",
+    "correction": "Selected record and expected revision; preserve source and attribute feedback separately",
+    "no_arbitrary_execution": true,
+    "unknown_paid_request_auto_retry": false
+  },
+  "synthetic": {
+    "local_suite": {
+      "run": 358,
+      "passed": 358
+    },
+    "full_suite": {
+      "run": 687,
+      "passed": 679,
+      "skipped_optional": 8
+    },
+    "feedback_tests": 11,
+    "cases": [
+      "Ordinary chat retained and recalled, recording tools cannot promote it to diary",
+      "Assignment requirements, quotation, plans and book titles are not completed habits",
+      "Legacy provenance migration is idempotent and retains originals",
+      "Feedback targets/versions, actor changes, replay and restart unknown handling",
+      "Clear one learning topic and keep the others",
+      "Feedback evidence is separate from original message and remains valid on sync",
+      "Authenticated same-origin CSRF-protected feedback HTTP queue",
+      "Real TTY synthetic preview skipped with zero original note writes"
+    ]
+  },
+  "sdk": {
+    "installed_sdk_types_and_native_tool_executor": true,
+    "global_registered_tools": 8,
+    "pwa_toolset": "Only correct_record; native bounded tool_loop_agent",
+    "synthetic_feedback_effect_written": true,
+    "stranger_rejected": true,
+    "real_model_calls": 0,
+    "real_platform_test_messages": 0
+  },
+  "ui": {
+    "synthetic_desktop_feedback_conversation_reviewed": true,
+    "synthetic_correction_result_and_receipt_reviewed": true,
+    "responsive_probe": {
+      "innerWidth": 390,
+      "document_scrollWidth": 390
+    },
+    "real_owner_mobile_acceptance": false
+  },
+  "live": {
+    "release": "20261027_183710_850081",
+    "rollback": "20261027_183710_850081",
+    "original_pre_migration_database_backup": "20261027_183006_564760",
+    "original_messages": 33,
+    "original_text_preserved": true,
+    "conversation_memories": 12,
+    "source_tags_added": 33,
+    "withdrawn_derived_tracking_records": 2,
+    "old_reading_observations_withdrawn": 1,
+    "reading_after": "unknown, not not_done",
+    "manifest_and_installed_plugin_match": true,
+    "served_javascript_matches_release": true,
+    "astrbot_service": "active",
+    "dashboard_service": "active",
+    "unauthenticated_feedback_status": 401,
+    "life_db_mode": "0600",
+    "feedback_jobs_submitted_by_validation": 0,
+    "mac_pull": {
+      "cursor_before": 57,
+      "cursor_after": 90,
+      "conversation_diary_candidates": 0
+    },
+    "shared_exchange": {
+      "complete": true,
+      "uploaded": 0,
+      "downloaded": 31,
+      "pages": 1
+    },
+    "existing_diary_files_checked": 7,
+    "existing_diary_hashes_unchanged": true,
+    "real_obsidian_writes": 0
+  },
+  "pending": [
+    "Owner real model feedback conversation and tool choice quality",
+    "Interactive preview and confirmation of existing erroneous diary projections",
+    "Owner final PWA mobile acceptance"
+  ]
+}

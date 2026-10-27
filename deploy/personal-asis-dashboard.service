@@ -1,5 +1,5 @@
 [Unit]
-Description=Personal Asis two-agent read-only dashboard
+Description=Personal Asis two-agent dashboard with owner feedback
 After=network-online.target
 [Service]
 Type=simple

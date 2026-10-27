@@ -1,5 +1,8 @@
 # AstrBot 生活增量插件
 
+当前2.5.0：普通本人私聊继续保存为对话记忆，只有`/life`主动记录进入Obsidian随记与习惯／学习投影。作息、明确提醒与已选持续目标各有用途，不因为普通聊天出现“阅读完成”就记为实际读书。PWA反馈对话复用现有原生Agent、选中记录与版本，纠正派生整理并保留回执。见[反馈说明](../../docs/human-feedback.md)。
+
+
 复用 AstrBot 模型／会话，增加本人生活原话、可修正整理、明确时间事项提醒、生活工作区工具。所有入口检查配置中的唯一 `owner_platform` + `owner_id` 且只接受私聊。没有自动绑定和群聊收录。
 
 主存储实现是 `src/personal_asis/life_store.py`；部署时复制为插件的 `life_store.py`，不依赖 Mac 项目或旧 Relay。`scripts/deploy-life-vps` 只打包必要模块、插件与 Dashboard，验证哈希、备份、切换；失败自动恢复旧代码与服务，不删除生活库。

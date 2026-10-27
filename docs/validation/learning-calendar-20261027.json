@@ -1,0 +1,69 @@
+{
+  "date": "2026-10-27",
+  "scope": "PWA unified learning heatmap with date-selected details",
+  "behavior": {
+    "history_and_all_valid_astrbot_learning_combined": true,
+    "independent_of_recent_100_messages_and_selected_day": true,
+    "body_hidden_until_day_selection": true,
+    "details_grouped_by_topic": true,
+    "year_topic_query_apply_to_calendar_and_detail": true,
+    "correction_entry_retained_for_astrbot": true,
+    "mobile_horizontal_scroll_within_chart": true,
+    "horizontal_position_retained_on_expand_and_refresh": true,
+    "habit_day_query_linked": true,
+    "no_duration_completion_or_mastery_inference": true,
+    "logout_clears_calendar_data": true,
+    "new_dependencies": 0,
+    "original_obsidian_writes": 0
+  },
+  "synthetic": {
+    "specialist_tests": 3,
+    "local_passed": 376,
+    "full_run": 705,
+    "full_passed": 697,
+    "optional_skipped": 8,
+    "real_handlers_tested": [
+      "Default hidden details, click day and group entries by topic",
+      "Filter/close/refresh/clear and preservation of horizontal position",
+      "Leap year, week alignment and invalid dates",
+      "All source dates beyond recent message window, original revisions and timezone",
+      "Conversation-memory exclusion and source deletion"
+    ],
+    "desktop_calendar_and_click_details_reviewed": true,
+    "desktop_topic_filter_reviewed": true,
+    "mobile_preview_width": 390,
+    "mobile_layout_and_details_reviewed": true,
+    "mobile_keyboard_month_navigation_and_scroll_retention_reviewed": true,
+    "real_model_calls": 0,
+    "platform_test_messages": 0
+  },
+  "pending": [
+    "Owner real-account mobile acceptance"
+  ],
+  "live": {
+    "release": "20261027_232954_017933",
+    "rollback": "20261027_232954_017933",
+    "manifest_match": true,
+    "served_assets": {
+      "dashboard.html": true,
+      "dashboard.js": true,
+      "dashboard-learning.js": true,
+      "dashboard.css": true
+    },
+    "unauthenticated_api": 401,
+    "services": [
+      "active",
+      "active"
+    ],
+    "installed_sdk_tools": 8,
+    "history_records": 271,
+    "live_learning_records": 2,
+    "combined_records": 273,
+    "combined_days": 104,
+    "topics": 20,
+    "original_messages_preserved": true,
+    "original_messages": 36,
+    "current_messages": 36,
+    "absolute_paths_exposed": false
+  }
+}

@@ -35,7 +35,7 @@ class LayoutTests(unittest.TestCase):
         for i, text in enumerate(texts):
             rid = format(i+1,'064x')
             records[rid] = dict(id=rid,text=text,day='2026-10-27',occurred_at=f'2026-10-27T12:{i:02}:00+08:00',
-                revision=1,kind='journal',deleted=False,summary='',due_at=None,task_status=None)
+                revision=1,capture_source='life_command',kind='journal',deleted=False,summary='',due_at=None,task_status=None)
         return dict(records=records,applied={},cursor=0)
 
     def response(self, groups):

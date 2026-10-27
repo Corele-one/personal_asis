@@ -349,7 +349,7 @@ class LifeTests(unittest.TestCase):
         self.assertTrue(sync.block(a).endswith('```python\n# 保留代码注释\n```\n'))
 
     def test_structured_activity_not_duplicated_but_extra_personal_prose_is_kept(self):
-        a=dict(self.record(),text='冥想完成',tracking=dict(habits=[dict(evidence='冥想完成')],learning=[]))
+        a=dict(self.record(),text='冥想完成',tracking=dict(habits=[dict(habit='meditation',status='done',evidence='冥想完成')],learning=[]))
         self.assertFalse(sync.projected(a))
         self.assertTrue(sync.projected(dict(a,text='冥想完成，感觉思路清楚了一些。')))
 

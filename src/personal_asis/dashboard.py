@@ -1,4 +1,4 @@
-"""Read-only dashboard for the two agents. No legacy search or execution routes."""
+"""Authenticated dashboard and owner feedback, without remote filesystem control."""
 import argparse
 import json
 from pathlib import Path
@@ -18,10 +18,24 @@ def snapshot(home, day=None):
     try:
         records = store.recent(100)
         reminders = dict(store.db.execute('SELECT state,count(*) FROM reminders GROUP BY state'))
-        records = [{k:r[k] for k in ('id','day','kind','text','summary','occurred_at','due_at','task_status')} for r in records]
+        records = [{k:r[k] for k in ('id','revision','day','kind','text','summary','occurred_at','due_at','task_status')} for r in records]
         from .life_tracking import LifeTracking
         from .life_attention import LifeAttention
         tracking = LifeTracking(store).day(day)
+        from .learning_history import canonical_topic
+        from .life_store import TZ
+        from datetime import datetime
+        learning_live = []
+        for record in LifeTracking(store).records('0001-01-01', '9999-12-31'):
+            for index, item in enumerate(record['tracking']['learning']):
+                learning_live.append(dict(item, id=record['id']+':'+str(index),
+                    source='astrbot', day=record['day'],
+                    topic=canonical_topic(item['topic']) or item['topic'],
+                    time=datetime.fromisoformat(record['occurred_at']).astimezone(TZ).strftime('%H:%M'),
+                    record_id=record['id'], record_revision=record['revision']))
+        for item in tracking['habits'] + tracking['learning']:
+            if item.get('record_id'):
+                item['record_revision'] = store.get(item['record_id'])['revision']
         attention = LifeAttention(store).dashboard()
     finally:
         store.close()
@@ -35,8 +49,11 @@ def snapshot(home, day=None):
         content={k:content[k] for k in ('title','content','updated_at')}
     from .bootstrap_context import load as load_bootstrap
     baseline=load_bootstrap(Path(home)/'bootstrap.json')
+    from .learning_history import from_shared
+    history=from_shared(home)
     return dict(version=2, astrbot={'records': records, 'reminders': reminders}, mac=mac,
-                mac_content=content, life_baseline=baseline, tracking=tracking, attention=attention)
+                mac_content=content, life_baseline=baseline, tracking=tracking, attention=attention,
+                learning_history=history, learning_live=learning_live)
 
 
 def server(home, origin, port=8766):
@@ -98,7 +115,17 @@ def server(home, origin, port=8766):
                             except ValueError:
                                 raise ProtocolError('invalid_day', 400)
                         return self.write(snapshot(home, day))
+                    if route == '/api/feedback':
+                        auth.session(self.token())
+                        thread = parse_qs(urlsplit(self.path).query).get('thread',[''])[0]
+                        from .life_feedback import LifeFeedback
+                        store = LifeStore(Path(home)/'life.sqlite3')
+                        try:
+                            return self.write({'messages':LifeFeedback(store).thread(thread)})
+                        finally:
+                            store.close()
                 files = {'/':('dashboard.html','text/html'), '/dashboard.js':('dashboard.js','application/javascript'),
+                         '/dashboard-learning.js':('dashboard-learning.js','application/javascript'),
                          '/dashboard.css':('dashboard.css','text/css'), '/sw.js':('dashboard-sw.js','application/javascript'),
                          '/manifest.webmanifest':('dashboard.webmanifest','application/manifest+json'),
                          '/icon.svg':('dashboard-icon.svg','image/svg+xml')}
@@ -108,6 +135,8 @@ def server(home, origin, port=8766):
                 self.write((ASSETS/name).read_bytes(),mime=mime)
             except ProtocolError as error:
                 self.write({'error':str(error)},error.status)
+            except (ValueError,TypeError):
+                self.write({'error':'invalid_request'},400)
             except Exception:
                 self.write({'error':'dashboard_unavailable'},503)
 
@@ -117,7 +146,7 @@ def server(home, origin, port=8766):
                 if self.headers.get('Transfer-Encoding') or len(self.headers.get_all('Content-Length',[])) != 1:
                     raise ProtocolError('invalid_body')
                 length=int(self.headers['Content-Length'])
-                if not 0 < length <= 4096:
+                if not 0 < length <= 8192:
                     raise ProtocolError('body_size')
                 data = json.loads(self.rfile.read(length))
                 if not isinstance(data,dict):
@@ -130,11 +159,21 @@ def server(home, origin, port=8766):
                         auth.session(self.token(),self.headers.get('X-CSRF-Token',''))
                         auth.logout(self.token())
                         return self.write({'authenticated':False},cookie='')
+                    if self.path == '/api/feedback':
+                        auth.session(self.token(),self.headers.get('X-CSRF-Token',''))
+                        from .life_feedback import LifeFeedback
+                        store = LifeStore(Path(home)/'life.sqlite3')
+                        try:
+                            return self.write(LifeFeedback(store).submit(data),202)
+                        finally:
+                            store.close()
                     raise ProtocolError('not_found',404)
             except ProtocolError as error:
                 self.write({'error':str(error)},error.status)
-            except (ValueError,TypeError):
-                self.write({'error':'invalid_body'},400)
+            except (ValueError,TypeError) as error:
+                code = str(error)
+                known = code.startswith(('feedback_','invalid_feedback_')) or code == 'record_not_found'
+                self.write({'error':code if known else 'invalid_body'},409 if code in ('feedback_busy','feedback_record_changed') else 400)
             except Exception:
                 self.write({'error':'dashboard_unavailable'},503)
 

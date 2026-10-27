@@ -17,9 +17,10 @@ from .bootstrap_context import load as load_bootstrap, render as render_bootstra
 from .personal_profile import load as load_profile, render as render_profile
 from .life_tracking import LifeTracking
 from .life_attention import LifeAttention
+from .life_intake import entry_content
 
 
-@register('life_agent', 'Personal Asis', '本人生活、习惯学习、共享资料与主动简报', '2.4.0')
+@register('life_agent', 'Personal Asis', '主动记录、习惯学习、共享资料与用户纠正', '2.5.0')
 class LifeAgent(Star):
     def __init__(self, context: Context, config):
         super().__init__(context)
@@ -33,6 +34,7 @@ class LifeAgent(Star):
         self.workspace = self.home / 'workspace'
         self.workspace.mkdir(exist_ok=True, mode=0o700)
         self.worker = None
+        self.feedback_worker = None
 
     def owner(self, event):
         return (bool(self.config.get('owner_id')) and event.is_private_chat()
@@ -59,7 +61,7 @@ class LifeAgent(Star):
         recorded = False
         if self.config.get('capture_enabled', True):
             try:
-                value, _ = self.capture(event)
+                value, _ = self.capture(event, source='bedtime')
                 self.store.organize(value['id'], kind='sleep_bed', summary='准备入睡（本人自报）')
                 recorded = True
             except (ValueError, OSError, sqlite3.Error):
@@ -69,20 +71,45 @@ class LifeAgent(Star):
 
     async def initialize(self):
         self.worker = asyncio.create_task(self.reminders())
+        self.feedback_worker = asyncio.create_task(self.feedback_loop())
 
     async def terminate(self):
+        if self.feedback_worker:
+            self.feedback_worker.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await self.feedback_worker
         if self.worker:
             self.worker.cancel()
             with contextlib.suppress(asyncio.CancelledError):
                 await self.worker
         self.store.close()
 
-    def capture(self, event):
+    async def feedback_loop(self):
+        from .life_feedback import LifeFeedback
+        from .feedback_agent import respond
+        feedback = LifeFeedback(self.store)
+        feedback.recover()
+        while True:
+            job = feedback.claim()
+            if job:
+                try:
+                    reply = await respond(self, feedback, job)
+                    feedback.finish(job,reply=reply)
+                except asyncio.CancelledError:
+                    feedback.finish(job,error='interrupted')
+                    raise
+                except Exception:
+                    feedback.finish(job,error='result_unknown')
+                    logger.warning('life_agent PWA feedback outcome unavailable; no automatic retry')
+            await asyncio.sleep(2)
+
+    def capture(self, event, *, source=None):
+        source = source or ('life_command' if entry_content(event.message_str) is not None else 'conversation')
         # Receive timestamp is explicit provenance, not a guessed date in the message.
         result = self.store.capture(event.get_platform_id(), event.get_sender_id(),
             str(event.message_obj.message_id), event.message_str,
-            datetime.now(timezone.utc).isoformat(), event.unified_msg_origin)
-        event.set_extra('life_capture_status', 'saved')
+            datetime.now(timezone.utc).isoformat(), event.unified_msg_origin, capture_source=source)
+        event.set_extra('life_capture_status', 'memory_saved' if source == 'conversation' else 'saved')
         value, created = result
         try:
             value = self.tracking.auto(value)
@@ -131,24 +158,23 @@ class LifeAgent(Star):
             yield event.plain_result(self.bedtime_status())
             event.stop_event()
             return
-        if not self.config.get('capture_enabled', True):
-            return
-        # AstrBot waking_check strips '/' before plugin dispatch, including /life.
-        if not text or text.startswith('/') or text == 'life' or text.startswith('life '):
+        # Ordinary messages remain useful assistant memory, while recording
+        # intent is tagged independently and enforced by both diary projections.
+        if not self.config.get('capture_enabled', True) or not text or text.startswith('/') or re.match(r'^life(?:\s|$)',text):
             return
         try:
-            self.capture(event)
-        except (ValueError, OSError, sqlite3.Error):
-            event.set_extra('life_capture_status', 'failed')
-            logger.warning('life_agent capture unavailable')
-            yield event.plain_result('生活记录未落盘；请稍后检查 /life。')
+            self.capture(event,source='conversation')
+        except (ValueError,OSError,sqlite3.Error):
+            event.set_extra('life_capture_status','failed')
+            logger.warning('life_agent conversation memory unavailable')
 
     @filter.on_llm_request()
     async def instructions(self, event: AstrMessageEvent, req):
         if not self.owner(event):
             return
         req.system_prompt += ('\n你是 VPS 上负责睡眠、健康、日常事务的 AstrBot。'
-            '本人发送的普通文本由插件原样记录。需要分类、整理摘要、补记日期或明确时间事项时调用 life_organize；'
+            '普通聊天原话保留为助手的对话记忆；只有/life主动提交的正文才是随记。问答、引用、作业要求不是日记或本人行为，不调用life_track或life_organize把它们变成日记。'
+            '对/life记录分类、整理摘要、补记日期时调用life_organize；明确提醒请求可单独建时间事项，但不进随记。'
             '只有工具成功才说已整理。原话是证据，整理可修正，不作诊断。睡前到起床只代表自报作息区间，不是实际睡眠时长。'
             '日期和时间按 Asia/Shanghai，工具时间必须带时区；相对时间以当前收到消息时间为参照，有歧义先问。'
             '只在用户明确要求提醒或有明确待办时间节点时设 due_at；不从泛泛感想推断正式任务。'
@@ -168,7 +194,9 @@ class LifeAgent(Star):
             '原话保存与分类整理分开；只有工具成功才说已整理，没创建事项就不能说已设置提醒。'
             '原生Computer Use由AstrBot当前会话配置与权限控制，生活草稿工具的限制不等于原生工具权限。')
         req.system_prompt += ('\n本人另行开启习惯与具体学习记录：冥想、阅读、早睡、锻炼。'
-            '每次收到相关本人自述，按需调用life_track，证据必须逐字来自原话；计划、引用、提问、未记录均不算完成。'
+            '只从/life主动记录提取本人实际行为，按需调用life_track，证据必须逐字来自原话，并结合完整上下文判断。'
+            '阅读习惯指本人读书；实践作业的阅读要求、任务说明、教材内容、文档和代码不是本人读过书的证据。'
+            '计划、老师要求、引用、他人行为、示例、提问、未记录均不算实际学习或习惯完成。'
             '说晚安仅是准备睡觉，不自动算早睡完成；没有约定早睡时间时不要自行设阈值。'
             '学习主题完全开放，旧Missing/C++/Research清单已经过时，不作为限制或当前目标。'
             '学习开始保存本次具体主题，结束保存实际内容、疑问和下一步；开始不算完成、结束不代表掌握，不猜实际专注时长。'
@@ -186,6 +214,8 @@ class LifeAgent(Star):
         saved = event.get_extra('life_capture_status') == 'saved'
         if event.get_extra('life_ack_sent'):
             req.system_prompt += '\n本轮已单独发送简短保存回执，接下来只需自然回应内容，不重复回执。'
+        elif event.get_extra('life_capture_status') == 'memory_saved':
+            req.system_prompt += '\n本轮普通对话仅保存为助手记忆，不进入Obsidian随记或自动成为习惯／学习记录。自然回应即可，不播报存储回执。'
         elif saved:
             req.system_prompt += '\n本轮原话已成功保存于VPS，可在自然回应中简短说“已记下”。'
         else:
@@ -238,7 +268,7 @@ class LifeAgent(Star):
             yield event.plain_result('\n\n'.join(f"{r['id']}\n{r['day']} {r['kind']}\n{r['text']}" for r in rows) or '暂无记录。')
         elif action == 'status' or not content:
             count = self.store.db.execute('SELECT count(*) FROM records').fetchone()[0]
-            yield event.plain_result(f'生活 Agent 就绪；已有 {count} 条记录。本人普通私聊自动记录，AstrBot 按需整理。/life list 查看，/life delete 完整记录ID 删除。Mac 运行 pi_sync 后预览确认同步。附件识别未接入。\n' + self.bedtime_status())
+            yield event.plain_result(f'生活 Agent 就绪；只有 /life 后的正文进入随记，普通聊天仅作助手记忆。/life list 查看，/life delete 完整记录ID 删除。Mac 运行 pi_sync 后预览确认同步。附件识别未接入。\n' + self.bedtime_status())
         else:
             if self.config.get('capture_enabled', True):
                 try:
@@ -269,10 +299,16 @@ class LifeAgent(Star):
         '''
         if not self.owner(event) or not self.config.get('capture_enabled', True):
             return 'owner_or_capture_required'
+        reminder = kind == 'task' and due_at and re.search(r'提醒我|提醒一下我|设置.{0,12}提醒',event.message_str)
+        if entry_content(event.message_str) is None and not reminder:
+            return 'explicit_life_entry_required'
         try:
             if not record_id:
-                value, _ = self.capture(event)
+                value, _ = self.capture(event,source='reminder' if reminder and entry_content(event.message_str) is None else None)
                 record_id = value['id']
+            prior = self.store.get(record_id)
+            if prior['platform'] != event.get_platform_id() or prior['sender'] != event.get_sender_id():
+                return 'record_owner_required'
             result = self.store.organize(record_id, kind=kind, summary=summary,
                 occurred_at=occurred_at or None, due_at=due_at or None,
                 task_status=task_status, origin=event.unified_msg_origin)
@@ -292,6 +328,8 @@ class LifeAgent(Star):
         '''
         if not self.owner(event) or not self.config.get('capture_enabled', True):
             return 'owner_or_capture_required'
+        if entry_content(event.message_str) is None:
+            return 'explicit_life_entry_required'
         try:
             if len(habits_json.encode()) + len(learning_json.encode()) > 20000:
                 return 'tracking_limit'
@@ -340,7 +378,7 @@ class LifeAgent(Star):
         if not self.owner(event) or not self.config.get('capture_enabled', True):
             return 'owner_or_capture_required'
         try:
-            r, _ = self.capture(event)
+            r, _ = self.capture(event,source='life_command' if entry_content(event.message_str) is not None else 'focus')
             value = self.attention.goal(self.bedtime_owner(), r['id'], goal_id=goal_id, title=title,
                 progress=progress, next_step=next_step, blocker=blocker,
                 next_attention=next_attention, status=status)
@@ -363,10 +401,10 @@ class LifeAgent(Star):
 
     @filter.llm_tool(name='life_recent')
     async def recent(self, event: AstrMessageEvent):
-        '''Read the owner's latest 20 VPS life records. Does not read Mac notes.'''
+        '''Read 20 recent owner records and conversation memories. capture_source distinguishes memory from explicit /life entries; memory is not a diary or evidence of completed habits.'''
         if not self.owner(event):
             return 'owner_required'
-        return json.dumps(self.store.recent(20), ensure_ascii=False)
+        return json.dumps(self.store.recent(20,include_conversation=True), ensure_ascii=False)
 
     @filter.llm_tool(name='shared_knowledge')
     async def shared_knowledge(self, event: AstrMessageEvent, action: str, query: str = '',

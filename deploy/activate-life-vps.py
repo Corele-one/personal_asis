@@ -26,7 +26,14 @@ def main(stage):
         if not p.resolve().is_relative_to(stage) or p.is_symlink() or hashlib.sha256(p.read_bytes()).hexdigest()!=expected:
             raise ValueError('release_integrity_failed')
     # Validate native tool schemas and synthetic behavior before stopping services.
-    run('/home/mac/.local/share/uv/tools/astrbot/bin/python', str(stage/'validate-life-sdk.py'), str(stage))
+    try:
+        preflight = run('/home/mac/.local/share/uv/tools/astrbot/bin/python', str(stage/'validate-life-sdk.py'), str(stage))
+        print(preflight.stdout.strip().splitlines()[-1],flush=True)
+    except subprocess.CalledProcessError as error:
+        # This fixture only uses temporary synthetic state; expose its failure
+        # before stopping any service, without ever printing private config.
+        print(error.stderr[-8000:],file=sys.stderr,flush=True)
+        raise
     stamp=datetime.datetime.now().strftime('%Y%m%d_%H%M%S_%f')
     backup=Path('/home/mac/personal-asis-v2-rollbacks')/stamp;backup.mkdir(parents=True,mode=0o700)
     plugins=Path('/home/mac/astrbot/data/plugins');config_dir=plugins.parent/'config'
@@ -86,6 +93,14 @@ def main(stage):
         shutil.copytree(release/'astrbot_plugin_life_agent',plugins/'astrbot_plugin_life_agent')
         current.write_text(json.dumps(config));current.chmod(0o600)
         temporary=link.with_name('personal-asis-v2-next');temporary.unlink(missing_ok=True);temporary.symlink_to(release,target_is_directory=True);temporary.replace(link)
+        # Services are stopped and SQLite has been backed up. Retag legacy
+        # conversation memory and withdraw invalid derived observations once.
+        result=run('/usr/bin/python3','-c',
+            'import sys,json;sys.path.insert(0,"/home/mac/personal-asis-v2/src");'
+            'from personal_asis.life_store import LifeStore;'
+            's=LifeStore("/home/mac/.local/share/personal-asis-life/life.sqlite3");'
+            'print(json.dumps(s.reconcile_intake()));s.close()')
+        print(result.stdout.strip())
         for name in managed[:2]:run('sudo','rm','-f',str(units/name))
         run('sudo','install','-m','644',str(release/'personal-asis-dashboard.service'),str(units/managed[2]))
         run('sudo','systemctl','daemon-reload');run('sudo','nginx','-t')

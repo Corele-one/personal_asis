@@ -27,3 +27,5 @@
 | [本轮验收](validation/two-agent-20261020.json) | 合成、SDK、服务、SSH、UI 分别记录 |
 
 `adr/` 中旧决策、`validation/` 中旧日期记录作为历史证据保留；旧服务运维、远程冻结计划与重复发布说明已删除。`Intention.md`／`advice.md` 是最初动机与建议，不定义当前架构。项目代理规则见 [AGENT.md](../AGENT.md)。
+
+- [PWA 用户纠正对话](human-feedback.md)：区分对话记忆与主动记录，核对并修正派生内容。

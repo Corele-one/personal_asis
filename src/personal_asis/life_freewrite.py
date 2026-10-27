@@ -16,6 +16,9 @@ def omission(record):
     """Return a narrow, inspectable reason; never infer worth from text length."""
     if record['deleted']:
         return 'deleted'
+    from .life_intake import is_entry
+    if not is_entry(record):
+        return 'conversation'
     if sleep_only(record):
         return 'sleep'
     if record['kind'] == 'task':
@@ -41,8 +44,9 @@ def omission(record):
     # A structured-only update already appears in Habits/Learning. Do not copy
     # it a second time to Freewrite; preserve any additional reflective prose.
     remainder = text
-    evidence = [item['evidence'] for name in ('habits', 'learning')
-                for item in record.get('tracking', {}).get(name, [])]
+    from .life_tracking import observations
+    tracking = observations(record)
+    evidence = [item['evidence'] for name in ('habits', 'learning') for item in tracking[name]]
     for item in sorted(evidence, key=len, reverse=True):
         remainder = remainder.replace(item, '')
     if evidence and not remainder.strip(' \t\n，。！,.!、；;'):
@@ -75,7 +79,8 @@ def block(record):
                 fence = marker[1]
             elif marker[1][0] == fence[0] and len(marker[1]) >= len(fence) and not marker[2].strip():
                 fence = None
-        elif fence is None and (re.match(r'^#{1,4}[ \t]', line) or re.fullmatch(r'(?:=+|-+)[ \t]*', line)):
+        elif fence is None and (re.match(r'^#{1,4}[ \t]', line) or re.fullmatch(r'(?:=+|-+)[ \t]*', line)
+                or re.match(r'^ {0,3}---[ \t]+(?:start-multi-column:|end-(?:multi-)?column\b)',line)):
             line = '\\' + line
         lines.append(line)
     if fence:

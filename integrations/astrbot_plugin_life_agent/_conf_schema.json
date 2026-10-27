@@ -1,6 +1,6 @@
 {
   "owner_platform": {"description":"唯一获准的本人平台ID", "type":"string", "default":""},
   "owner_id": {"description":"唯一获准的本人私聊ID；禁止自动绑定陌生用户", "type":"string", "default":""},
-  "capture_enabled": {"description":"保存本人私聊文本为生活原始记录；不保存附件", "type":"bool", "default":true},
+  "capture_enabled": {"description":"保存本人私聊文本作为助手记忆；仅 /life 主动记录进入日记，作息／事项分别处理，不保存附件", "type":"bool", "default":true},
   "reminders_enabled": {"description":"仅发送明确创建的到期事项；未知发送结果不自动重试", "type":"bool", "default":true}
 }

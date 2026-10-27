@@ -1,0 +1,58 @@
+{
+  "date": "2026-10-27",
+  "scope": "Column-bounded markerless Learning projection and unified topic tracking",
+  "implementation": {
+    "activity_receipts_version": 2,
+    "learning_placement": "Inside its multi-column section before end-multi-column",
+    "markdown_identity_comments": false,
+    "render": "H4 topic groups with time/phase and original evidence",
+    "handwritten_content_preserved": true,
+    "checked_legacy_topics_preserved": true,
+    "tracker": "Standalone read-only Dataview script; diary text and historic checked learning items remain sources"
+  },
+  "synthetic": {
+    "specialist_tests": 9,
+    "local_tests": 367,
+    "full_tests": 696,
+    "full_passed": 688,
+    "optional_skipped": 8,
+    "coverage": [
+      "Legacy tail and wrong-column migration",
+      "Footer and column delimiters preserved",
+      "Markerless revisions, deletion and interrupted date move",
+      "Edited owned text refuses overwrite",
+      "Manual paragraph retains its topic heading",
+      "Source exclusions checked before activity reads",
+      "Fenced examples and forged column markers cannot divide a note",
+      "Dynamic topics and manual notes, legacy de-duplication",
+      "Leap-year and invalid-date handling",
+      "Standalone note JavaScript compiles without imports or network"
+    ]
+  },
+  "configured_environment": {
+    "dataview": "0.5.68",
+    "dataview_js_enabled": true,
+    "plugin_configuration_changed": false
+  },
+  "visual": {
+    "synthetic_desktop_reviewed": true,
+    "real_obsidian_render_pending": true,
+    "real_obsidian_window": "Still shows the previous view; installed-file checks are not UI acceptance"
+  },
+  "real_obsidian_writes": 3,
+  "approved_write": {
+    "complete_preview_shown": true,
+    "explicit_user_confirmation": true,
+    "exact_preview_match": true,
+    "daily_learning_inside_columns": true,
+    "legacy_activity_comments_removed": true,
+    "private_before_images_retained": true,
+    "repeat_activity_writes": 0,
+    "pending_commit": false
+  },
+  "model_calls": 0,
+  "remote_deployment_required": false,
+  "pending": [
+    "Actual Obsidian rendering after reopening or refreshing the note"
+  ]
+}

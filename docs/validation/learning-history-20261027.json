@@ -1,0 +1,66 @@
+{
+  "date": "2026-10-27",
+  "scope": "Life and Study learning history in the unified Obsidian view and authenticated PWA Learning",
+  "rules": {
+    "fixed_dated_directories": true,
+    "learning_numeric_flags_and_checked_items": true,
+    "checked_learning_tasks_labelled_separately": true,
+    "study_only_owner_work_section": true,
+    "explicit_unfinished_tasks_and_unchecked_plans_excluded": true,
+    "materials_templates_file_timestamps_not_learning_evidence": true,
+    "completion_duration_mastery_not_inferred": true,
+    "original_evidence_and_relative_provenance_retained": true,
+    "history_creates_astrbot_records_habits_or_goals": false,
+    "pwa_reuses_current_shared_note_replicas": true,
+    "obsidian_study_import_is_explicit_snapshot": true
+  },
+  "synthetic": {
+    "new_history_tests": 6,
+    "local_passed": 373,
+    "full_run": 702,
+    "full_passed": 694,
+    "optional_skipped": 8,
+    "cases": [
+      "H4 legacy learning, numeric flags, evidence detail and checked task context",
+      "Explicit unfinished and future tasks do not become learning completion",
+      "Study ToDo, Tomorrow Plan, Prompt, undated summaries and templates excluded",
+      "Exclusions, symlinks, source hashes and read-only source scan",
+      "Shared tombstones, missing parts and read-only history query",
+      "History remains separate from live messages and habit observations",
+      "Python and JavaScript parser parity and standalone imported view compilation"
+    ],
+    "real_model_calls": 0,
+    "platform_test_messages": 0
+  },
+  "live": {
+    "release": "20261027_200341_856924",
+    "rollback": "20261027_200341_856924",
+    "manifest_match": true,
+    "served_javascript_match": true,
+    "installed_sdk_tools": 8,
+    "astrbot_service": "active",
+    "dashboard_service": "active",
+    "unauthenticated_dashboard_status": 401,
+    "absolute_paths_in_dashboard": false,
+    "history_records": 271,
+    "history_days": 103,
+    "history_topics": 20,
+    "life_history": 240,
+    "study_history": 31,
+    "incomplete_source_groups": 0,
+    "replica_complete": true,
+    "original_messages_checked": 33,
+    "original_message_texts_preserved": true,
+    "original_source_files_unchanged": 171,
+    "actual_life_files_with_python_js_parity": 137,
+    "approved_obsidian_files_written": 1,
+    "exact_preview_match": true,
+    "shared_uploaded": 5,
+    "shared_downloaded": 3,
+    "repeat_upload_download": [0, 0]
+  },
+  "pending": [
+    "Owner visual acceptance of the PWA history and updated Obsidian view; native UI automation could not navigate to the new synthetic preview",
+    "Study snapshot changes require another complete preview and confirmed import"
+  ]
+}

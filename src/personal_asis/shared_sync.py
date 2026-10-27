@@ -8,6 +8,7 @@ import sqlite3
 
 from .shared_store import MAX_BATCH, MAX_RECORD, SharedStore
 from .shared_sources import refresh_mac
+from . import sync_ui as ui
 
 REMOTE = 'PYTHONPATH=/home/mac/personal-asis-v2/src python3 -m personal_asis.shared_transfer'
 
@@ -77,7 +78,7 @@ def run(config, home, profile, *, interactive):
         raise ValueError('shared_explicit_scope_required')
     if type(config.get('shared_refresh_network',True)) is not bool:
         raise ValueError('shared_invalid_refresh_mode')
-    print('\n2/3 · 更新 Mac 数据库（Life／Study／五彩／小红书）')
+    ui.stage(2,'更新本机资料','Life / Study / 五彩 / 小红书')
     with SharedStore(Path(profile)/'shared.sqlite3','mac') as store:
         if not store.get_meta('initial_source_backup'):
             from .shared_store import safe_path
@@ -106,7 +107,7 @@ def run(config, home, profile, *, interactive):
             print(f'有 {len(failed)} 个来源本次未能刷新；保留已采集资料，未自动重试。')
         if refresh['unavailable_notes'] or refresh['scope_changed']:
             print('部分笔记根目录不可用或超出已确认共享范围；未扩大共享。')
-        print('3/3 · 交换数据库增量（SSH）')
+        ui.stage(3,'交换共享库增量','Mac ⇄ VPS · SSH')
         result = replicate(store, config, max_pages=config.get('shared_max_pages',50))
         print(f"本轮上传 {result['uploaded']} 条变更，拉回 {result['downloaded']} 条变更。")
         if not result['complete']:

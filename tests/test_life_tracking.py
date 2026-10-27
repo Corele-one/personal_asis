@@ -31,7 +31,7 @@ class TrackingTests(unittest.TestCase):
             with self.subTest(text=text):
                 self.assertFalse(any(h['status']=='done' for h in infer(text)['habits']))
         self.assertEqual(infer('今天还没锻炼')['habits'][0]['status'],'not_done')
-        with self.assertRaisesRegex(ValueError,'completion_not_supported'):
+        with self.assertRaisesRegex(ValueError,'completion_not_supported|self_report_required'):
             validate(dict(habits=[dict(habit='reading',status='done',evidence='计划阅读')],learning=[]),'计划阅读')
 
     def test_evidence_required_and_native_correction_survives_replay(self):
@@ -191,7 +191,8 @@ class TrackingTests(unittest.TestCase):
             with patch('builtins.input') as ask:
                 self.assertEqual(life_sync.startup(home,profile,interactive=True),'up_to_date');ask.assert_not_called()
         raw=(vault/'Daily/2026-10-26.md').read_text()
-        self.assertEqual(raw.count('<!-- asis-learning:2026-10-26:start -->'),1)
+        self.assertNotIn('<!-- asis-learning:',raw)
+        self.assertEqual(raw.count('#### 电源噪声分析'),1)
         self.assertIn('activity_applied',json.loads((profile/'life-sync-cache.json').read_text()))
 
 
@@ -203,14 +204,14 @@ class TrackingPluginTests(unittest.TestCase):
 
     def test_native_tool_preserves_other_observations_and_rejects_stranger(self):
         async def run():
-            event=self.event('冥想完成，开始学习版图设计')
+            event=self.event('/life 冥想完成，开始学习版图设计')
             self.bot.capture(event)
             result=await self.bot.track(event,learning_json='[]')
             self.assertIn('saved_on',result)
             r=self.bot.store.recent()[0]
             self.assertEqual(len(r['tracking']['habits']),1)
             self.assertEqual(r['tracking']['learning'],[])
-            self.assertEqual(await self.bot.track(self.event('冥想完成',owner=False)), 'owner_or_capture_required')
+            self.assertEqual(await self.bot.track(self.event('/life 冥想完成',owner=False)), 'owner_or_capture_required')
         asyncio.run(run())
 
     def test_pause_not_captured_and_private_sender_dispatch_uses_persisted_reservation(self):
@@ -238,8 +239,8 @@ class TrackingPluginTests(unittest.TestCase):
         asyncio.run(run())
 
     def test_tracking_failure_preserves_honest_original_receipt(self):
-        event=self.event('冥想完成')
+        event=self.event('/life 冥想完成')
         with patch.object(self.bot.tracking,'auto',side_effect=ValueError('synthetic derived failure')):
             self.bot.capture(event)
         self.assertEqual(event.get_extra('life_capture_status'),'saved')
-        self.assertEqual(self.bot.store.recent()[0]['text'],'冥想完成')
+        self.assertEqual(self.bot.store.recent()[0]['text'],event.message_str)

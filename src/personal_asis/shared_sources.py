@@ -183,6 +183,8 @@ def refresh_mac(store, home, *, mode='text', network=True, scope=None):
 
 
 def refresh_vps(store, home):
+    from .life_intake import is_entry
+    from .life_tracking import observations
     path = safe_path(Path(home)/'life.sqlite3')
     if not path.is_file():
         return dict(changed=0, omitted=0)
@@ -202,8 +204,9 @@ def refresh_vps(store, home):
         if record.get('due_at'):
             text += '\n提醒时间：'+record['due_at']+'；状态：'+record['task_status']
         if record.get('tracking'):
-            text += '\n习惯／学习观测：'+json.dumps(record['tracking'],ensure_ascii=False)
-        bodies.extend(document_bodies('astrbot',record['id'],record['day']+' · '+record['kind'],text,
+            text += '\n习惯／学习观测：'+json.dumps(observations(record),ensure_ascii=False)
+        label = record['kind'] if is_entry(record) else '对话记忆／独立事项（不进入日记随记）'
+        bodies.extend(document_bodies('astrbot',record['id'],record['day']+' · '+label,text,
                                       acquired_at=record['updated_at'],
                                       attribution='本人在AstrBot的自述；整理可修正，缺记录不等于未发生'))
     return replace_scope(store, 'life', bodies, sources={'astrbot'})

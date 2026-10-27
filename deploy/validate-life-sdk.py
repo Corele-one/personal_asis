@@ -23,7 +23,7 @@ async def fixture():
                                    dict(owner_platform='synthetic', owner_id='owner'))
         try:
             extras = {}
-            event = types.SimpleNamespace(message_str='冥想完成，开始学习模拟滤波器',
+            event = types.SimpleNamespace(message_str='/life 冥想完成，开始学习模拟滤波器',
                 message_obj=types.SimpleNamespace(message_id='synthetic-learning'),
                 unified_msg_origin='synthetic:FriendMessage:owner',
                 is_private_chat=lambda: True, get_platform_id=lambda: 'synthetic',
@@ -31,6 +31,7 @@ async def fixture():
                 get_extra=lambda k: extras.get(k), plain_result=lambda s: s)
             replies = [reply async for reply in bot.collect(event)]
             assert replies == []
+            bot.capture(event)
             r = bot.store.recent()[0]
             assert r['tracking']['habits'][0]['status'] == 'done'
             assert r['tracking']['learning'][0]['topic'] == '模拟滤波器'
@@ -62,6 +63,44 @@ async def fixture():
             note = json.loads(await bot.shared_knowledge(event,'annotate',record_id=key,text='合成的本人补充'))
             same = json.loads(await bot.shared_knowledge(event,'annotate',record_id=key,text='合成的本人补充'))
             assert note == same
+            # PWA uses the installed native tool executor with a synthetic model
+            # boundary; no provider generation or platform dispatch occurs.
+            from astrbot.core.astr_agent_context import AgentContextWrapper, AstrAgentContext
+            from astrbot.core.astr_agent_tool_exec import FunctionToolExecutor
+            from astrbot_plugin_life_agent.life_feedback import LifeFeedback
+            from astrbot_plugin_life_agent.feedback_agent import respond
+            feedback=LifeFeedback(bot.store)
+            bot.attention.configure(bot.bedtime_owner(),event.unified_msg_origin,False)
+            target=bot.store.get(r['id'])
+            feedback.submit(dict(id='a'*32,thread='b'*32,text='这条冥想是误判，请去掉。',record_id=r['id'],revision=target['revision']))
+            job=feedback.claim()
+            class SyntheticContext(module.Context):
+                def __init__(self):
+                    pass
+                async def get_current_chat_provider_id(self,umo):
+                    assert umo == event.unified_msg_origin
+                    return 'synthetic-no-generation'
+                async def tool_loop_agent(self,**kwargs):
+                    assert kwargs['max_steps']==4
+                    tool=kwargs['tools'].get_tool('correct_record')
+                    assert tool is not None
+                    context=AgentContextWrapper(context=AstrAgentContext(context=self,event=kwargs['event']),tool_call_timeout=10)
+                    outputs=[v async for v in FunctionToolExecutor.execute(tool,context,action='clear_habit',habit='meditation')]
+                    assert outputs
+                    return types.SimpleNamespace(completion_text='已去掉误判。')
+            original_context=bot.context
+            bot.context=SyntheticContext()
+            reply=await respond(bot,feedback,job)
+            feedback.finish(job,reply=reply)
+            assert feedback.thread('b'*32)[0]['effect']['action']=='clear_habit'
+            assert bot.store.get(r['id'])['text']==target['text']
+            bot.context=original_context
+            event.message_str='实践作业要求阅读完成后写报告'
+            event.message_obj.message_id='synthetic-memory'
+            awaitable=[reply async for reply in bot.collect(event)]
+            assert awaitable==[]
+            assert await bot.track(event)=='explicit_life_entry_required'
+            assert bot.store.get(bot.rid(event))['capture_source']=='conversation'
             event.get_sender_id = lambda: 'stranger'
             assert await bot.track(event) == 'owner_or_capture_required'
             assert await bot.shared_knowledge(event,'search',query='共享电路') == 'owner_required'
@@ -72,5 +111,5 @@ async def fixture():
 asyncio.run(fixture())
 print(json.dumps(dict(actual_sdk_import=True, registered_tool_methods=len(tools),
     synthetic_owner_tracking=True, synthetic_goal=True, synthetic_prompt=True,
-    synthetic_shared_search_read_annotation=True,
+    synthetic_shared_search_read_annotation=True, synthetic_pwa_feedback_executor=True, conversation_memory_isolated=True,
     stranger_rejected=True, real_model_calls=0, real_messages_sent=0)))

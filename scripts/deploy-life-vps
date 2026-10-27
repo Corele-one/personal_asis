@@ -16,7 +16,7 @@ args=p.parse_args()
 if not re.fullmatch(r'[a-zA-Z0-9_.-]+@[a-zA-Z0-9.-]+',args.host) or not 1<=args.port<=65535:raise SystemExit('invalid_ssh_target')
 with tempfile.TemporaryDirectory(prefix='asis-life-release-') as tmp:
     stage=Path(tmp)/uuid.uuid4().hex;pkg=stage/'src/personal_asis';pkg.mkdir(parents=True)
-    for name in ('__init__.py','life_store.py','life_bedtime.py','life_tracking.py','life_attention.py','life_export.py','life_status.py','dashboard.py','web_auth.py','http_errors.py','mac_content.py','bootstrap_context.py','personal_profile.py','profile_transfer.py','shared_store.py','shared_sources.py','shared_transfer.py','shared_cli.py','data_policy.py'):
+    for name in ('__init__.py','life_store.py','life_intake.py','life_feedback.py','life_bedtime.py','life_tracking.py','life_attention.py','life_export.py','life_status.py','dashboard.py','learning_history.py','web_auth.py','http_errors.py','mac_content.py','bootstrap_context.py','personal_profile.py','profile_transfer.py','shared_store.py','shared_sources.py','shared_transfer.py','shared_cli.py','data_policy.py'):
         shutil.copyfile(repo/'src/personal_asis'/name,pkg/name)
     (pkg/'web').mkdir()
     for f in (repo/'src/personal_asis/web').glob('dashboard*'):shutil.copyfile(f,pkg/'web'/f.name)
@@ -25,7 +25,7 @@ with tempfile.TemporaryDirectory(prefix='asis-life-release-') as tmp:
     shutil.copyfile(repo/'src/personal_asis/life_bedtime.py',plugin/'life_bedtime.py')
     shutil.copyfile(repo/'src/personal_asis/bootstrap_context.py',plugin/'bootstrap_context.py')
     shutil.copyfile(repo/'src/personal_asis/personal_profile.py',plugin/'personal_profile.py')
-    for name in ('life_tracking.py','life_attention.py','shared_store.py','shared_sources.py','shared_cli.py','data_policy.py'):
+    for name in ('life_intake.py','life_feedback.py','life_tracking.py','life_attention.py','shared_store.py','shared_sources.py','shared_cli.py','data_policy.py'):
         shutil.copyfile(repo/'src/personal_asis'/name,plugin/name)
     for name in ('personal-asis-dashboard.service','activate-life-vps.py','rollback-life-vps.py','validate-life-sdk.py'):
         shutil.copyfile(repo/'deploy'/name,stage/name)

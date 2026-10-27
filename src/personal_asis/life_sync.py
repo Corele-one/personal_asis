@@ -14,6 +14,7 @@ from datetime import date, datetime
 from zoneinfo import ZoneInfo
 from .native_sources import HOME, PROFILE, private_write, source_configuration
 from . import life_freewrite as freewrite
+from . import sync_ui as ui
 
 REMOTE_EXPORT = 'PYTHONPATH=/home/mac/personal-asis-v2/src python3 -m personal_asis.life_export'
 PROJECTION_VERSION = 4
@@ -74,8 +75,8 @@ def validate_record(r):
     if local_time(r['occurred_at']).date().isoformat() != r['day']:
         raise ValueError('record_day_mismatch')
     if 'tracking' in r:
-        from .life_tracking import validate
-        validate(r['tracking'], r['text'])
+        from .life_tracking import validate, evidence_text
+        validate(r['tracking'], evidence_text(r))
 
 
 def block(r):
@@ -157,8 +158,8 @@ def preview_ranges(lines, ranges, owned=()):
 def preview(files, *, raw=False):
     """Show complete changed records, all other edits, and their section context."""
     for f in sorted(files, key=lambda f: str(f['path'])):
-        print(f"\n  {f['path'].stem} · {'更新' if f['before'] else '新建'}")
-        print('  ' + str(f['path']))
+        print(ui.color(f"\n  ▸ {f['path'].stem} · {'更新' if f['before'] else '新建'}", '1'))
+        ui.line(str(f['path']),indent='    ')
         before_text, after_text = f['before'].decode(), f['after']
         if raw:
             print(''.join(difflib.unified_diff(before_text.splitlines(True), after_text.splitlines(True),
@@ -171,7 +172,8 @@ def preview(files, *, raw=False):
         for label, lines, ranges in (
                 ('移除', before, [(i, j) for _, i, j, _, _ in edits]),
                 ('写入', after, [(k, l) for _, _, _, k, l in edits])):
-            locs = f.get('owned_before' if label == '移除' else 'owned_after',{}).values()
+            locs = [*f.get('owned_before' if label == '移除' else 'owned_after',{}).values(),
+                    *f.get('activity_before' if label == '移除' else 'activity_after',{}).values()]
             original = before_text if label == '移除' else after_text
             owned = [(original[:v['start']].count('\n'), original[:v['start']].count('\n')+len(v['text'].splitlines())) for v in locs]
             for start, end in preview_ranges(lines, ranges, owned):
@@ -183,15 +185,15 @@ def preview(files, *, raw=False):
                     context = {k:v for k,v in context.items() if k < level}
                     context[level] = title
                 scope = ' / '.join(context[level] for level in (3, 4) if level in context)
-                print('\n  ' + label + (' · ' + scope if scope else ''))
+                print('\n    ' + ui.color(('＋ ' if label == '写入' else '− ') + label, '32' if label == '写入' else '31') + (' · ' + scope if scope else ''))
                 for line in visible:
-                    print('    ' + line)
+                    ui.line(line,indent='    │ ')
 
 
 def confirm(files, *, raw=False):
     preview(files, raw=raw)
     while True:
-        answer = input('\n输入“确认写入”保存以上改动 · d 查看原始 diff · 回车暂不写入\n› ')
+        answer = input('\n  确认写入  保存本批日记    d  原始 diff    Enter  暂不写入\n  › ')
         if answer.lower() == 'd':
             preview(files, raw=True)
         else:
@@ -242,9 +244,8 @@ def startup(home=HOME, profile=PROFILE, *, interactive=None, raw_diff=False, lay
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
             return 'sync_already_running'
-        print('\nPi · 日记同步\n生活自述 → Freewrite；习惯／学习 → 对应栏目。')
-        if config.get('shared_sync_mode','off') != 'off':
-            print('1/3 · VPS 生活记录 → Mac（写日记仍需本次确认）')
+        ui.header()
+        ui.stage(1,'日记归档','仅主动 /life 记录；普通对话不进入随记')
         cache = profile / 'life-sync-cache.json'
         state = json.loads(cache.read_text()) if cache.exists() else dict(cursor=0, records={}, applied={})
         try:
@@ -288,14 +289,15 @@ def startup(home=HOME, profile=PROFILE, *, interactive=None, raw_diff=False, lay
                       '或用 --layout plain 预览原话追加。')
             return finish('layout_unavailable')
         from .life_projection import plan as plan_activity
-        files, activity_changes = plan_activity(state, root, daily, files)
+        files, activity_changes = plan_activity(state, root, daily, files,
+                                                allowed=lambda relative:not source.excludes(relative))
         life_journal.seal(files,changes,root)
         for f in files:
             if source.excludes(f['path'].relative_to(root).as_posix()):
                 raise ValueError('daily_target_excluded')
         ignored = sum(freewrite.omission(r) not in (None, 'deleted') for r in state['records'].values())
         if ignored:
-            print(f'已过滤 {ignored} 条问候、命令、作息、提醒或单独归档的活动记录。')
+            print(ui.color(f'  已略过 {ignored} 条普通对话、问候、命令、作息、提醒或独立活动记录。','2'))
         if not files:
             # A crash may leave an already-written block without its receipt.
             # Reconcile metadata without asking to approve an empty vault edit.
@@ -306,7 +308,7 @@ def startup(home=HOME, profile=PROFILE, *, interactive=None, raw_diff=False, lay
             publish_status(config, state, sources, home=home)
             print('日记已是最新，本次无需写入。')
             return finish('up_to_date')
-        print(f'\n待确认 · {len(files)} 篇日记\n以下按完整段落显示改动。')
+        print('\n' + ui.color(f'  待确认 · {len(files)} 篇日记','1;33') + '\n  以下为完整变更段落；尚未写入。')
         if not confirm(files, raw=raw_diff):
             publish_status(config, state, sources, home=home)
             print('本次未写入。改动已保留，下次 pi_sync 可继续。')
@@ -323,7 +325,7 @@ def startup(home=HOME, profile=PROFILE, *, interactive=None, raw_diff=False, lay
         state.pop('pending_projection',None)
         private_write(cache, json.dumps(state, ensure_ascii=False))
         publish_status(config, state, sources, home=home)
-        print(f'已保存到 Obsidian · {len(files)} 篇日记。')
+        print(ui.color(f'\n  ✓ 已保存到 Obsidian · {len(files)} 篇日记。','1;32'))
         return finish('applied')
 
 
