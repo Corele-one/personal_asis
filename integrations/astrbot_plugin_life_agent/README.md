@@ -9,9 +9,13 @@
 
 配置 schema 自带，首次迁移从已有本人绑定生成；后续部署保留配置。普通文本记录不等于模型已成功整理，工具成功前不能回报已整理。提醒 `sending`／`unknown` 不自动重发。
 
-`life_bedtime.py` 共用模块提供本人明确开启的每日01:00／每5分钟催睡，直至晚安，无白天截止。状态和每次投递占位独立保存于原SQLite库的新表，不写入生活事件／同步流；简短晚安自述仍直接记作 `sleep_bed`。`/life sleep`／`on`／`off`、`/life goodnight` 提供确定性控制，不新增LLM工具或shell权限。新库默认关闭，生产启用必须针对既有本人绑定明确执行；日常开关持久保存，不因升级重置。未知发送不重试同一次，后续五分钟催睡继续；停机无积压补发。
+`life_bedtime.py` 共用模块提供本人明确开启的每日01:00／每10分钟催睡，直至晚安，无白天截止。状态和每次投递占位独立保存于原SQLite库的新表，不写入生活事件／同步流；简短晚安自述仍直接记作 `sleep_bed`。`/life sleep`／`on`／`off`、`/life goodnight` 提供确定性控制，不新增LLM工具或shell权限。新库默认关闭，生产启用必须针对既有本人绑定明确执行；日常开关持久保存，不因升级重置。未知发送不重试同一次，后续十分钟催睡继续；停机无积压补发。2.5.1将间隔调为10分钟，并在加载时幂等顺延旧5分钟待发计划，保留当晚晚安。文案按窗口与轮次轮换，仅首条带轻量停止提示；可引用当前本人睡前窗口内、最近50条主动记录里经证据校验的学习主题。普通聊天、删除、他人、旧／未来记录及过长主题不用于个性化；不把未回复当成仍醒着，不增加模型调用。
 
 `life_context` 按需读取本人授权的带出处初始化背景，`/life forget-context` 删除当前背景和工作区说明。初始化不创建消息或提醒；部署会复制共用的 `bootstrap_context.py` 验证实现。
+
+`google_calendar_enabled` 默认关闭。开启后只在 `owner(event)` 验证通过的既有本人平台私聊提供 `google_calendar_read`；该工具仅允许七项上游日历读取工具并拒绝其他工具名，参数和结果均有大小上限。`list-events`、`search-events`、`get-freebusy` 必须传入有效且递增的 `timeMin` / `timeMax`，省略时区使用 Asia/Shanghai。插件通过 AstrBot 已安装的 MCP SDK stdio 会话连接上游 `@cocal/google-calendar-mcp`；不把上游 `manage-accounts` 注册到 AstrBot 的 Agent 工具表。
+
+`google_calendar_write_enabled` 默认关闭。开启需持有精确的 `calendar.readonly` + `calendar.events.owned` OAuth scope；后者只允许写入本人拥有的日历。Agent 仅能提出单个 `create-event` / `update-event` / `delete-event` 预览；五分钟内同一私聊收到精确 `/life calendar confirm <code>` 才执行一次，取消为 `/life calendar cancel <code>`。创建不含参会者，修改／删除拒绝带参会者或重复事件，通知固定关闭；不支持批量、邀请回复或日历管理。确认前没有写调用，代码在请求前消费；未知结果不自动重试。OAuth 客户端和令牌固定读取 VPS 私密目录。
 
 2.2.0：`/life` 后的非管理命令内容保存后回执“已记下”，随后以 `event.request_llm` 进入当前原生会话／人格／工具流程，保留多行全文，不另造模型循环。普通消息的回复提示自然接住内容，避免播报内部记录字段；晚安回执不再附带整段规则。关闭收录仍可交流，保存失败不能报成功。
 

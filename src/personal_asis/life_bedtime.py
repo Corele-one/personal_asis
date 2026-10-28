@@ -1,8 +1,57 @@
-"""Owner-authorized, persistent 01:00 / five-minute bedtime nudges. No LLM."""
+"""Owner-authorized, persistent 01:00 / ten-minute bedtime nudges. No LLM."""
 from datetime import datetime, timedelta
 import re
 
 from .life_store import TZ, digest, timestamp
+
+INTERVAL_MINUTES = 10
+
+
+def night_start(at):
+    local = datetime.fromisoformat(timestamp(at)).astimezone(TZ)
+    start = local.replace(hour=12, minute=0, second=0, microsecond=0)
+    return start - timedelta(days=1) if local.hour < 12 else start
+
+
+def nudge_text(item, records=(), *, platform='', sender=''):
+    """Use only this owner's current-night learning evidence, never infer wakefulness."""
+    from .life_tracking import observations
+    start = night_start(item['at'])
+    topics = []
+    for record in records:
+        if record.get('platform') != platform or record.get('sender') != sender:
+            continue
+        at = datetime.fromisoformat(record['occurred_at'])
+        if not start <= at <= datetime.fromisoformat(item['at']):
+            continue
+        for learning in observations(record)['learning']:
+            topic = learning['topic'].strip()
+            # Long text, markup and control characters do not belong in a nudge.
+            if len(topic) <= 36 and not any(ord(c) < 32 or c in '[]<>`「」' for c in topic):
+                topics.append((at, topic))
+    number = item['number']
+    if topics and number % 2:
+        topic = max(topics, key=lambda pair: pair[0])[1]
+        messages = (
+            f'你前面记的「{topic}」，今晚先放一放吧。留一句下次从哪儿接着来，就可以安心收工了。',
+            f'轻轻催你一下：「{topic}」可以留到睡醒再接着看，不用今晚把所有问题都解决。',
+            f'「{topic}」不会跑掉，先把自己照顾好。要是还在忙，就找个方便停下来的地方收尾吧。',
+        )
+        body = messages[(start.date().toordinal() + number // 2) % len(messages)]
+    else:
+        messages = (
+            '来轻轻催你收工。要是还在忙，先留个下次接着做的记号，今天就到这里吧。',
+            '那个“再看一会儿”，今晚就先放过它吧。把屏幕放下，给自己一点慢慢安静下来的时间。',
+            '不用等所有事都做完才休息。现在停在这里也可以，剩下的睡醒再说。',
+            '来敲一下门：差不多该把今天合上啦。手头的事找个地方收尾，就去躺躺吧。',
+            '要是还没歇下，就把下一步写一句，别让它一直挂在脑子里。今晚先照顾自己。',
+            '今天不必再多完成一件事了。把手机放远一点，给自己留点不看屏幕的时间吧。',
+            '再轻轻提醒一句：不用跟今天较劲到最后。能停下来的话，就安心去休息。',
+            '如果已经睡下，这条醒来略过就好。还在忙的话，就把这当作今晚收工的小提示。',
+        )
+        body = messages[(start.date().toordinal() + number - 1) % len(messages)]
+    # Keep the stop hint on the first nudge only; full controls remain in /life sleep.
+    return body + ('\n准备睡了就跟我说声晚安，今晚我就不再催啦。' if number == 1 else '')
 
 
 def owner_key(platform, sender):
@@ -41,6 +90,17 @@ class BedtimeReminder:
         CREATE TABLE IF NOT EXISTS bedtime_ack(
           owner TEXT NOT NULL, message TEXT NOT NULL, PRIMARY KEY(owner,message));
         ''')
+        # Upgrade an already scheduled five-minute follow-up without resetting
+        # enablement, a goodnight, or the next night's 01:00 start. Idempotent.
+        with self.db:
+            self.db.execute('BEGIN IMMEDIATE')
+            for row in self.db.execute('''SELECT p.*, MAX(d.attempted_at) AS last_attempt
+                    FROM bedtime_policy p JOIN bedtime_delivery d ON p.owner=d.owner
+                    WHERE p.enabled=1 GROUP BY p.owner''').fetchall():
+                next_due = timestamp((datetime.fromisoformat(row['last_attempt'])
+                                      + timedelta(minutes=INTERVAL_MINUTES)).isoformat())
+                if row['next_due'] < next_due and (not row['last_goodnight'] or row['last_goodnight'] <= row['last_attempt']):
+                    self.db.execute('UPDATE bedtime_policy SET next_due=? WHERE owner=?', (next_due, row['owner']))
 
     def status(self, owner):
         row = self.db.execute('SELECT * FROM bedtime_policy WHERE owner=?', (owner,)).fetchone()
@@ -97,11 +157,14 @@ class BedtimeReminder:
             # attempt and the NEXT independent nudge before any network operation.
             inserted = self.db.execute("INSERT OR IGNORE INTO bedtime_delivery VALUES(?,?,'sending',?)",
                                        (owner, state['next_due'], at))
-            next_due = timestamp((datetime.fromisoformat(at) + timedelta(minutes=5)).isoformat())
+            next_due = timestamp((datetime.fromisoformat(at) + timedelta(minutes=INTERVAL_MINUTES)).isoformat())
             self.db.execute('UPDATE bedtime_policy SET next_due=? WHERE owner=?', (next_due, owner))
             if not inserted.rowcount:
                 return None
-        return dict(owner=owner, origin=state['origin'], due=state['next_due'])
+            number = self.db.execute('''SELECT COUNT(*) FROM bedtime_delivery
+                WHERE owner=? AND attempted_at>=? AND attempted_at<=?''',
+                (owner, timestamp(night_start(at).isoformat()), at)).fetchone()[0]
+        return dict(owner=owner, origin=state['origin'], due=state['next_due'], at=at, number=number)
 
     def result(self, item, state):
         if state not in ('sent', 'unknown'):

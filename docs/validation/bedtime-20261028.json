@@ -1,0 +1,64 @@
+{
+  "date": "2026-10-28",
+  "plugin_version": "2.5.1",
+  "behavior": {
+    "starts_at": "01:00 Asia/Shanghai",
+    "interval_minutes": 10,
+    "stops_on_goodnight": true,
+    "daytime_cutoff": false,
+    "existing_five_minute_followup_extended": true,
+    "wording": "Window/attempt-based rotation; optional current-night, owner-only, evidence-validated learning topic from recent 50 explicit records; first nudge has a short stop hint",
+    "model_calls_added": 0
+  },
+  "synthetic_tests": {
+    "life_chain": {
+      "run": 102,
+      "passed": 102
+    },
+    "local_agent": {
+      "run": 379,
+      "passed": 379
+    },
+    "full": {
+      "run": 708,
+      "passed": 700,
+      "skipped_optional_dependencies": 8
+    },
+    "covered": [
+      "ten-minute boundary across restart and unknown delivery",
+      "old pending followup upgrade and goodnight preservation",
+      "wording rotation across restart without creating records",
+      "owner/current-night learning only; excludes conversation, deleted, old and future records"
+    ]
+  },
+  "actual_sdk": {
+    "import": true,
+    "registered_tools": 8,
+    "synthetic_ten_minute_bedtime": true,
+    "real_model_calls": 0,
+    "real_messages_sent": 0
+  },
+  "deployment": {
+    "release": "20261028_150123_033637",
+    "backup": "20261028_150123_033637",
+    "rollback_available": true,
+    "plugin_main_bedtime_metadata_hashes_match": true,
+    "services": {
+      "astrbot": "active",
+      "dashboard": "active"
+    },
+    "enabled_and_last_goodnight_preserved": true,
+    "next_due": "2026-10-29T01:00:00+08:00",
+    "original_records_at_deployment": 41,
+    "all_deployment_backup_originals_preserved": true,
+    "reconciliation_changes": 0
+  },
+  "notes": [
+    "Pre-upload snapshot contained 40 records; deployment backup and post-deploy each contained 41. All 41 original messages match the backup.",
+    "No real platform test messages, paid model verification, or Obsidian writes."
+  ],
+  "pending": [
+    "Real scheduled platform delivery",
+    "Owner acceptance of reminder wording"
+  ]
+}

@@ -1,5 +1,7 @@
 # 双 Agent 运行与回退
 
+Google Calendar MCP只读查询与受限写入提案均已部署；本人已授权 `calendar.events.owned` 并开启写入配置。写入仍要求每次预览后由本人私聊确认。权限边界、使用步骤、当前开关及回退见[接入说明](google-calendar-mcp.md)。合成SDK预检不代表真实模型自动选择或事件写入已验收。
+
 ## Mac
 
 `~/.local/bin/pi_sync` 指向仓库 `scripts/pi_sync`，独立执行同步；系统 `sync` 保持原有行为。`~/.local/bin/pi` 和既有 Finder／固定启动器均指向本仓库的 `scripts/asis-pi`，使用既有私密生产Python。私密profile为 `.local/pi-agent`；`life-sync.json` 已启用目标 `mac@35.209.202.207:22` 与相对日记目录 `Calendar/Journal/Daily`。Life根目录仍从既有本机 `sources.yaml` 获取，不在Git记录真实路径。
@@ -50,6 +52,8 @@ scripts/deploy-life-vps
 脚本只上传必要Python模块、插件、Dashboard和部署脚本，附逐文件SHA256清单；不上传 `.local`、笔记、状态、凭据、Git或node_modules。远端保留原生活库和插件配置，先准备回退，再停服务、替换插件／发布链接、检查nginx并启动。异常会执行生成的回退脚本。部署不做真实模型生成、聊天消息或平台写入。
 
 每次成功输出release和backup路径。后续增量回退：在对应 `personal-asis-v2-rollbacks/时间戳/` 运行 `./rollback.sh`。它只恢复前一代码／插件／unit选择，不回滚生活事件库、不删除新记录。最初迁移备份 `20261020_153545` 的脚本用于恢复旧架构；后续备份用于恢复上一v2版本。均需按目标核对，不混用回退脚本。
+
+2.5.1催睡调整为01:00起每10分钟；首次加载会幂等延后仍按旧5分钟排定的后续提醒，已关闭及当晚晚安状态保留。轮次从当前睡前窗口内的投递占位计算，重启不从第一条重复。文案仅按需读取既有主动记录的合格学习主题，不新增表、外部请求或模型调用。
 
 催睡使用同一生活库中独立的 `bedtime_policy`／`bedtime_delivery`／`bedtime_ack` 表；既有记录、同步游标和一次性事项表不迁移。新安装默认关闭，生产针对既有本人平台／私聊绑定开启，后续重启／部署保留规则。用户用 `/life sleep` 查看、`/life sleep off` 停用。切换本人绑定不会继续向旧身份发送。回退到2.0.1会停止催睡，不需要回滚或删除新表。
 

@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>AstrBot 接入 Google Calendar MCP · 配置指南</title>
+  <style>
+    :root { color-scheme: light dark; --bg:#f4f6f8; --paper:#fff; --ink:#17202a; --muted:#5d6874; --line:#dce2e8; --blue:#1769aa; --blue-bg:#e9f3fc; --amber:#8b5600; --amber-bg:#fff4db; --green:#176b45; --green-bg:#e7f5ed; --red:#9b3030; --red-bg:#fff0f0; }
+    @media (prefers-color-scheme: dark) { :root { --bg:#11161c; --paper:#19212a; --ink:#edf2f7; --muted:#aab6c2; --line:#35414c; --blue:#84bfff; --blue-bg:#1d3042; --amber:#ffd27b; --amber-bg:#3a2d18; --green:#83d5a7; --green-bg:#173326; --red:#ffaaaa; --red-bg:#3b2020; } }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.65 system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; }
+    main { width:min(900px, calc(100% - 32px)); margin:32px auto 64px; }
+    header, section, footer { background:var(--paper); border:1px solid var(--line); border-radius:16px; padding:24px; margin:16px 0; }
+    header { padding:32px; border-top:5px solid var(--blue); }
+    h1 { font-size:clamp(1.7rem,4vw,2.35rem); line-height:1.2; margin:0 0 12px; }
+    h2 { font-size:1.35rem; margin:0 0 12px; }
+    h3 { font-size:1.05rem; margin:20px 0 8px; }
+    p { margin:8px 0 12px; }
+    a { color:var(--blue); }
+    .sub, .meta { color:var(--muted); }
+    .pill { display:inline-block; font-size:.84rem; font-weight:700; padding:3px 10px; border-radius:999px; background:var(--blue-bg); color:var(--blue); }
+    .callout { border-left:4px solid var(--blue); background:var(--blue-bg); padding:14px 16px; border-radius:8px; margin:14px 0; }
+    .warn { border-left-color:var(--amber); background:var(--amber-bg); }
+    .stop { border-left-color:var(--red); background:var(--red-bg); }
+    .ok { border-left-color:var(--green); background:var(--green-bg); }
+    ol, ul { padding-left:1.35rem; }
+    li { margin:7px 0; }
+    code, pre { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.9em; }
+    code { overflow-wrap:anywhere; }
+    pre { white-space:pre-wrap; overflow-wrap:anywhere; background:#111923; color:#eaf1f8; padding:16px; border-radius:10px; overflow-x:auto; }
+    .step { display:flex; gap:12px; align-items:flex-start; }
+    .num { flex:0 0 30px; height:30px; display:grid; place-items:center; border-radius:50%; background:var(--blue-bg); color:var(--blue); font-weight:800; }
+    .step-body { min-width:0; flex:1; }
+    .checklist label { display:flex; align-items:flex-start; gap:10px; margin:9px 0; cursor:pointer; }
+    input[type=checkbox] { margin-top:.35rem; accent-color:var(--blue); }
+    .status { display:flex; gap:8px; flex-wrap:wrap; margin-top:16px; }
+    .small { font-size:.9rem; }
+    .actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+    button { border:1px solid var(--line); color:var(--ink); background:var(--paper); border-radius:8px; padding:8px 12px; cursor:pointer; }
+    button:hover { border-color:var(--blue); }
+    footer { color:var(--muted); font-size:.9rem; }
+    @media print { body { background:white; color:#111; } main { width:100%; margin:0; } header,section,footer { break-inside:avoid; border-color:#bbb; box-shadow:none; } button,.actions { display:none; } pre { color:#111; background:#f1f1f1; border:1px solid #ccc; } a { color:#111; text-decoration:underline; } }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="pill">AstrBot 4.27.3 · 只读与受限写入已启用</span>
+    <h1>Google Calendar MCP 配置指南</h1>
+    <p class="sub">已复用 AstrBot Life 插件、已安装 MCP SDK 和现成的 <code>@cocal/google-calendar-mcp@2.7.0</code>。只读查询及本人私聊中的受限写入提案均已启用；每次事件变更仍须你确认。</p>
+    <div class="status"><span class="pill">OAuth scope 已核验</span><span class="pill">令牌权限 0600</span><span class="pill">SDK 门控预检通过</span><span class="pill">真实 list-calendars 调用成功</span></div>
+  </header>
+
+  <section>
+    <h2>先看当前状态</h2>
+    <ul>
+      <li>Google Calendar API 已启用，OAuth 应用处于 External / Testing，Gmail 已加入测试用户。</li>
+      <li>客户端文件和当前只读令牌在 VPS 私密目录，权限均为 <code>0600</code>；当前scope只有 <code>calendar.readonly</code>。</li>
+      <li>Life 插件 <code>2.7.0</code> 已部署；只读查询与写入提案开关均为 true。</li>
+      <li>已连接七项只读工具并完成真实 <code>list-calendars</code> 调用；没有将Calendar MCP全局注册到 <code>mcp_server.json</code>。</li>
+    </ul>
+    <div class="callout ok"><strong>只读接入和写入授权已完成。</strong>上游会额外注册 <code>manage-accounts</code>，Life 插件不会把它提供给 Agent。写入提案只允许新增、修改或删除单个非重复事件，具体边界见下文。</div>
+  </section>
+
+  <section>
+    <h2>第一步：确认 Google OAuth 配置</h2>
+    <div class="step"><span class="num">1</span><div class="step-body">
+      <p>打开 <a href="https://console.cloud.google.com/auth/audience">Google Auth Platform · 目标对象</a>，确认应用仍处于 <strong>External / Testing</strong>，你的 Gmail 在测试用户名单中。测试阶段无需发布应用。</p>
+    </div></div>
+    <div class="step"><span class="num">2</span><div class="step-body">
+      <p>在 Google Cloud 的 <a href="https://console.cloud.google.com/apis/library/calendar-json.googleapis.com">Google Calendar API</a> 页面确认 API 状态为“已启用”。客户端类型应为 Desktop app。</p>
+    </div></div>
+    <div class="callout">OAuth 应用名应显示为 <strong>AstrBot Calendar</strong>，客户端为 <strong>AstrBot Calendar VPS</strong>。如果页面显示其他应用或账号，先停下检查。</div>
+  </section>
+
+  <section>
+    <h2>第二步：原只读 OAuth 流程（已完成）</h2>
+    <p>这一步会由你在 Google 同意页授予日历只读权限。Python 引导脚本使用 PKCE，监听地址只绑定 VPS 的 <code>127.0.0.1</code>；客户端密钥和令牌留在 VPS。脚本会拒绝额外 scope、缺少 refresh token 的响应，也不会覆盖已有令牌。</p>
+    <div class="step"><span class="num">1</span><div class="step-body">
+      <p>在 Mac 的终端 A 建立临时 SSH 转发。让这个终端保持运行：</p>
+      <pre><code>ssh -N -o ExitOnForwardFailure=yes -L 8085:127.0.0.1:8085 mac@35.209.202.207</code></pre>
+      <p class="small">连接首次提示 SSH 主机指纹时，只在与之前核验过的 VPS 指纹一致时继续。完成授权后按 <code>Control-C</code> 关闭转发。</p>
+    </div></div>
+    <div class="step"><span class="num">2</span><div class="step-body">
+      <p>在 Mac 的终端 B，把公开的引导脚本传到 VPS，再启动它：</p>
+      <pre><code>scp scripts/google-calendar-oauth-bootstrap.py mac@35.209.202.207:/home/mac/astrbot/data/google-calendar-mcp/oauth_bootstrap.py
+ssh mac@35.209.202.207 'chmod 700 /home/mac/astrbot/data/google-calendar-mcp && chmod 600 /home/mac/astrbot/data/google-calendar-mcp/gcp-oauth.keys.json && chmod 700 /home/mac/astrbot/data/google-calendar-mcp/oauth_bootstrap.py && python3 /home/mac/astrbot/data/google-calendar-mcp/oauth_bootstrap.py'</code></pre>
+      <p>脚本会在终端显示一条临时 Google OAuth URL。不要把 URL、回调地址或授权过程截图发到聊天里。</p>
+    </div></div>
+    <div class="step"><span class="num">3</span><div class="step-body">
+      <p>在 Mac 浏览器打开终端 B 打印的 URL，选中已加入测试用户的 Gmail。Google 同意页出现后，仔细核对：</p>
+      <ul><li>应用是 <strong>AstrBot Calendar</strong>；</li><li>请求的唯一数据权限是 <code>calendar.readonly</code>，含义为查看日历和活动；</li><li>没有写入、修改、删除日历事件的权限。</li></ul>
+      <p>只有以上信息都匹配且你同意时，才在 Google 页面点击继续/允许。如果显示更广权限、另一个应用或另一个账号，请取消并停止。若页面空白，刷新或换浏览器后重跑脚本；不要盲目继续。</p>
+    </div></div>
+    <div class="step"><span class="num">4</span><div class="step-body">
+      <p>Google 回调成功后，VPS 终端应显示“Read-only OAuth token saved privately”及“calendar.readonly”。随后终端 A 按 <code>Control-C</code> 关闭 SSH 转发。如果 Google 页面空白或范围不符，先在终端 B 按 <code>Control-C</code> 取消流程，再关闭转发；排除原因后再重新运行。</p>
+    </div></div>
+    <div class="callout stop"><strong>不要</strong>使用上游 MCP 的 <code>auth</code> / <code>manage-accounts add</code> 来获取这次令牌：它们默认申请完整 <code>calendar</code> scope。也不要用 gcloud ADC 流程；它会额外要求 <code>cloud-platform</code>。</div>
+  </section>
+
+  <section>
+    <h2>第三步：检查私密保存结果</h2>
+    <p>在 Mac 另开终端执行以下只检查权限和授权范围的命令。输出不包含令牌内容：</p>
+    <pre><code>ssh mac@35.209.202.207 "stat -c '%a %n' /home/mac/astrbot/data/google-calendar-mcp/tokens.json && python3 -c 'import json; p=\"/home/mac/astrbot/data/google-calendar-mcp/tokens.json\"; t=json.load(open(p))[\"normal\"]; assert t.get(\"scope\")==\"https://www.googleapis.com/auth/calendar.readonly\" and t.get(\"refresh_token\") and t.get(\"access_token\"); print(\"scope and token fields OK\")'"</code></pre>
+    <p>期望权限是 <code>600</code>，末行显示 <code>scope and token fields OK</code>。若失败，不要贴出文件内容；把不含令牌的报错文字发给我。</p>
+    <div class="callout ok">成功后，脚本只在 VPS 写入 <code>tokens.json</code>。客户端 JSON、访问令牌和刷新令牌都不要复制到 Mac、聊天、工单、Git 或命令参数。</div>
+  </section>
+
+  <section>
+    <h2>第四步：交给我完成 AstrBot 安全上线</h2>
+    <p>只读版本已完成以下上线步骤：</p>
+    <ol>
+      <li>在现有 Life 插件中经 MCP SDK 调用上游服务，只将七项只读工具封装给 Agent；上游 <code>manage-accounts</code> 不会注册为 Agent 工具。</li>
+      <li>验证每次调用只允许你本人已绑定的平台私聊；拒绝群聊、其他账号和未绑定身份。</li>
+      <li>备份既有 Life 插件和私密插件配置，启用前检查实际人格工具选择；部署后用你的真实账号只做一次日历列表/事件读取验证。</li>
+      <li>只读版本不创建、修改或删除事件，也不发送平台测试消息。</li>
+    </ol>
+    <div class="callout warn">不要手工改 <code>data/mcp_server.json</code> 或切换 AstrBot MCP 的全局访问白名单。仅把工具设为 admin 仍不能证明群聊隔离，可能影响其他插件。</div>
+  </section>
+
+  <section>
+    <h2>写入授权与激活状态</h2>
+    <p>写入代码已通过 VPS 实际 AstrBot SDK 合成预检并部署；Google 授权和 VPS 激活已完成。Google 官方的写入 scope <code>calendar.events.owned</code> 允许查看、创建、修改和删除你拥有的日历中的事件；同时保留 <code>calendar.readonly</code> 以继续读取你可访问的日历。授权范围详情见 <a href="https://developers.google.com/workspace/calendar/api/auth">Google 官方文档</a>。</p>
+    <div class="callout ok"><strong>已核验：</strong>Google 只授予 <code>calendar.readonly</code> 和 <code>calendar.events.owned</code>；AstrBot 配置已启用，服务启动日志确认写入提案工具已上线。</div>
+    <div class="step"><span class="num">1</span><div class="step-body">
+      <p>下列步骤仅供以后令牌到期时重新授权参考。Mac 终端 A 建立临时回环转发并保持运行：</p>
+      <pre><code>ssh -N -o ExitOnForwardFailure=yes -L 8085:127.0.0.1:8085 mac@35.209.202.207</code></pre>
+    </div></div>
+    <div class="step"><span class="num">2</span><div class="step-body">
+      <p>在终端 B 启动已放在 VPS 私密目录的扩权脚本：</p>
+      <pre><code>ssh mac@35.209.202.207 'python3 /home/mac/astrbot/data/google-calendar-mcp/upgrade_calendar_write.py'</code></pre>
+      <p>在浏览器打开脚本打印的临时 URL。核对应用为 <strong>AstrBot Calendar</strong>、账号正确，且仅请求上面列出的两个scope。脚本用 PKCE，收到的scope不完全相符或缺少刷新令牌时，会保留现有只读令牌；成功升级时也会先把原令牌保留为VPS私密的 <code>0600</code> 备份。</p>
+    </div></div>
+    <div class="step"><span class="num">3</span><div class="step-body">
+      <p>看到“Calendar scopes verified”后，在终端 A 按 <code>Control-C</code> 关闭转发，再执行一次性激活脚本：</p>
+      <pre><code>ssh mac@35.209.202.207 'python3 /home/mac/astrbot/data/google-calendar-mcp/activate_calendar_write.py'</code></pre>
+      <p>该脚本会再次校验scope、备份配置、打开写入开关并重启AstrBot。随后你可在本人私聊提出新增、修改或删除事件；机器人先给完整预览与确认码，你发送 <code>/life calendar confirm &lt;确认码&gt;</code> 才会执行。五分钟有效、一次使用。取消用 <code>/life calendar cancel &lt;确认码&gt;</code>。</p>
+    </div></div>
+    <p>写入目前仅支持单个、非重复事件；创建时不能邀请参会者，修改／删除含参会者的事件会被拒绝，也不发送通知。暂不支持批量写入、重复事件和日历共享管理。每次操作的Google结果未知时不会自动重试；先到日历核实状态。</p>
+  </section>
+
+  <section class="checklist" aria-labelledby="check-title">
+    <h2 id="check-title">你的操作清单</h2>
+    <label><input type="checkbox" checked disabled>Google 应用保持 External / Testing，Gmail 已是测试用户</label>
+    <label><input type="checkbox" checked disabled>OAuth 同意页显示 AstrBot Calendar、calendar.readonly 和 calendar.events.owned</label>
+    <label><input type="checkbox" checked disabled>VPS 已保存令牌，权限为 600，范围检查通过</label>
+    <label><input type="checkbox" checked disabled>SDK 合成私聊门控通过，群聊与其他账号被拒绝</label>
+    <label><input type="checkbox" checked disabled>AstrBot 已连接七项只读工具，真实 list-calendars 调用成功</label>
+    <div class="actions"><button type="button" onclick="window.print()">打印 / 存为 PDF</button></div>
+    <p class="small meta">授权与写入配置已开启，尚未执行真实事件写入。你可先在本人私聊提出一个事件变更，检查预览，再用一次性确认命令执行。</p>
+  </section>
+
+  <footer>
+    <p>相关资料：<a href="google-calendar-mcp.md">接入现状与技术记录</a> · <a href="https://docs.astrbot.app/use/mcp.html">AstrBot MCP 文档</a> · <a href="https://github.com/nspady/google-calendar-mcp">google-calendar-mcp 上游项目</a></p>
+    <p>说明版本：2026-10-28。External / Testing 的刷新令牌可能有期限。重新授权时请继续核对scope；只读恢复用初始脚本，写入启用后用写入扩权脚本。两者都只在权限精确匹配时替换令牌，并将旧令牌保存在VPS私密备份。</p>
+  </footer>
+</main>
+</body>
+</html>

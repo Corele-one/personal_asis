@@ -7,7 +7,7 @@ import types
 import unittest
 from unittest.mock import patch
 
-from personal_asis.life_bedtime import BedtimeReminder, is_goodnight, owner_key
+from personal_asis.life_bedtime import BedtimeReminder, is_goodnight, nudge_text, owner_key
 from personal_asis.life_store import LifeStore
 
 
@@ -37,9 +37,9 @@ class BedtimeTests(unittest.TestCase):
         second = LifeStore(self.path)
         try:
             restarted = BedtimeReminder(second)
-            self.assertIsNone(restarted.claim(self.owner, '2026-10-22T01:04:59+08:00'))
+            self.assertIsNone(restarted.claim(self.owner, '2026-10-22T01:09:59+08:00'))
             restarted.result(item, 'unknown')
-            self.assertIsNotNone(restarted.claim(self.owner, '2026-10-22T01:05:00+08:00'))
+            self.assertIsNotNone(restarted.claim(self.owner, '2026-10-22T01:10:00+08:00'))
             self.assertEqual(second.db.execute('SELECT state FROM bedtime_delivery WHERE due=?', (item['due'],)).fetchone()[0], 'unknown')
         finally:
             second.close()
@@ -48,7 +48,8 @@ class BedtimeTests(unittest.TestCase):
         self.enable()
         self.rule.claim(self.owner, '2026-10-22T01:00:00+08:00')
         self.enable('2026-10-22T01:03:00+08:00')
-        self.assertIsNotNone(self.rule.claim(self.owner, '2026-10-22T01:05:00+08:00'))
+        self.assertIsNone(self.rule.claim(self.owner, '2026-10-22T01:05:00+08:00'))
+        self.assertIsNotNone(self.rule.claim(self.owner, '2026-10-22T01:10:00+08:00'))
 
     def test_never_stops_at_morning_or_next_midnight_without_goodnight(self):
         self.enable()
@@ -60,7 +61,44 @@ class BedtimeTests(unittest.TestCase):
         self.enable()
         self.assertIsNotNone(self.rule.claim(self.owner, '2026-10-22T12:02:00+08:00'))
         self.assertIsNone(self.rule.claim(self.owner, '2026-10-22T12:02:01+08:00'))
-        self.assertIsNotNone(self.rule.claim(self.owner, '2026-10-22T12:07:00+08:00'))
+        self.assertIsNone(self.rule.claim(self.owner, '2026-10-22T12:07:00+08:00'))
+        self.assertIsNotNone(self.rule.claim(self.owner, '2026-10-22T12:12:00+08:00'))
+
+    def test_upgrade_extends_existing_followup_and_preserves_goodnight(self):
+        self.enable()
+        self.rule.claim(self.owner, '2026-10-22T01:00:00+08:00')
+        with self.store.db:
+            self.store.db.execute("UPDATE bedtime_policy SET next_due='2026-10-21T17:05:00+00:00'")
+        upgraded = BedtimeReminder(self.store)
+        self.assertIsNone(upgraded.claim(self.owner, '2026-10-22T01:09:59+08:00'))
+        self.assertIsNotNone(upgraded.claim(self.owner, '2026-10-22T01:10:00+08:00'))
+        upgraded.goodnight(self.owner, self.origin, '2026-10-22T01:11:00+08:00')
+        expected = upgraded.status(self.owner)
+        self.assertEqual(BedtimeReminder(self.store).status(self.owner), expected)
+
+    def test_nudge_rotation_survives_restart_without_creating_records(self):
+        self.enable()
+        first = self.rule.claim(self.owner, '2026-10-22T01:00:00+08:00')
+        second = BedtimeReminder(self.store).claim(self.owner, '2026-10-22T01:10:00+08:00')
+        self.assertEqual((first['number'], second['number']), (1, 2))
+        self.assertNotEqual(nudge_text(first), nudge_text(second))
+        self.assertIn('晚安', nudge_text(first))
+        self.assertNotIn('/life', nudge_text(second))
+        self.assertEqual(self.store.export()['changes'], [])
+
+    def test_personalization_uses_only_current_night_owner_learning(self):
+        from personal_asis.life_tracking import LifeTracking
+        record, _ = self.store.capture('p', 'owner', 'study', '/life 开始学习模拟电路',
+            '2026-10-21T23:00:00+08:00')
+        LifeTracking(self.store).auto(record)
+        record = self.store.get(record['id'])
+        item = dict(at='2026-10-21T17:00:00+00:00', number=1)
+        render = lambda records: nudge_text(item, records, platform='p', sender='owner')
+        self.assertIn('模拟电路', render([record]))
+        for changes in (dict(sender='other'), dict(platform='other'), dict(deleted=True),
+                        dict(capture_source='conversation'), dict(occurred_at='2026-10-20T15:00:00+00:00'),
+                        dict(occurred_at='2026-10-21T18:00:00+00:00'), dict(tracking={})):
+            self.assertNotIn('模拟电路', render([dict(record, **changes)]), changes)
 
     def test_evening_and_post_midnight_goodnight_skip_same_night(self):
         for at in ('2026-10-21T23:30:00+08:00', '2026-10-22T00:30:00+08:00'):
@@ -287,7 +325,8 @@ class PluginTests(unittest.TestCase):
                 with self.assertRaises(asyncio.CancelledError): await self.bot.reminders()
             self.assertEqual(len(self.sent), 1)
             self.assertEqual(self.sent[0][0], 'p:FriendMessage:owner')
-            self.assertIn('该睡觉了', self.sent[0][1])
+            self.assertNotIn('/life sleep off', self.sent[0][1])
+            self.assertIn('每 10 分钟', replies[0])
             [r async for r in self.bot.life(event, 'sleep', 'off')]
             self.assertFalse(self.bot.bedtime.status(self.bot.bedtime_owner())['enabled'])
         asyncio.run(run())
