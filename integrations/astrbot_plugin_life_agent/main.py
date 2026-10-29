@@ -23,7 +23,7 @@ from .life_attention import LifeAttention
 from .life_intake import entry_content
 
 
-@register('life_agent', 'Personal Asis', '主动记录、习惯学习、共享资料与用户纠正', '2.7.0')
+@register('life_agent', 'Personal Asis', '主动记录、习惯学习、共享资料与用户纠正', '2.8.2')
 class LifeAgent(Star):
     def __init__(self, context: Context, config):
         super().__init__(context)
@@ -38,6 +38,7 @@ class LifeAgent(Star):
         self.workspace.mkdir(exist_ok=True, mode=0o700)
         self.worker = None
         self.feedback_worker = None
+        self.attention_worker = None
         self.calendar_session = None
         self.calendar_stack = None
         self.calendar_write_scope_available = False
@@ -145,6 +146,10 @@ class LifeAgent(Star):
             logger.warning('life_agent Google Calendar MCP unavailable; no account or calendar details logged')
 
     async def terminate(self):
+        if self.attention_worker:
+            self.attention_worker.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await self.attention_worker
         if self.feedback_worker:
             self.feedback_worker.cancel()
             with contextlib.suppress(asyncio.CancelledError):
@@ -930,8 +935,8 @@ class LifeAgent(Star):
             try:
                 # Binding must still match at dispatch; old owners never receive nudges.
                 if self.config.get('owner_platform') and self.config.get('owner_id'):
-                    if self.config.get('capture_enabled', True):
-                        await self.send_attention()
+                    if self.config.get('capture_enabled', True) and (not self.attention_worker or self.attention_worker.done()):
+                        self.attention_worker = asyncio.create_task(self.send_attention())
                     item = self.bedtime.claim(self.bedtime_owner())
                     if item:
                         try:
@@ -959,6 +964,7 @@ class LifeAgent(Star):
                 await asyncio.sleep(15)
 
     async def send_attention(self):
+        bound_owner = (self.config['owner_platform'], self.config['owner_id'])
         mac_path = self.home / 'mac-status.json'
         try:
             mac = json.loads(mac_path.read_text()) if mac_path.exists() else None
@@ -967,8 +973,35 @@ class LifeAgent(Star):
         item = self.attention.claim(self.bedtime_owner(), self.config['owner_platform'], self.config['owner_id'], mac=mac)
         if item:
             try:
-                sent = await self.context.send_message(item['origin'], MessageChain().message(item['body']))
+                # claim() persisted the reservation before any paid request.
+                # One SDK call, no tools/history/Agent loop; never auto-retry.
+                from .life_briefing import SYSTEM, GENERATION_TIMEOUT, render
+                body, generation = item['body'], 'fallback'
+                if item.get('evidence'):
+                    try:
+                        provider = await self.context.get_current_chat_provider_id(umo=item['origin'])
+                        answer = await asyncio.wait_for(self.context.llm_generate(
+                            chat_provider_id=provider, system_prompt=SYSTEM,
+                            prompt=json.dumps(dict(start=item['start'], end=item['end'],
+                                evidence=item['evidence']), ensure_ascii=False),
+                            contexts=[], tools=None), timeout=GENERATION_TIMEOUT)
+                        body, generation = render(answer.completion_text, item), 'model'
+                    except asyncio.CancelledError:
+                        raise
+                    except Exception:
+                        logger.warning('life_agent brief synthesis unavailable; source preview only; no retry')
+                if (self.config.get('owner_platform'), self.config.get('owner_id')) != bound_owner:
+                    self.attention.withdraw(item)
+                    return
+                if not self.config.get('capture_enabled', True) or not self.attention.valid(item):
+                    self.attention.withdraw(item)
+                    return
+                self.attention.save_body(item, body, generation)
+                sent = await self.context.send_message(item['origin'], MessageChain().message(body))
                 self.attention.result(item, 'sent' if sent else 'unknown')
+            except asyncio.CancelledError:
+                self.attention.result(item, 'unknown')
+                raise
             except Exception:
                 self.attention.result(item, 'unknown')
                 logger.warning('life_agent brief outcome unknown; no automatic retry')

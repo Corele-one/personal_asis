@@ -1,6 +1,7 @@
 """Use the installed AstrBot SDK with temporary synthetic state; transport forbidden."""
 import asyncio
 import importlib
+import inspect
 import json
 from pathlib import Path
 import sys
@@ -162,6 +163,38 @@ async def fixture():
             feedback.finish(job,reply=reply)
             assert feedback.thread('b'*32)[0]['effect']['action']=='clear_habit'
             assert bot.store.get(r['id'])['text']==target['text']
+            # Installed Context signature + plugin pipeline, synthetic generation
+            # and transport only. The actual configured model is never invoked.
+            from datetime import datetime
+            from astrbot_plugin_life_agent import life_attention
+            calls = {'model': 0, 'send': 0}
+            class BriefContext(SyntheticContext):
+                async def llm_generate(self, **kwargs):
+                    inspect.signature(module.Context.llm_generate).bind(self, **kwargs)
+                    assert kwargs['tools'] is None and kwargs['contexts'] == []
+                    assert bot.store.db.execute("SELECT state FROM attention_delivery").fetchone()[0] == 'sending'
+                    calls['model'] += 1
+                    evidence = json.loads(kwargs['prompt'])['evidence']
+                    idea = next(v for v in evidence if v['source']=='idea')
+                    return types.SimpleNamespace(completion_text=json.dumps({'paragraphs': [
+                        {'text': '你之前想看的那部合成旧片，后来还没见你聊起。', 'refs': [idea['id']]}]},ensure_ascii=False))
+                async def send_message(self, origin, message):
+                    assert origin == event.unified_msg_origin
+                    calls['send'] += 1
+                    return True
+            bot.store.capture('synthetic','owner','brief-source','/life 多任务让我分心，想散步。','2026-10-28T20:00:00+08:00')
+            bot.store.capture('synthetic','owner','old-idea-source','我想看《合成旧片》','2026-10-23T20:00:00+08:00',capture_source='conversation')
+            bot.attention.configure(bot.bedtime_owner(),event.unified_msg_origin,True)
+            policy=bot.attention.policy(bot.bedtime_owner());policy['next_brief']='2026-10-29T00:00:00+00:00'
+            with bot.store.db:bot.attention._policy(bot.bedtime_owner(),policy)
+            bot.context=BriefContext()
+            with patch.object(life_attention,'local',return_value=datetime.fromisoformat('2026-10-29T08:10:00+08:00')):
+                await bot.send_attention()
+                await bot.send_attention()
+            assert calls == {'model': 1, 'send': 1}
+            saved=json.loads(bot.store.db.execute('SELECT payload FROM attention_delivery').fetchone()[0])
+            assert saved['generation']=='model'
+            assert len(saved['recalled_idea_keys'])==1
             bot.context=original_context
             event.message_str='实践作业要求阅读完成后写报告'
             event.message_obj.message_id='synthetic-memory'
@@ -181,6 +214,8 @@ print(json.dumps(dict(actual_sdk_import=True, registered_tool_methods=len(tools)
     synthetic_ten_minute_bedtime=True,
     synthetic_owner_tracking=True, synthetic_goal=True, synthetic_prompt=True,
     synthetic_shared_search_read_annotation=True, synthetic_pwa_feedback_executor=True, conversation_memory_isolated=True,
+    installed_brief_generate_signature=True, synthetic_brief_reserved_single_call_and_delivery=True,
+    synthetic_old_conversation_idea_with_provenance=True,
     calendar_owner_private_read=True, calendar_group_and_stranger_rejected=True,
     calendar_queries_require_valid_range_and_timezone=True, manage_accounts_not_exposed=True,
     real_google_calls=0, real_model_calls=0, real_messages_sent=0)))

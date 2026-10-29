@@ -1,6 +1,6 @@
 name: astrbot_plugin_life_agent
 display_name: Personal Asis Life Agent
 desc: 本人睡眠、健康、日常记录和定时事项；Mac 确认后同步 Obsidian
-version: v2.7.0
+version: v2.8.2
 author: Personal Asis
 repo: ""

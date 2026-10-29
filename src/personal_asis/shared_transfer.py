@@ -25,6 +25,16 @@ def handle(request, home):
         if request['after'] > head:
             raise ValueError('shared_replica_reset_requires_reseed')
         received = store.receive(request['upload'], 'mac')
+        # Withdraw cached briefing prose when its source changed/disappeared.
+        # Already delivered platform messages are external copies.
+        if (Path(home)/'life.sqlite3').is_file():
+            from .life_store import LifeStore
+            from .life_attention import LifeAttention
+            life = LifeStore(Path(home)/'life.sqlite3')
+            try:
+                LifeAttention(life).withdraw_stale_shared()
+            finally:
+                life.close()
         with store.db:
             store.set_meta('mac_last_received', datetime.now(timezone.utc).isoformat())
             store.set_meta('mac_snapshot',dict(received=received,head=request['head'],complete=received>=request['head']))

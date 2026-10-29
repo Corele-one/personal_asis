@@ -148,7 +148,7 @@ class BedtimeTests(unittest.TestCase):
 class PluginTests(unittest.TestCase):
     def setUp(self):
         # Synthetic API only; deployed-SDK validation is performed separately.
-        from personal_asis import life_store, life_bedtime, bootstrap_context, personal_profile, life_tracking, life_attention, life_intake
+        from personal_asis import life_store, life_bedtime, bootstrap_context, personal_profile, life_tracking, life_attention, life_intake, life_briefing
         modules = {name: types.ModuleType(name) for name in ('astrbot', 'astrbot.api', 'astrbot.api.event', 'astrbot.api.star', 'synthetic_life_plugin')}
         decorator = lambda *a, **kw: lambda fn: fn
         modules['astrbot.api'].logger = types.SimpleNamespace(warning=lambda *a: None)
@@ -169,7 +169,8 @@ class PluginTests(unittest.TestCase):
                         'synthetic_life_plugin.bootstrap_context': bootstrap_context,
                         'synthetic_life_plugin.personal_profile': personal_profile})
         modules.update({'synthetic_life_plugin.life_tracking': life_tracking,
-                        'synthetic_life_plugin.life_attention': life_attention, 'synthetic_life_plugin.life_intake': life_intake})
+                        'synthetic_life_plugin.life_attention': life_attention, 'synthetic_life_plugin.life_intake': life_intake,
+                        'synthetic_life_plugin.life_briefing': life_briefing})
         mocked = patch.dict(sys.modules, modules); mocked.start(); self.addCleanup(mocked.stop)
         path = Path(__file__).resolve().parents[1] / 'integrations/astrbot_plugin_life_agent/main.py'
         spec = importlib.util.spec_from_file_location('synthetic_life_plugin.main', path)

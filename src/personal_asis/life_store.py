@@ -25,6 +25,7 @@ def digest(value):
 class LifeStore:
     def __init__(self, path):
         path = Path(path)
+        self.path = path.absolute()
         path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
         self.db = sqlite3.connect(path, timeout=15)
         self.db.row_factory = sqlite3.Row

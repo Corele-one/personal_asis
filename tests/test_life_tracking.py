@@ -120,8 +120,9 @@ class TrackingTests(unittest.TestCase):
         item=dict(phase='end',topic='差分放大器',content='学习差分放大器',blocker='共模增益',next_step='先画小信号模型',evidence=r['text'])
         self.tracking.update(r['id'],dict(habits=[],learning=[item]))
         report=self.attention.prepare(self.owner,'p','owner','brief','2026-10-29T08:10:00+08:00')
-        self.assertIn('共模增益',report['body']);self.assertIn('□ 先画小信号模型',report['body'])
-        self.assertIn('pi_sync',report['body']);self.assertIn('不够',report['body'])
+        evidence=json.dumps(report['evidence'],ensure_ascii=False)
+        self.assertIn('共模增益',evidence);self.assertIn('先画小信号模型',evidence)
+        self.assertIn('pi_sync',report['body']);self.assertIn('暂不可用',report['body'])
         self.assertNotIn('未完成阅读',report['body'])
 
     def test_goal_followup_only_once_per_update_and_snooze_preserves_window(self):
@@ -221,7 +222,7 @@ class TrackingPluginTests(unittest.TestCase):
             self.assertEqual(self.bot.store.recent(),[])
             # A fixture controls time and transport. No real platform send or model.
             item=dict(owner=self.bot.bedtime_owner(),origin='p:FriendMessage:owner',day='2026-10-29',body='合成简报')
-            with patch.object(self.bot.attention,'claim',return_value=item) as claim,patch.object(self.bot.attention,'result') as result:
+            with patch.object(self.bot.attention,'claim',return_value=item) as claim,patch.object(self.bot.attention,'valid',return_value=True),patch.object(self.bot.attention,'result') as result:
                 await self.bot.send_attention()
                 self.assertEqual(self.sent[-1],('p:FriendMessage:owner','合成简报'))
                 result.assert_called_once_with(item,'sent')

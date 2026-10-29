@@ -1,0 +1,137 @@
+{
+  "date": "2026-10-29",
+  "plugin_version": "2.8.2",
+  "behavior": {
+    "sources": [
+      "owner explicit life entries",
+      "windowed Life Journal Freewrite/Learning",
+      "related WUCAI quotes/annotations",
+      "related collected Xiaohongshu body"
+    ],
+    "presentation": "Expanded personal letter; softly suggested 900-1600 Chinese characters, no fixed paragraph count or mandatory advice; deduplicated sources at end, internal paragraph evidence IDs retained",
+    "model": "Existing AstrBot selected chat provider; one SDK call per reserved report, no tools or history, 90-second generation timeout",
+    "fallback": "Explicit source-preview only on synthesis/format failure, no model retry",
+    "cadence": "Every 3 days and Monday 08:00-09:00 Asia/Shanghai, merged per day; existing pause controls retained",
+    "provenance": "Saved/quoted content is not completed reading or adopted opinion; retrieval timestamps are not reading dates",
+    "withdrawal": "Version/deletion/correction/policy/window checks before send; shared-source changes withdraw cached reports",
+    "background_platform_fetch_added": false,
+    "output_protection": {
+      "max_paragraphs": 16,
+      "max_paragraph_characters": 1800,
+      "max_body_characters": 6000,
+      "max_message_bytes": 24000
+    },
+    "fresh_snapshot_notice_omitted": true,
+    "old_ideas": {
+      "lookback_days": 30,
+      "owner_records_limit": 200,
+      "journal_documents_limit": 31,
+      "sources": [
+        "owner explicit life entries",
+        "owner conversation memory",
+        "complete Life Journal Freewrite"
+      ],
+      "older_than_current_review_window": true,
+      "candidate_limit": 4,
+      "maximum_recalled_per_letter": 2,
+      "cooldown_days": 14,
+      "cooldown_only_after_actual_model_citation": true,
+      "unknown_delivery_counts_for_cooldown": true,
+      "absence_of_followup": "not confirmed, never classified as failure or uncompleted",
+      "later_completion_and_cancellation_checked": true,
+      "new_completion_during_generation_blocks_send": true,
+      "goals_tasks_reminders_or_tracking_created": false,
+      "fallback_omits_old_ideas": true
+    }
+  },
+  "synthetic_tests": {
+    "briefing": 15,
+    "local_agent": {
+      "run": 394,
+      "passed": 394
+    },
+    "full": {
+      "run": 723,
+      "passed": 715,
+      "skipped_optional_dependencies": 8
+    },
+    "coverage": [
+      "Journal window and section boundaries, excluding templates/quotes/checklist",
+      "related reading with account/coverage provenance, title-only and expiry exclusions",
+      "complete chunk verification and busy-week input bound",
+      "citation IDs and program-owned source labels/URLs",
+      "model reservation before SDK call; single call without tools/history",
+      "unknown model/send fallback without retry",
+      "delete/disable during generation prevents send",
+      "shared withdrawal clears cached prose and retains no-retry reservation",
+      "course alias retrieval of relevant Xiaohongshu body",
+      "Expanded letter exceeding old paragraph/body/byte limits accepted; inline markers omitted, footer deduplicated, per-paragraph provenance retained, excessive output rejected",
+      "Old owner conversation and complete Journal ideas; source date/owner/quotation/requirement/generic-reflection exclusions",
+      "Later completed/cancelled and current-day status suppress old wishes; still-unfinished followup retained",
+      "Actual-citation-only idea cooldown survives restart and unknown delivery; uncited candidates remain eligible",
+      "New completion while generating and source deletion prevent dispatch; at most two old ideas; fallback omits them"
+    ],
+    "final_idea_tracking_shared_targeted": {
+      "run": 50,
+      "passed": 50
+    }
+  },
+  "actual_sdk": {
+    "import_verified": true,
+    "registered_tool_methods": 10,
+    "installed_generate_signature_verified": true,
+    "synthetic_reserved_single_call_pipeline": true,
+    "real_model_calls": 0,
+    "real_test_messages_sent": 0,
+    "synthetic_old_conversation_idea_with_provenance": true
+  },
+  "deployment": {
+    "release": "20261029_154620_371034",
+    "backup": "20261029_154620_371034",
+    "rollback_available": true,
+    "manifest_and_online_plugin_hashes_match": true,
+    "files_verified": 53,
+    "astrbot": "active",
+    "dashboard": "active",
+    "backup_record_count": 47,
+    "live_record_count": 47,
+    "all_previous_record_payloads_equal": true,
+    "database_and_backup_mode": "0600",
+    "existing_proactive_policy_preserved": true,
+    "next_brief": "2026-11-01T08:00:00+08:00",
+    "next_weekly": "2026-11-02T08:00:00+08:00",
+    "previous_release": "20261029_151957_824519",
+    "final_style_release_verified": true,
+    "live_generation_timeout_seconds": 90,
+    "old_ideas_release_verified": true,
+    "goals_preserved": true
+  },
+  "real_source_selection": {
+    "read_only": true,
+    "snapshot_complete": true,
+    "incomplete_documents": 0,
+    "selected": {
+      "astrbot": 12,
+      "journal": 3,
+      "wucai": 2,
+      "xiaohongshu": 1
+    },
+    "evidence_json_characters": 9328,
+    "model_calls": 0,
+    "platform_messages": 0,
+    "private_cached_next_window_idea_candidates": 2,
+    "live_read_only_next_window_idea_candidates": 2,
+    "live_idea_statuses": "not_confirmed"
+  },
+  "privacy": {
+    "real_obsidian_writes": 0,
+    "new_source_accounts": 0,
+    "private_manual_preview": "Ignored local directory only; not generated by the VPS model and not delivered to a platform"
+  },
+  "pending": [
+    "Real model synthesis and factual/tone quality",
+    "Next scheduled private-platform delivery and owner acceptance",
+    "Real model judgement of whether and how to mention an old idea, including follow-up semantics and low-frequency recall"
+  ],
+  "style_feedback": "Owner found the previous version still stiff and excessively terse; writing constraints and transport guard adjusted together. Manual local preview is approximately 1400 Chinese characters; it is not a real model evaluation."
+}

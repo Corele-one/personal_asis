@@ -1,4 +1,4 @@
-"""Persistent goals and bounded, evidence-based preparation; no extra model loop."""
+"""Persistent goals, bounded briefing preparation and durable delivery reservations."""
 from datetime import datetime, timedelta
 import json
 import re
@@ -123,54 +123,25 @@ class LifeAttention:
             end = start + timedelta(days=6)
         rows = LifeTracking(self.store).records(start.isoformat(), end.isoformat(), platform, sender)
         goals = [g for g in self.goals(owner) if g['status'] == 'active']
-        source_ids = [r['id'] for r in rows]
-        lines = [f"{'上周回顾' if kind == 'weekly' else '近几天简报'} · {start:%m/%d}–{end:%m/%d}"]
-        observed = {}
-        learning = []
-        for r in rows:
-            for h in r.get('tracking', {}).get('habits', []):
-                key = (r['day'], h['habit'])
-                if observed.get(key) == 'done' and h['status'] in ('planned', 'unknown'):
-                    continue
-                observed[key] = h['status']
-            learning.extend((r, item) for item in r.get('tracking', {}).get('learning', []))
-        completed = [f"{name} {sum(k[1] == key and v == 'done' for k,v in observed.items())} 天"
-                     for key, name in HABITS.items() if any(k[1] == key and v == 'done' for k,v in observed.items())]
-        if completed:
-            lines.append('已记录的习惯：' + '，'.join(completed) + '。未记录的日期不计作未完成。')
-        if learning:
-            lines.append('学习记录整理：')
-            for r, item in learning[-8:]:
-                phase = {'start': '开始', 'progress': '进展', 'end': '结束'}[item['phase']]
-                lines.append(f"• {r['day'][5:]} {phase} · {item['topic']}：{item['content'][:300]}")
-            next_steps = list(dict.fromkeys(item['next_step'] for _,item in learning if item['next_step']))
-            blockers = list(dict.fromkeys(item['blocker'] for _,item in learning if item['blocker']))
-            if blockers:
-                lines.append('待解决问题：' + '；'.join(blockers[-3:]))
-            if next_steps:
-                lines.append('按你记录整理的下次学习提纲：\n' + '\n'.join('□ ' + v for v in next_steps[-3:]))
-        if goals:
-            lines.append('当前关注事项：')
-            for g in goals:
-                source_ids.extend(g['source_ids'])
-                lines.append('• ' + g['title'] + ('\n  进展：' + g['progress'] if g['progress'] else '')
-                             + ('\n  卡点：' + g['blocker'] if g['blocker'] else '')
-                             + ('\n  下一步：□ ' + g['next_step'] if g['next_step'] else '\n  下一步尚未确定，可以告诉我目前卡在哪。'))
-        if len({r['day'] for r in rows if r.get('tracking')}) < 2:
-            lines.append('这段时间可用的习惯／学习记录还不够，暂不判断趋势。可以运行 pi_sync 核对两端状态，并把未记录的学习或习惯补充给我。')
-        stale = not mac
-        if mac:
-            try:
-                stale = (at - local(mac['checked_at'])).total_seconds() > 3 * 86400
-            except (KeyError, ValueError, TypeError):
-                stale = True
-        if stale:
-            lines.append('Mac 最近同步状态较旧或尚不可用，方便时运行一次 pi_sync；它不会自动把笔记全文上传给我。')
-        body = '\n\n'.join(lines)
-        if len(body.encode()) > 12000:
-            body = body.encode()[:11000].decode('utf-8', errors='ignore') + '\n（其余记录可在看板查看）'
-        return dict(kind=kind, start=start.isoformat(), end=end.isoformat(), body=body,
-                    source_ids=list(dict.fromkeys(source_ids)), prepared_at=timestamp(now))
+        from .life_briefing import gather, references, fallback, old_ideas
+        home = self.store.path.parent
+        recent_ideas = set()
+        since = (at.date()-timedelta(days=14)).isoformat()
+        for report in self.db.execute("SELECT payload FROM attention_delivery WHERE owner=? AND day>=? AND state IN ('sending','sent','unknown')",(owner,since)):
+            recent_ideas.update(json.loads(report[0]).get('recalled_idea_keys',[]))
+        ideas = old_ideas(self.store,platform,sender,start.isoformat(),end.isoformat(),
+                          status_day=at.date().isoformat(),skip=recent_ideas)
+        evidence, coverage = gather(home, rows, goals, start.isoformat(), end.isoformat(),ideas=ideas)
+        heading = f"{'上周回顾' if kind == 'weekly' else '近几天简报'} · {start:%m/%d}–{end:%m/%d}"
+        refs = references(evidence)
+        source_ids = list(dict.fromkeys([r['id'] for r in rows] + [rid for g in goals for rid in g['source_ids']]
+                                       + [r['record_id'] for r in refs if r.get('record_id')]))
+        value = dict(kind=kind, start=start.isoformat(), end=end.isoformat(), heading=heading,
+                     source_ids=source_ids, source_refs=refs, evidence=evidence,
+                     source_owner=dict(platform=platform,sender=sender),
+                     coverage=coverage, prepared_at=timestamp(now), generation='pending')
+        value['body'] = fallback(value)
+        return value
 
     def claim(self, owner, platform, sender, now=None, mac=None):
         at, stamp = local(now), timestamp(now)
@@ -191,7 +162,7 @@ class LifeAttention:
                 return None
             value = self.prepare(owner, platform, sender, 'weekly' if weekly else 'brief', now, mac)
             value['origin'] = policy['origin']
-            self.db.execute('INSERT INTO attention_delivery VALUES(?,?,?,?)', (owner, day, 'sending', json.dumps(value, ensure_ascii=False)))
+            self.db.execute('INSERT INTO attention_delivery VALUES(?,?,?,?)', (owner, day, 'sending', json.dumps({k:v for k,v in value.items() if k != 'evidence'}, ensure_ascii=False)))
             policy['next_brief'] = timestamp(morning(at + timedelta(days=3)).isoformat())
             # An overdue Monday report never becomes a backlog notification midweek.
             if weekly or policy['next_weekly'] <= stamp:
@@ -208,7 +179,65 @@ class LifeAttention:
         with self.db:
             self.db.execute("UPDATE attention_delivery SET state=? WHERE owner=? AND day=? AND state='sending'", (state, item['owner'], item['day']))
 
+    def valid(self, item):
+        """Recheck after awaiting a model; corrections/withdrawals must win."""
+        row = self.db.execute('SELECT state FROM attention_delivery WHERE owner=? AND day=?',
+                              (item['owner'], item['day'])).fetchone()
+        if not row or row['state'] != 'sending':
+            return False
+        policy = self.policy(item['owner'])
+        if not policy.get('enabled') or policy.get('origin') != item['origin']:
+            return False
+        if policy.get('pause_until') and policy['pause_until'] > timestamp():
+            return False
+        if local().date().isoformat() != item['day'] or not 8 <= local().hour < 9:
+            return False
+        for ref in item.get('source_refs', []):
+            if ref.get('record_id'):
+                try:
+                    record = self.store.get(ref['record_id'])
+                except ValueError:
+                    return False
+                if record['deleted'] or record['revision'] != ref['revision']:
+                    return False
+            if ref.get('goal_id'):
+                goal = next((g for g in self.goals(item['owner']) if g['id'] == ref['goal_id']), None)
+                if not goal or goal['updated_at'] != ref['updated_at']:
+                    return False
+        from .life_briefing import shared_valid
+        if not shared_valid(self.store.path.parent,item.get('source_refs',[])):
+            return False
+        # A new completion/cancellation received while generating also wins.
+        if keys := item.get('recalled_idea_keys'):
+            from .life_briefing import old_ideas
+            bound = item['source_owner']
+            current = old_ideas(self.store,bound['platform'],bound['sender'],item['start'],item['end'],
+                                status_day=local().date().isoformat(),only_keys=set(keys))
+            if not set(keys) <= {v['idea_key'] for v in current}:
+                return False
+        return True
+
+    def save_body(self, item, body, generation):
+        item.update(body=body, generation=generation)
+        with self.db:
+            self.db.execute("UPDATE attention_delivery SET payload=? WHERE owner=? AND day=? AND state='sending'",
+                            (json.dumps({k:v for k,v in item.items() if k != 'evidence'}, ensure_ascii=False),
+                             item['owner'], item['day']))
+
+    def withdraw(self, item):
+        with self.db:
+            self.db.execute("UPDATE attention_delivery SET state='withdrawn',payload='{}' WHERE owner=? AND day=?",
+                            (item['owner'], item['day']))
+
+    def withdraw_stale_shared(self):
+        from .life_briefing import shared_valid
+        for row in self.db.execute('SELECT owner,day,payload FROM attention_delivery').fetchall():
+            value = json.loads(row['payload'])
+            if not shared_valid(self.store.path.parent, value.get('source_refs', [])):
+                self.withdraw(dict(owner=row['owner'], day=row['day']))
+
     def dashboard(self):
+        self.withdraw_stale_shared()
         goals = [{k:v for k,v in g.items() if k not in ('source_ids', 'reported_version')} for g in self.goals()]
         reports = []
         for row in self.db.execute('SELECT day,state,payload FROM attention_delivery ORDER BY day DESC LIMIT 8'):
