@@ -30,9 +30,40 @@ def locate(text, loc):
     return matches[0], matches[0]+len(body)
 
 
+def locate_legacy_image(text, loc, image_count=0):
+    """A removed SDK-only [image] line is not an edit to the owner's prose.
+
+    Permit this narrow migration only with recovered image metadata and an
+    exact, unique match of all remaining bytes. Never normalize written text.
+    """
+    try:
+        return locate(text,loc)
+    except ValueError as error:
+        if str(error) != 'journal_text_edited' or not image_count:
+            raise
+    body,count = re.subn(r'^\[image\][ \t]*\n?', '', loc['text'], flags=re.M)
+    if not 0 < count <= image_count:
+        raise ValueError('journal_text_edited')
+    body = body.rstrip('\r\n') + '\n'
+    if not body.strip():
+        raise ValueError('journal_text_edited')
+    return locate(text,dict(loc,text=body))
+
+
 def plan(state, root, daily, *, editor=None, allowed=None):
     from .life_sync import safe_target, local_time, projected
     records, old = state['records'], state['applied']
+    from .life_images import bind_paths,paths as image_paths
+    bind_paths(records,daily)
+    # Layout groups may share one receipt across a caption record and a photo
+    # record; either owner supplies proof that the old line was an SDK marker.
+    legacy_images = {}
+    for rid,receipt in old.items():
+        r=records.get(rid,{})
+        if r.get('images') and not r.get('deleted'):
+            for loc in receipt.get('locations',[]):
+                key=(loc['path'],loc['text'])
+                legacy_images[key]=legacy_images.get(key,0)+len(r['images'])
     loaded = {}
     def read_file(relative):
         if relative not in loaded:
@@ -46,7 +77,9 @@ def plan(state, root, daily, *, editor=None, allowed=None):
         return loaded[relative]
     changed = {rid for rid,r in records.items() if not (old.get(rid,{}).get('projection') == VERSION
         and old[rid]['revision'] == r['revision'] and old[rid]['present'] == projected(r)
-        and (not editor or not projected(r) or old[rid].get('layout') == editor.version))}
+        and (not r.get('images') or old[rid].get('image_paths') == image_paths(r))
+        and (not editor or not projected(r) or old[rid].get('layout') in
+             getattr(editor,'compatible_versions',(editor.version,))))}
     for rid in list(changed):
         if rid not in old and not projected(records[rid]):
             relative = str(Path(daily)/(records[rid]['day']+'.md'))
@@ -84,10 +117,10 @@ def plan(state, root, daily, *, editor=None, allowed=None):
             for match in legacy:
                 spans.add((match.start(),match.end()))
                 owned_before[rid] = location(relative,before,match.start(),match[0])
-            for loc in locs:
-                start,end = locate(before,loc)
+            for index,loc in enumerate(locs):
+                start,end = locate_legacy_image(before,loc,legacy_images.get((loc['path'],loc['text']),0))
                 spans.add((start,end))
-                owned_before[rid] = location(relative,before,start,before[start:end])
+                owned_before[rid+':'+str(index)] = location(relative,before,start,before[start:end])
             if target == relative and projected(r):
                 involved.add(rid)
                 body = prose.block(r)
@@ -126,6 +159,14 @@ def plan(state, root, daily, *, editor=None, allowed=None):
                 bounds = prose.section(before)
                 if bounds and bounds[0] <= start < bounds[1]:
                     limit = min(limit,bounds[1])
+                else:
+                    # Reviewed source paragraphs may live in Learning. Its
+                    # column terminator/footer is template, not a manual note
+                    # that should keep an otherwise empty generated heading.
+                    from .life_projection import section as activity_section
+                    _,a,b = activity_section(before,'learning')
+                    if a <= start < b:
+                        limit = min(limit,b)
                 remainder = before[end:limit]
                 for a,b in reversed(ordered):
                     if end <= a < limit:
@@ -156,12 +197,17 @@ def plan(state, root, daily, *, editor=None, allowed=None):
             r = records[rid];target = str(Path(daily)/(r['day']+'.md'))
             receipt = receipts.setdefault(rid,dict(revision=r['revision'],path=target,
                 projection=VERSION,present=projected(r),locations=[]))
+            if r.get('images'):
+                receipt['image_paths'] = image_paths(r)
             if editor:
                 receipt['layout'] = editor.version
             if target == relative and projected(r):
-                start, body = positions[rid] if editor else positions[prose.block(r)]
-                loc = location(relative,text,start,body)
-                receipt['locations'].append(loc);owned_after[rid] = loc
+                placements = positions[rid] if editor else positions[prose.block(r)]
+                placements = placements if isinstance(placements,list) else [placements]
+                for index,(start,body) in enumerate(placements):
+                    loc = location(relative,text,start,body)
+                    receipt['locations'].append(loc)
+                    owned_after[rid if len(placements) == 1 else rid+':'+str(index)] = loc
         files.append(dict(path=path,relative=relative,before=raw,after=text,
                           owned_before=owned_before,owned_after=owned_after))
     return [f for f in files if f['before'] != f['after'].encode()], list(receipts.items())
@@ -171,21 +217,23 @@ def seal(files, changes, root):
     """Activity projections may change the final file hash after prose planning."""
     by_path = {f['path'].relative_to(root).as_posix():f for f in files}
     for rid,receipt in changes:
-        for loc in receipt.get('locations',[]):
+        for index,loc in enumerate(receipt.get('locations',[])):
             f = by_path.get(loc['path'])
             if f:
                 start,end = locate(f['after'],loc)
                 loc.update(start=start,file_hash=digest(f['after']))
-                f['owned_after'] = {**f.get('owned_after',{}),rid:loc}
+                f['owned_after'] = {**f.get('owned_after',{}),rid+':'+str(index):loc}
 
 
 def pending(state, files, changes, activity_changes, root):
     before = copy.deepcopy(state['applied'])
     for f in files:
-        for rid,loc in f.get('owned_before',{}).items():
+        for key,loc in f.get('owned_before',{}).items():
+            rid = key.split(':')[0]
             receipt = before.setdefault(rid,dict(revision=0,projection=0,path=loc['path'],present=True))
             locs = receipt.setdefault('locations',[])
-            receipt['locations'] = [v for v in locs if v['path'] != loc['path']] + [loc]
+            if not any(v['path'] == loc['path'] and v['text'] == loc['text'] for v in locs):
+                receipt['locations'].append(loc)
     return dict(files={f['path'].relative_to(root).as_posix():dict(before=hashlib.sha256(f['before']).hexdigest(),after=digest(f['after'])) for f in files},
                 before=before,after=dict(changes),activity=activity_changes)
 

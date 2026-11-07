@@ -1,5 +1,6 @@
 """Use the installed AstrBot SDK with temporary synthetic state; transport forbidden."""
 import asyncio
+import base64
 import importlib
 import inspect
 import json
@@ -11,7 +12,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, sys.argv[1])
 module = importlib.import_module('astrbot_plugin_life_agent.main')
-tools = ('organize', 'life_context', 'recent', 'workspace_tool', 'track', 'progress', 'focus','shared_knowledge','google_calendar_read','google_calendar_propose_write')
+tools = ('organize', 'life_context', 'recent', 'workspace_tool', 'track', 'progress', 'focus','shared_knowledge','google_calendar_read','google_calendar_propose_write','wucai_read')
 assert all(callable(getattr(module.LifeAgent, name)) for name in tools)
 
 
@@ -39,7 +40,58 @@ async def fixture():
                 unified_msg_origin='synthetic:FriendMessage:owner',
                 is_private_chat=lambda: True, get_platform_id=lambda: 'synthetic',
                 get_sender_id=lambda: 'owner', set_extra=lambda k,v: extras.update({k:v}),
+                get_messages=lambda: [],
                 get_extra=lambda k: extras.get(k), plain_result=lambda s: s)
+            wucai = importlib.import_module('astrbot_plugin_life_agent.wucai_cli')
+            with patch.object(wucai, 'read') as read_wucai:
+                assert await bot.wucai_read(event, 'get-article', '{}') == 'wucai_disabled'
+                bot.config['wucai_enabled'] = True
+                read_wucai.return_value = '{"synthetic":true}'
+                assert await bot.wucai_read(event, 'get-article', '{"url":"https://example.test/t/7"}') == '{"synthetic":true}'
+                assert json.loads(read_wucai.await_args.args[1]) == {'url':'https://example.test/t/7'}
+                assert json.loads(await bot.wucai_read(event, 'get-article-text', '{"note_idx":"synthetic"}'))['synthetic']
+                assert json.loads(read_wucai.await_args.args[1]) == {'note_idx':'synthetic'}
+                fulltext = importlib.import_module('astrbot_plugin_life_agent.wucai_fulltext')
+                assert fulltext.decode_clipping('0:合成原文'.encode()) == '合成原文'
+                event.is_private_chat = lambda: False
+                assert await bot.wucai_read(event, 'list-articles') == 'owner_private_chat_required'
+                event.is_private_chat = lambda: True
+                event.get_sender_id = lambda: 'stranger'
+                assert await bot.wucai_read(event, 'list-articles') == 'owner_private_chat_required'
+                event.get_sender_id = lambda: 'owner'
+                assert read_wucai.await_count == 2
+                wucai_req = types.SimpleNamespace(system_prompt='')
+                await bot.instructions(event, wucai_req)
+                assert 'wucai_read' in wucai_req.system_prompt and '不得把相似帖子' in wucai_req.system_prompt
+                assert 'get-article-text' in wucai_req.system_prompt
+                event.message_str = 'https://mp.weixin.qq.com/s/CaseSensitive\n五彩剪藏，解析这篇文章'
+                extras.pop('wucai_article_receipt', None)
+                bot.wucai_articles.begin(event)
+                read_wucai.return_value = '{"status":"lookup_incomplete","next_arguments":{"lookup_cursor":"synthetic"}}'
+                result = json.loads(await bot.wucai_read(event, 'get-article-text', '{"note_idx":"wrong_search_hit"}'))
+                assert not result['can_summarize']
+                assert json.loads(read_wucai.await_args.args[1])['url'] == 'https://mp.weixin.qq.com/s/CaseSensitive'
+                from astrbot.api.provider import LLMResponse
+                response = LLMResponse(role='assistant', completion_text='synthetic unsupported full article summary')
+                await bot.guard_article_response(event, response)
+                assert '尚未取得正文' in response.completion_text
+                assert 'unsupported' not in response.completion_text
+                async def unsafe_stream():
+                    yield module.MessageChain().message('synthetic unsupported stream')
+                result = types.SimpleNamespace(async_stream=unsafe_stream(), is_llm_result=lambda:True)
+                event.get_result = lambda: result
+                await bot.guard_article_delivery(event)
+                chunks = [chunk async for chunk in result.async_stream]
+                assert len(chunks) == 1 and 'unsupported' not in str(chunks[0])
+                read_wucai.return_value = json.dumps(dict(status='ok', text='合成正文', offset=0, total_chars=4,
+                    content_hash='a'*64, note_idx='synthetic', original_url='https://mp.weixin.qq.com/s/CaseSensitive'))
+                complete = json.loads(await bot.wucai_read(event,'get-article-text','{"note_idx":"wrong_search_hit"}'))
+                assert complete['read_complete'] and complete['can_summarize']
+                response = LLMResponse(role='assistant', completion_text='synthetic grounded response')
+                await bot.guard_article_response(event,response)
+                assert response.completion_text == 'synthetic grounded response'
+                extras.pop('wucai_article_receipt',None)
+                event.message_str='/life 冥想完成，开始学习模拟滤波器'
             class SyntheticCalendar:
                 def __init__(self):
                     self.calls = []
@@ -167,17 +219,30 @@ async def fixture():
             # and transport only. The actual configured model is never invoked.
             from datetime import datetime
             from astrbot_plugin_life_agent import life_attention
+            reading_key = shared.identity('synthetic-brief-reading')
+            reading_body = sources.document_bodies('wucai','synthetic-reading','合成阅读','共享电路需要先理解基本模块。',account='cn',coverage='highlights_only')[0]
+            with shared.SharedStore(bot.home/'shared.sqlite3','vps') as library:
+                library.receive(dict(changes=[dict(origin='mac',collection='reading',id=reading_key,version=2,body=reading_body)],cursor=2,more=False),'mac')
             calls = {'model': 0, 'send': 0}
             class BriefContext(SyntheticContext):
-                async def llm_generate(self, **kwargs):
-                    inspect.signature(module.Context.llm_generate).bind(self, **kwargs)
-                    assert kwargs['tools'] is None and kwargs['contexts'] == []
+                async def tool_loop_agent(self, **kwargs):
+                    inspect.signature(module.Context.tool_loop_agent).bind(self, **kwargs)
+                    assert kwargs['contexts'] == [] and kwargs['max_steps']==5
+                    tool=kwargs['tools'].get_tool('briefing_library')
+                    assert tool is not None and len(kwargs['tools'].tools)==1
                     assert bot.store.db.execute("SELECT state FROM attention_delivery").fetchone()[0] == 'sending'
+                    context=AgentContextWrapper(context=AstrAgentContext(context=self,event=kwargs['event']),tool_call_timeout=10)
+                    outputs=[v async for v in FunctionToolExecutor.execute(tool,context,action='search',source='wucai',query='共享电路')]
+                    search=json.loads(outputs[-1].content[0].text)
+                    assert len(search['matches'])==1
+                    outputs=[v async for v in FunctionToolExecutor.execute(tool,context,action='read',key=search['matches'][0]['key'])]
+                    read=json.loads(outputs[-1].content[0].text)
+                    assert read['evidence']['text']=='共享电路需要先理解基本模块。'
                     calls['model'] += 1
                     evidence = json.loads(kwargs['prompt'])['evidence']
                     idea = next(v for v in evidence if v['source']=='idea')
                     return types.SimpleNamespace(completion_text=json.dumps({'paragraphs': [
-                        {'text': '你之前想看的那部合成旧片，后来还没见你聊起。', 'refs': [idea['id']]}]},ensure_ascii=False))
+                        {'text': '你之前想看的那部合成旧片，后来还没见你聊起。', 'refs': [idea['id'], read['evidence']['id']]}]},ensure_ascii=False))
                 async def send_message(self, origin, message):
                     assert origin == event.unified_msg_origin
                     calls['send'] += 1
@@ -205,6 +270,43 @@ async def fixture():
             event.get_sender_id = lambda: 'stranger'
             assert await bot.track(event) == 'owner_or_capture_required'
             assert await bot.shared_knowledge(event,'search',query='共享电路') == 'owner_required'
+            # Actual SDK Image representation produced by the installed Lark
+            # adapter: base64://, retained privately before the simple receipt.
+            from astrbot.api.message_components import Image
+            from astrbot_plugin_life_agent import life_images
+            png = base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aX1sAAAAASUVORK5CYII=')
+            image = Image.fromBytes(png)
+            event.get_sender_id = lambda: 'owner'
+            event.message_str = '/life 合成图文 [image]'
+            event.message_obj.message_id = 'synthetic-image'
+            event.get_messages = lambda: [image]
+            photo, created = bot.capture(event)
+            assert created and len(photo['images']) == 1
+            descriptor = photo['images'][0]
+            image_request = dict(record_id=photo['id'],sha256=descriptor['sha256'])
+            assert life_images.export(bot.store,image_request) == png
+            assert bot.capture(event)[0]['revision'] == photo['revision']
+            assert set(descriptor) == {'sha256','size','extension'}
+            event.message_obj.message_id = 'synthetic-ordinary-image'
+            event.message_str = '合成参考图片 [image]'
+            ordinary, _ = bot.capture(event,source='conversation')
+            assert not ordinary.get('images')
+            event.message_str = '/life 合成图文 [image]'
+            event.message_obj.message_id = 'synthetic-stranger-image'
+            event.get_sender_id = lambda: 'stranger'
+            assert [r async for r in bot.life(event,'合成图文')] == []
+            event.get_sender_id = lambda: 'owner'
+            event.is_private_chat = lambda: False
+            assert [r async for r in bot.life(event,'合成图文')] == []
+            event.is_private_chat = lambda: True
+            event.get_messages = lambda: [Image.fromURL('https://example.test/private-image')]
+            try:
+                bot.capture(event)
+                raise AssertionError('remote_image_must_not_be_fetched')
+            except ValueError:
+                pass
+            bot.store.delete(photo['id'])
+            assert not (bot.home/'images'/life_images.filename(descriptor)).exists()
         finally:
             bot.store.close()
 
@@ -218,4 +320,8 @@ print(json.dumps(dict(actual_sdk_import=True, registered_tool_methods=len(tools)
     synthetic_old_conversation_idea_with_provenance=True,
     calendar_owner_private_read=True, calendar_group_and_stranger_rejected=True,
     calendar_queries_require_valid_range_and_timezone=True, manage_accounts_not_exposed=True,
-    real_google_calls=0, real_model_calls=0, real_messages_sent=0)))
+    installed_sdk_base64_image_capture_export_and_replay=True,
+    diary_images_stranger_group_remote_url_rejected=True,
+    ordinary_images_not_persisted=True, deleted_image_scrubbed=True,
+    wucai_owner_private_read=True, wucai_disabled_and_stranger_group_gates=True,
+    real_wucai_calls=0, real_google_calls=0, real_model_calls=0, real_messages_sent=0)))

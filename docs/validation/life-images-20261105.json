@@ -1,0 +1,79 @@
+{
+  "date": "2026-11-05",
+  "scope": "Owner /life diary images from Feishu to confirmed Obsidian projection",
+  "root_cause": "Life capture retained message_str [image] placeholders, without SDK Image bytes, an image read transport, or vault embeds",
+  "release": "20261105_215717_733366",
+  "rollback": "20261105_215717_733366",
+  "plugin_version": "2.9.2",
+  "synthetic_tests": {
+    "life_total": 146,
+    "life_passed": 146,
+    "local_total": 462,
+    "local_passed": 461,
+    "local_optional_dependency_skipped": 1,
+    "full_total": 791,
+    "full_passed": 782,
+    "full_optional_dependency_skipped": 9,
+    "coverage": [
+      "Exact approval versus skip: no vault notes or attachments written on skip",
+      "Multiple images, pure-image entries, replay and cache reuse",
+      "Missing approved attachment requires a new preview and approval",
+      "Image size, format, count, hash and record ownership validation",
+      "Corruption, excluded targets, symlinks and conflicting files reject writes",
+      "Date moves, source deletion and shared blob retention",
+      "Legacy removed standalone SDK image marker: exact remaining prose preserved; actual prose edits rejected",
+      "Paragraph review retains generated image references"
+    ]
+  },
+  "installed_sdk": {
+    "import_and_registration": true,
+    "tool_methods": 11,
+    "actual_image_from_bytes_base64_representation": true,
+    "capture_export_and_replay": true,
+    "stranger_and_group_rejected": true,
+    "remote_image_url_not_fetched": true,
+    "ordinary_chat_images_not_persisted": true,
+    "source_delete_scrubs_image": true,
+    "generation_and_platform_transport": "synthetic only"
+  },
+  "deployment": {
+    "astrbot_active": true,
+    "dashboard_active": true,
+    "running_log_registered_version": "2.9.2",
+    "import_errors": false,
+    "plugin_and_export_store_image_modules_match": true,
+    "existing_intake_reconciliation_changes": 0,
+    "rollback_prepared_before_restart": true
+  },
+  "historical_recovery": {
+    "records": 4,
+    "images": 6,
+    "source": "Original Feishu messages through existing official API credentials on the same VPS",
+    "checked": ["message ID", "owner sender identity", "saved original text", "image count, size and format"],
+    "source_prose_changed": false,
+    "database_backup_before_metadata_changes": true,
+    "updated_revisions_emit_normal_incremental_changes": true
+  },
+  "real_ssh_and_local_preview": {
+    "event_pull": true,
+    "image_transfer": true,
+    "image_records": 4,
+    "images": 6,
+    "preview_notes": 3,
+    "planning_mode": "plain, no model calls",
+    "hash_size_and_format_verified": true,
+    "embeds_verified": true,
+    "verified_images_ready_in_normal_private_cache": 6,
+    "normal_sync_cursor_unchanged": true,
+    "real_note_bytes_unchanged": true,
+    "vault_attachment_writes": 0
+  },
+  "real_model_calls": 0,
+  "real_platform_messages_sent": 0,
+  "real_obsidian_writes": 0,
+  "remaining_acceptance": [
+    "Owner sends new /life image messages and checks receipt and native conversation",
+    "Owner restarts pi_sync, reviews the current batch and enters 确认写入",
+    "Owner checks rendered image display inside Obsidian"
+  ]
+}

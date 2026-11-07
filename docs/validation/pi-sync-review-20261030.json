@@ -1,0 +1,96 @@
+{
+  "date": "2026-10-30",
+  "scope": "Local pi_sync natural-language review of pending diary paragraphs",
+  "implementation": {
+    "confirmation_loop": "explicit move resolved locally or bounded MiMo decision -> full revised preview -> explicit confirmation",
+    "editable": [
+      "pending source paragraph section",
+      "heading",
+      "grouping",
+      "order"
+    ],
+    "sections": [
+      "Freewrite",
+      "Learning"
+    ],
+    "source_prose": "rendered locally without rewriting",
+    "manual_prose_and_template": "preserved",
+    "existing_structured_tracking": "read-only review context; no VPS correction",
+    "initial_and_review_model_call_limit": 4,
+    "failure": "preserve current preview; no automatic resend",
+    "draft": "private ignored file with 0600 permissions; bound to sources, receipts and before-file hashes; invalidated on changes; removed after apply",
+    "explicit_move": "unique date/topic match in pending source paragraphs; no model request; ambiguous or missing topic prompts clarification",
+    "model_diagnostics": "allowlisted provider status/category or output stage retained; raw provider errors and raw model response not cached",
+    "model_output_compatibility": [
+      "single JSON fence",
+      "section case",
+      "unique short date"
+    ]
+  },
+  "synthetic_validation": {
+    "new_review_tests": 20,
+    "review_layout_diary_tracking_tests": {
+      "run": 84,
+      "passed": 84
+    },
+    "local_agent_regression": {
+      "run": 421,
+      "passed": 421
+    },
+    "life_chain_regression_before_final_guard_test": {
+      "run": 136,
+      "passed": 136
+    },
+    "final_full_regression": {
+      "run": 751,
+      "passed": 743,
+      "skipped_optional_dependencies": 8
+    },
+    "checks": [
+      "mixed message moves only selected learning paragraph",
+      "manual prose, template and footer preserved",
+      "multiple reviews use original source paragraphs",
+      "invalid, missing, duplicated and cross-day assignments rejected",
+      "skip preserves draft; restart restores without model call",
+      "confirmation writes once; repeated sync is unchanged",
+      "source/file changes invalidate private draft",
+      "source revoked during preview stops before model call",
+      "shared model request budget; no tools or absolute vault path in payload",
+      "failed request not automatically retried",
+      "multi-file partial write recovery and subsequent source revision",
+      "existing activity receipt offsets and placement preserved",
+      "source deletion removes all reviewed paragraphs and empty generated headings",
+      "fenced code remains indivisible",
+      "git diff --check",
+      "private draft path ignored by Git",
+      "both screenshot phrasings work without API even at exhausted model budget",
+      "unselected date stays byte-identical in the proposed preview",
+      "missing/ambiguous local topic does not consume a model call",
+      "compound and negative instructions are not partially executed",
+      "specific safe HTTP/output failure remains available on cached failure",
+      "JSON fence, section case and short date compatibility"
+    ]
+  },
+  "current_local_configuration_verified": {
+    "provider": "xiaomi",
+    "model": "mimo-v2.6-flash"
+  },
+  "real_validation": {
+    "model_api_call": false,
+    "ssh_sync": false,
+    "obsidian_write": false,
+    "vps_deployment": false,
+    "owner_terminal_acceptance": "pending; restart running pi_sync to load new code",
+    "actual_pending_preview_replay": {
+      "source": "current local pending sync batch",
+      "screenshot_phrasings_tested": 2,
+      "both_passed": true,
+      "unrelated_date_preserved": true,
+      "personal_homepage_heading_preserved": true,
+      "model_requests": 0,
+      "vault_writes": 0,
+      "cache_writes": 0
+    },
+    "past_failure_cause": "Old failed-cache entries did not retain reason; cannot retrospectively distinguish provider, JSON or validation error."
+  }
+}

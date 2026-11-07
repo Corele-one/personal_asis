@@ -1,0 +1,63 @@
+{
+  "date": "2026-11-05",
+  "scope": "Match the existing daily assets convention and improve paragraph/image layout",
+  "changes": {
+    "vault_target": "Calendar/Journal/Daily/assets/YYYY-MM-DD/file-YYYYMMDDHHMMSSmmm.ext",
+    "filename_source": "Shanghai local record time; sequential milliseconds for multiple images and timestamp collisions",
+    "visible_embed": "Short timestamp filename, standalone paragraph with surrounding blank lines",
+    "internal_image_identity": "SHA256 remains private for cache and integrity checks",
+    "text_formatting": "Whitespace-only paragraph breaks at sentence ends, conversational transitions and complete clauses",
+    "model_unit": "Natural paragraph, standalone image or indivisible fenced code block",
+    "grouping": "One message may span topics; small messages may share a topic; image sources preserve caption/photo order",
+    "receipts": "One source record can own multiple placements; deletion/revision/interruption tracks all placements",
+    "existing_days": "Prompt upgrade alone does not reflow previously confirmed unchanged dates",
+    "old_drafts": "New fingerprint prevents resuming a draft with old paths/layout",
+    "migration": "Legacy hash-based references are previewed using existing private receipts, with note edits still confirmed"
+  },
+  "synthetic_validation": {
+    "life_total": 155,
+    "life_passed": 155,
+    "local_total": 471,
+    "local_passed": 470,
+    "local_optional_dependency_skipped": 1,
+    "full_total": 800,
+    "full_passed": 791,
+    "full_optional_dependency_skipped": 9,
+    "coverage": [
+      "Same-message multi-topic placement and multiple receipts",
+      "Caption and photo are separate paragraphs with common source provenance",
+      "Out-of-order photo model output is rejected",
+      "Existing date directories and timestamp names",
+      "Stable naming for timestamp collisions",
+      "Long prose and shorter conversational transitions preserve non-whitespace text",
+      "Code blocks remain whole",
+      "Old hash-based embeds migrate only in the preview",
+      "Previously confirmed unchanged days do not trigger model requests",
+      "Existing skip/approval, exclusions, corruption, replay, revision, deletion and interruption tests"
+    ],
+    "model_responses": "Synthetic; no paid generation"
+  },
+  "real_readonly_validation": {
+    "existing_vault_assets_pattern_inspected": true,
+    "ssh_event_pull": true,
+    "private_cached_images_verified": 6,
+    "image_records": 4,
+    "preview_notes": 3,
+    "planning_mode": "plain",
+    "targets_in_existing_assets_directory": true,
+    "date_subdirectories": true,
+    "seventeen_digit_timestamp_names": true,
+    "images_on_standalone_paragraphs": true,
+    "normal_sync_cursor_unchanged": true,
+    "real_note_and_attachment_writes": 0,
+    "old_hash_attachment_directory_exists": false
+  },
+  "real_model_calls": 0,
+  "real_platform_messages_sent": 0,
+  "vps_or_provider_changes": false,
+  "remaining_acceptance": [
+    "Owner restarts pi_sync and reviews current smart layout",
+    "Owner confirms the batch with 确认写入",
+    "Owner checks final Obsidian rendering"
+  ]
+}

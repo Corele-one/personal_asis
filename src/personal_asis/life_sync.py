@@ -77,6 +77,12 @@ def validate_record(r):
     if 'tracking' in r:
         from .life_tracking import validate, evidence_text
         validate(r['tracking'], evidence_text(r))
+    if 'images' in r:
+        from .life_images import validate
+        validate(r['images'])
+        from .life_intake import is_entry
+        if r['images'] and (r['deleted'] or not is_entry(r)):
+            raise ValueError('diary_images_require_active_entry')
 
 
 def block(r):
@@ -99,8 +105,10 @@ def projected(r):
 
 
 def current_receipt(r, old):
+    from .life_images import paths as image_paths
     return (old is not None and old['revision'] == r['revision']
             and old.get('projection') == PROJECTION_VERSION
+            and (not r.get('images') or old.get('image_paths') == image_paths(r))
             and old.get('present') == projected(r))
 
 
@@ -190,14 +198,24 @@ def preview(files, *, raw=False):
                     ui.line(line,indent='    │ ')
 
 
-def confirm(files, *, raw=False):
+def confirm(files, *, raw=False, revise=None):
     preview(files, raw=raw)
     while True:
-        answer = input('\n  确认写入  保存本批日记    d  原始 diff    Enter  暂不写入\n  › ')
+        answer = input('\n  确认写入  保存本批日记    d  原始 diff    Enter / 跳过  暂不写入'
+                       + ('\n  也可直接输入修改建议，例如：把数字集成电路放到 Learning。' if revise else '')
+                       + '\n  › ').strip()
         if answer.lower() == 'd':
             preview(files, raw=True)
+        elif answer == '确认写入':
+            return True
+        elif answer.lower() in ('', '跳过', '取消', '退出', 'q', 'skip'):
+            return False
+        elif revise:
+            if revise(answer):
+                print('\n  已按建议调整；以下为完整变更段落，尚未写入。')
+                preview(files, raw=raw)
         else:
-            return answer == '确认写入'
+            return False
 
 
 def apply(files):
@@ -275,22 +293,34 @@ def startup(home=HOME, profile=PROFILE, *, interactive=None, raw_diff=False, lay
             raise ValueError('invalid_journal_layout_mode')
         from .life_layout import Editor, LayoutUnavailable
         editor = Editor(home,profile,retry=retry_layout) if mode == 'smart' else None
+        from . import life_review
+        allowed = lambda relative: not source.excludes(relative)
+        from . import life_image_sync
+        try:
+            image_files = life_image_sync.prepare(config,state,profile,root,allowed)
+        except (OSError,ValueError,subprocess.SubprocessError):
+            print('图片暂未完整取回或目标需核对；本批日记未写入，下次 pi_sync 可继续。')
+            return finish('images_unavailable')
+        frozen = life_review.load(profile,state,root,daily,allowed)
         if editor:
             print('随记会结合当天文字编排；沿用相关段落，必要时补主题标题。')
         try:
-            files, changes = plan(state, root, daily, editor=editor,
-                                  allowed=lambda relative: not source.excludes(relative))
+            if frozen:
+                files, changes, activity_changes = frozen
+                print('已恢复上次按建议调整的待确认草稿。')
+            else:
+                files, changes = plan(state, root, daily, editor=editor, allowed=allowed)
+                from .life_projection import plan as plan_activity
+                files, activity_changes = plan_activity(state, root, daily, files, allowed=allowed)
         except LayoutUnavailable as error:
             print('智能编排暂未完成，本次日记未写入；资料库同步继续。')
+            print(life_review.failure_message(error))
             if str(error) == 'layout_call_limit':
                 print('本轮已达 4 次编排上限；已完成方案保留，下次 pi_sync 继续。')
             else:
                 print('同一输入不会自动重发模型请求；需重试时运行 pi_sync --retry-layout，'
                       '或用 --layout plain 预览原话追加。')
             return finish('layout_unavailable')
-        from .life_projection import plan as plan_activity
-        files, activity_changes = plan_activity(state, root, daily, files,
-                                                allowed=lambda relative:not source.excludes(relative))
         life_journal.seal(files,changes,root)
         for f in files:
             if source.excludes(f['path'].relative_to(root).as_posix()):
@@ -298,7 +328,7 @@ def startup(home=HOME, profile=PROFILE, *, interactive=None, raw_diff=False, lay
         ignored = sum(freewrite.omission(r) not in (None, 'deleted') for r in state['records'].values())
         if ignored:
             print(ui.color(f'  已略过 {ignored} 条普通对话、问候、命令、作息、提醒或独立活动记录。','2'))
-        if not files:
+        if not files and not image_files:
             # A crash may leave an already-written block without its receipt.
             # Reconcile metadata without asking to approve an empty vault edit.
             for rid, receipt in changes:
@@ -309,13 +339,52 @@ def startup(home=HOME, profile=PROFILE, *, interactive=None, raw_diff=False, lay
             print('日记已是最新，本次无需写入。')
             return finish('up_to_date')
         print('\n' + ui.color(f'  待确认 · {len(files)} 篇日记','1;33') + '\n  以下为完整变更段落；尚未写入。')
-        if not confirm(files, raw=raw_diff):
+        life_image_sync.preview(image_files)
+        def revise(feedback):
+            nonlocal changes, activity_changes, editor
+            if editor is None:
+                editor = Editor(home,profile,retry=retry_layout)
+            current = next(s for s in load_config(Path(home)/'sources.yaml').sources if s.id == 'life')
+            if (not current.index or current.root != root
+                    or any(current.excludes(f['path'].relative_to(root).as_posix()) for f in files)):
+                raise ValueError('life_source_changed_reconfirmation_required')
+            # A file changed since the preview must never be silently included
+            # in a model revision or approved using an older batch.
+            for f in files:
+                safe_target(root, f['path'].relative_to(root).as_posix())
+                if not allowed(f['path'].relative_to(root).as_posix()):
+                    raise ValueError('daily_target_excluded')
+                if (f['path'].read_bytes() if f['path'].exists() else b'') != f['before']:
+                    raise ValueError('daily_changed_reconfirmation_required')
+            print('  正在按建议调整草稿…')
+            try:
+                revised, revised_changes, revised_activity = life_review.revise(
+                    editor,files,changes,activity_changes,state,root,feedback)
+                life_journal.seal(revised,revised_changes,root)
+            except (OSError,ValueError,KeyError,TypeError) as error:
+                print('  '+life_review.failure_message(error))
+                print('  保留当前草稿；未确认写入。模型请求失败时不自动重发。')
+                return False
+            life_review.save(profile,state,root,daily,revised,revised_changes,revised_activity)
+            files[:] = revised
+            changes, activity_changes = revised_changes, revised_activity
+            return True
+        if not confirm(files, raw=raw_diff, revise=revise):
             publish_status(config, state, sources, home=home)
             print('本次未写入。改动已保留，下次 pi_sync 可继续。')
             return finish('skipped')
         current = next(s for s in load_config(Path(home) / 'sources.yaml').sources if s.id == 'life')
-        if not current.index or current.root != root or any(current.excludes(f['path'].relative_to(root).as_posix()) for f in files):
+        if (not current.index or current.root != root
+                or any(current.excludes(f['path'].relative_to(root).as_posix()) for f in files)
+                or any(current.excludes(f['relative']) for f in image_files)):
             raise ValueError('life_source_changed_reconfirmation_required')
+        # Recheck notes before installing attachments; every approved note must
+        # still match the preview. Images reach the vault before their embeds.
+        for f in files:
+            safe_target(root, f['path'].relative_to(root).as_posix())
+            if (f['path'].read_bytes() if f['path'].exists() else b'') != f['before']:
+                raise ValueError('daily_changed_reconfirmation_required')
+        life_image_sync.apply(image_files,root,lambda relative: not current.excludes(relative))
         state['pending_projection'] = life_journal.pending(state,files,changes,activity_changes,root)
         private_write(cache,json.dumps(state,ensure_ascii=False))
         apply(files)
@@ -324,6 +393,7 @@ def startup(home=HOME, profile=PROFILE, *, interactive=None, raw_diff=False, lay
         state.setdefault('activity_applied', {}).update(activity_changes)
         state.pop('pending_projection',None)
         private_write(cache, json.dumps(state, ensure_ascii=False))
+        (profile/'journal-review-draft.json').unlink(missing_ok=True)
         publish_status(config, state, sources, home=home)
         print(ui.color(f'\n  ✓ 已保存到 Obsidian · {len(files)} 篇日记。','1;32'))
         return finish('applied')

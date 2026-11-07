@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import tempfile
 import types
+import sys
 import unittest
 from unittest.mock import patch
 
@@ -74,6 +75,59 @@ class BriefingTests(unittest.TestCase):
         self.assertEqual(item['evidence'],[])
         self.assertEqual(item['coverage']['incomplete'],1)
         self.assertIn('不够',item['body'])
+
+    def test_legacy_templates_empty_sections_and_commands_are_not_evidence(self):
+        self.put('life','Calendar/Journal/Daily/2026-10-28.md',
+            '### Freewrite\ncalendar confirm abcdef123\n---\n### Learning\n'
+            '-[] Missing\n- [ ] C++\n- [ ] Research\n- [DDCA:: 0]\n#### 空标题\n'
+            '--- end-multi-column\n#### End-of-Day Checklist\n- [x] Backup Vault')
+        self.assertEqual(self.report()['evidence'], [])
+        text=brief.journal_text('### Task\n- [x] Check 昨天没完成的任务\n- [x] 复习微嵌第三章\n'
+            '- [ ] 复习数集\n---\n### Learning\n今天学了C++，进展到模板。\n- [x] Missing 第三讲\n')
+        self.assertIn('微嵌第三章',text)
+        self.assertIn('今天学了C++',text)
+        self.assertIn('Missing 第三讲',text)
+        self.assertNotIn('复习数集',text)
+        self.assertNotIn('Check 昨天',text)
+
+    def test_read_only_agent_search_then_read_full_page_and_revision_provenance(self):
+        self.record('/life 最近思考研究兴趣，也想散步')
+        keys=self.put('wucai','research','作者原文：研究兴趣需要耐心。\n\n'+'后续内容。'*800,
+                      title='兴趣与选择',account='cn',coverage='highlights_only')
+        self.put('xiaohongshu','expired','研究兴趣',account='one',expires_at=1,coverage='note_text')
+        self.put('xiaohongshu','only-title','',title='研究兴趣',account='one',coverage='metadata_only')
+        item=self.report();reader=brief.BriefingLibrary(self.home,item)
+        result=reader.query('search','wucai','研究兴趣')
+        self.assertEqual(len(result['matches']),1)
+        self.assertNotIn('text',json.dumps(result))
+        key=result['matches'][0]['key']
+        read=reader.query('read',key=key)
+        e=read['evidence']
+        self.assertEqual(e['shared'][0]['id'],keys[0])
+        self.assertEqual(read['next_offset'],4000)
+        self.assertIn(e['id'],{v['id'] for v in item['source_refs']})
+        self.assertIn('研究兴趣',brief.render('```json\n'+json.dumps({'paragraphs':[
+            dict(text='研究兴趣可以慢慢明确。',refs=[e['id'],'E1'])]},ensure_ascii=False)+'\n```',item))
+        self.shared.put('reading',keys[0],None)
+        self.assertEqual(reader.query('read',key=key)['error'],'brief_source_changed')
+        self.assertFalse(brief.shared_valid(self.home,item['source_refs']))
+        self.assertEqual(reader.query('search','study','研究')['error'],'brief_invalid_query')
+
+    def test_agent_can_read_journal_tail_and_long_explicit_record_with_budgets(self):
+        record=self.record('/life '+('开始复习。'*600)+'尾部具体疑问')
+        self.put('life','Calendar/Journal/Daily/2026-10-28.md','### Freewrite\n'+'当日自述。'*600+'日记结尾')
+        item=self.report();reader=brief.BriefingLibrary(self.home,item)
+        journal=next(e for e in item['evidence'] if e['source']=='journal')
+        self.assertTrue(journal['partial'])
+        self.assertIn('日记结尾',reader.query('read',key=journal['id'])['evidence']['text'])
+        original=next(e for e in item['evidence'] if e['source']=='astrbot')
+        self.assertIn('尾部具体疑问',reader.query('read',key=original['id'])['evidence']['text'])
+        for _ in range(8):reader.query('read',key=journal['id'])
+        self.assertEqual(reader.query('read',key=journal['id'])['error'],'brief_read_budget_exhausted')
+        self.assertLessEqual(reader.characters,20000)
+        self.store.delete(record['id'])
+        fresh=brief.BriefingLibrary(self.home,item)
+        self.assertEqual(fresh.query('read',key=original['id'])['error'],'brief_source_changed')
 
     def test_output_requires_valid_citations_and_program_controls_links(self):
         self.record('/life 今天散步很开心')
@@ -204,6 +258,23 @@ class BriefingDispatchTests(unittest.TestCase):
     def setUp(self):
         from test_life_bedtime import PluginTests
         PluginTests.setUp(self)
+        class Event:
+            def __init__(self, text, message, platform, session):
+                self.unified_msg_origin = platform.id+':FriendMessage:'+session
+        class Tool:
+            def __init__(self, **kwargs): self.__dict__.update(kwargs)
+        class Tools(list):
+            def get_tool(self, name): return next((t for t in self if t.name==name), None)
+        mock_modules = {}
+        for name in ('astrbot.core.agent.tool', 'astrbot.core.platform.astrbot_message', 'astrbot.core.platform.platform_metadata'):
+            mock_modules[name] = types.ModuleType(name)
+        mock_modules['astrbot.core.agent.tool'].FunctionTool = Tool
+        mock_modules['astrbot.core.agent.tool'].ToolSet = Tools
+        mock_modules['astrbot.core.platform.astrbot_message'].AstrBotMessage = types.SimpleNamespace
+        mock_modules['astrbot.core.platform.platform_metadata'].PlatformMetadata = types.SimpleNamespace
+        sdk = patch.dict(sys.modules, mock_modules); sdk.start(); self.addCleanup(sdk.stop)
+        event = patch.object(sys.modules['astrbot.api.event'], 'AstrMessageEvent', Event)
+        event.start(); self.addCleanup(event.stop)
 
     def setup_claim(self):
         self.bot.store.capture('p','owner','source','/life 多任务让我分心，想散步', '2026-10-28T20:00:00+08:00')
@@ -214,7 +285,7 @@ class BriefingDispatchTests(unittest.TestCase):
         self.clock_patch=patch('personal_asis.life_attention.local',return_value=datetime.fromisoformat(NOW))
         self.clock_patch.start();self.addCleanup(self.clock_patch.stop)
 
-    def test_single_model_call_after_reservation_no_tools_or_history_then_persisted_body(self):
+    def test_native_agent_after_reservation_read_only_tool_no_history_then_persisted_body(self):
         self.setup_claim(); calls=[]
         async def provider(**kwargs):return 'synthetic'
         async def generate(**kwargs):
@@ -222,12 +293,16 @@ class BriefingDispatchTests(unittest.TestCase):
             self.assertEqual(saved['state'],'sending')
             self.assertNotIn('evidence',json.loads(saved['payload']))
             calls.append(kwargs)
+            self.assertEqual(kwargs['max_steps'],5)
+            self.assertEqual([t.name for t in kwargs['tools']],['briefing_library'])
+            result=json.loads(await kwargs['tools'][0].call(None,action='search',source='wucai',query='专注'))
+            self.assertEqual(result['error'],'brief_library_unavailable')
             return types.SimpleNamespace(completion_text=json.dumps(dict(paragraphs=[
                 dict(text='你提到了多任务带来的分心；如果愿意，可以留一点散步的空当。',refs=['E1'])]),ensure_ascii=False))
-        self.bot.context.get_current_chat_provider_id=provider;self.bot.context.llm_generate=generate
+        self.bot.context.get_current_chat_provider_id=provider;self.bot.context.tool_loop_agent=generate
         asyncio.run(self.bot.send_attention());asyncio.run(self.bot.send_attention())
         self.assertEqual(len(calls),1);self.assertEqual(len(self.sent),1)
-        self.assertEqual(calls[0]['contexts'],[]);self.assertIsNone(calls[0]['tools'])
+        self.assertEqual(calls[0]['contexts'],[])
         saved=json.loads(self.bot.store.db.execute('SELECT payload FROM attention_delivery').fetchone()[0])
         self.assertEqual(saved['generation'],'model');self.assertEqual(saved['body'],self.sent[0][1])
 
@@ -236,11 +311,14 @@ class BriefingDispatchTests(unittest.TestCase):
         async def provider(**kwargs):return 'synthetic'
         async def generate(**kwargs):calls.append(kwargs);raise TimeoutError()
         async def send(*args):self.sent.append(args);raise OSError()
-        self.bot.context.get_current_chat_provider_id=provider;self.bot.context.llm_generate=generate
+        self.bot.context.get_current_chat_provider_id=provider;self.bot.context.tool_loop_agent=generate
         self.bot.context.send_message=send
         asyncio.run(self.bot.send_attention());asyncio.run(self.bot.send_attention())
         self.assertEqual(len(calls),1);self.assertEqual(len(self.sent),1)
         self.assertIn('暂不可用',self.sent[0][1])
+        self.assertNotIn('多任务',self.sent[0][1])
+        saved=json.loads(self.bot.store.db.execute('SELECT payload FROM attention_delivery').fetchone()[0])
+        self.assertEqual(saved['generation_failure'],'timeout')
         self.assertEqual(self.bot.store.db.execute('SELECT state FROM attention_delivery').fetchone()[0],'unknown')
 
     def test_delete_or_disable_during_generation_prevents_dispatch(self):
@@ -259,7 +337,7 @@ class BriefingDispatchTests(unittest.TestCase):
                     else:self.bot.attention.configure(self.bot.bedtime_owner(),'p:FriendMessage:owner',False)
                     return types.SimpleNamespace(completion_text='bad json')
                 if mode=='disable':self.bot.store.capture('p','owner','another','/life 今天散步了','2026-10-28T21:00:00+08:00')
-                self.bot.context.get_current_chat_provider_id=provider;self.bot.context.llm_generate=generate
+                self.bot.context.get_current_chat_provider_id=provider;self.bot.context.tool_loop_agent=generate
                 asyncio.run(self.bot.send_attention())
                 self.assertEqual(self.sent,[])
                 self.assertEqual(self.bot.store.db.execute('SELECT state FROM attention_delivery').fetchone()[0],'withdrawn')

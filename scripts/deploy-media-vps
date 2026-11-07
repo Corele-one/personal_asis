@@ -1,0 +1,28 @@
+#!/usr/bin/env python3
+"""Stage only attachment code, then preflight and activate with rollback."""
+import hashlib
+import json
+from pathlib import Path
+import shutil
+import subprocess
+import tempfile
+import uuid
+
+root = Path(__file__).resolve().parents[1]
+host = 'mac@35.209.202.207'
+with tempfile.TemporaryDirectory(prefix='asis-media-release-') as tmp:
+    stage = Path(tmp) / uuid.uuid4().hex
+    plugin = stage / 'astrbot_plugin_media_agent'
+    shutil.copytree(root / 'integrations/astrbot_plugin_media_agent', plugin,
+                    ignore=shutil.ignore_patterns('__pycache__'))
+    for name in ('media_files.py', 'media_worker.py', 'whisper_audio.py'):
+        shutil.copyfile(root / 'src/personal_asis' / name, plugin / name)
+    for name in ('validate-media-sdk.py', 'activate-media-vps.py'):
+        shutil.copyfile(root / 'deploy' / name, stage / name)
+    manifest = {str(p.relative_to(stage)): hashlib.sha256(p.read_bytes()).hexdigest()
+                for p in stage.rglob('*') if p.is_file()}
+    (stage / 'manifest.json').write_text(json.dumps(manifest))
+    remote = '/home/mac/personal-asis-media-incoming/' + stage.name
+    subprocess.run(['ssh','-o','BatchMode=yes',host,'mkdir -p -m 700 /home/mac/personal-asis-media-incoming'],check=True)
+    subprocess.run(['scp','-q','-r',str(stage),host+':/home/mac/personal-asis-media-incoming/'],check=True)
+    subprocess.run(['ssh','-o','BatchMode=yes',host,'python3 '+remote+'/activate-media-vps.py '+remote],check=True)

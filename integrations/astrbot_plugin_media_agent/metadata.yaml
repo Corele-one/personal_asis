@@ -1,0 +1,6 @@
+name: astrbot_plugin_media_agent
+display_name: Personal Asis 附件识别
+desc: 本人私聊扫描PDF逐页OCR与Whisper录音分段转写；复用AstrBot原生Agent
+version: v1.1.1
+author: Personal Asis
+repo: ""

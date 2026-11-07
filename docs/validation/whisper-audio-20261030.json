@@ -1,0 +1,92 @@
+{
+  "date": "2026-10-30",
+  "plugin_version": "1.1.1",
+  "backend": "groq/whisper-large-v3",
+  "authorization": {
+    "owner_explicitly_approved": true,
+    "scope": "owner-requested audio transcription only",
+    "existing_mac_key_transferred": "SSH stdin; no key in argv or output",
+    "vps_key_and_authorization_mode": "0600"
+  },
+  "diagnosis": {
+    "original_failure": "Gemini audio request phase; original receipt retained unknown without error classification; exact original cause cannot be recovered",
+    "additional_local_failure": "FFmpeg FLAC re-encoding exceeded 45-second limit",
+    "fix": "AAC stream copy to M4A; other formats use fast 16-bit mono FLAC; safe phase/tool/HTTP diagnostics"
+  },
+  "tests": {
+    "media": 10,
+    "whisper": 4,
+    "local": {
+      "total": 436,
+      "optional_skips": 1
+    },
+    "full": {
+      "total": 765,
+      "passed": 756,
+      "optional_skips": 9
+    },
+    "installed_sdk": {
+      "owner_and_attachment_guards": "passed",
+      "multipart_transport": "mocked",
+      "retryable_503_attempts": 1
+    }
+  },
+  "actual_owner_recording": {
+    "duration_seconds": 554.005333,
+    "chunks": 2,
+    "absolute_ranges": [
+      [
+        0,
+        300
+      ],
+      [
+        300,
+        554.005333
+      ]
+    ],
+    "whisper_requests": 2,
+    "both_succeeded": true,
+    "segments": 162,
+    "characters": 2314,
+    "timestamps_monotonic": true,
+    "second_chunk_seconds_including_transcription": 11.8,
+    "completed_first_chunk_reused": true,
+    "old_gemini_unknown_receipt_preserved": true,
+    "cached_results_imported_to_native_tools": true,
+    "cached_read_additional_cloud_calls": 0,
+    "manually_listened": false,
+    "speaker_identities_verified": false
+  },
+  "local_wav_fixture": {
+    "seconds": 2,
+    "output": "FLAC",
+    "sample_rate": 16000,
+    "channels": 1,
+    "bits": 16,
+    "cloud_calls": 0
+  },
+  "deployment": {
+    "backup": "media-20261030_190138_641471",
+    "astrbot": "active",
+    "dashboard": "active",
+    "tools_registered": 2,
+    "verified_hashes": {
+      "media_files.py": "08b31f065083e057b94fd1f4522b204edfd736b3b44b5dc803acbf75f8680d93",
+      "main.py": "55509b423b770597614b57b8e49acd36b20c599abe42c2ffefa6477607bddc21",
+      "metadata.yaml": "137895772e472a0abe9783698aa88aba76aaced03bc7072aee215feb2002a33b",
+      "whisper_audio.py": "647232fb9d084556a48917535ca37d9ad249b53b63de30c1b968388994db7d92",
+      "media_worker.py": "3cf555e29f5a13c6e6866afe94cf8ce99c4aa2a73c2a34b0f352a252fcb4bab8",
+      "_conf_schema.json": "81e2d32c6c9172747f16be30f0ca42bdaa2973562d4a538adb7105fa0fccd1b7"
+    },
+    "chat_model_configuration": "unchanged",
+    "temporary_work_directories": 0
+  },
+  "platform_test_messages": 0,
+  "obsidian_writes": 0,
+  "private_transcript_export": "local ignored directory only",
+  "pending": [
+    "Owner Feishu attachment result-delivery acceptance",
+    "Manual source-audio review and technical-term correction",
+    "Other recording formats and long sustained workloads"
+  ]
+}

@@ -23,6 +23,8 @@ def omission(record):
         return 'sleep'
     if record['kind'] == 'task':
         return 'reminder'
+    if record.get('images'):
+        return None
     text = content(record)
     bare = text.strip(' \t\n，。！？,.!？~～😊👋🙏')
     if not bare or re.fullmatch(
@@ -87,7 +89,65 @@ def block(record):
         # An unfinished snippet must not swallow the rest of the daily template.
         lines.append(fence)
     text = '\n'.join(lines)
-    return text + '\n'
+    from .life_images import embed
+    for index,image in enumerate(record.get('images', [])):
+        rendered = embed(record,index)
+        # Only replace transport markers outside code. An image always gets
+        # its own paragraph, including when the platform flattened the caption.
+        position = next((offset+line.index('[image]') for offset,line in surface_lines(text)
+                         if '[image]' in line),None)
+        if position is not None:
+            text = text[:position].rstrip() + '\n\n' + rendered + '\n\n' + text[position+7:].lstrip()
+        else:
+            text = text.rstrip() + '\n\n' + rendered
+    # Formatting may add paragraph whitespace; it never changes words or facts.
+    surface = {offset for offset,_ in surface_lines(text)}
+    lines,offset = [],0
+    for line in text.splitlines(True):
+        lines.append(readable_line(line) if offset in surface else line)
+        offset += len(line)
+    return '\n'.join(paragraphs(''.join(lines)))
+
+
+def paragraphs(body):
+    """Paragraphs and standalone images; fenced examples stay indivisible."""
+    result,current,fence = [],[],None
+    for line in body.splitlines(True):
+        marker = re.match(r'^ {0,3}(`{3,}|~{3,})(.*)',line)
+        if marker:
+            if fence is None:
+                fence=marker[1]
+            elif marker[1][0] == fence[0] and len(marker[1]) >= len(fence) and not marker[2].strip():
+                fence=None
+        if not line.strip() and fence is None:
+            if current:
+                result.append(''.join(current).rstrip('\r\n')+'\n');current=[]
+        else:
+            current.append(line)
+    if current:
+        result.append(''.join(current).rstrip('\r\n')+'\n')
+    return result
+
+
+def readable_line(line):
+    """Use sentence/transition boundaries in long plain prose, never hard-wrap."""
+    if (len(line.strip()) < 75 or re.match(r'^\s*(?:[#>*|\-+]|\d+[.)])',line)
+            or re.search(r'`|\[\[|\]\(|https?://',line)):
+        return line
+    transitions = {m.start() for m in re.finditer(r'(?:另外|不过|换个角度想|说到这里|另一方面|回到)',line)}
+    boundaries = ({m.end() for m in re.finditer(r'[。！？!?；;][”’」』]*',line)} if len(line) >= 160 else set())
+    boundaries.update(transitions)
+    # A very long conversational sentence can still break at a complete clause.
+    if ((not boundaries and len(line) >= 160)
+            or max(b-a for a,b in zip([0,*sorted(boundaries)],[*sorted(boundaries),len(line)])) > 220):
+        boundaries.update(m.end() for m in re.finditer('[，,]',line))
+    cuts,previous = [],0
+    for pos in sorted(boundaries):
+        if pos-previous >= (32 if pos in transitions else 95) and len(line)-pos >= 25:
+            cuts.append(pos);previous=pos
+    for pos in reversed(cuts):
+        line=line[:pos].rstrip()+'\n\n'+line[pos:].lstrip()
+    return line
 
 
 def surface_lines(text):

@@ -1,0 +1,76 @@
+{
+  "date": "2026-11-05",
+  "scope": "Owner-requested on-demand access to saved WuCai CN clipping text from Mac Pi and existing VPS AstrBot",
+  "plugin_version": "2.9.1",
+  "operation": "wucai_read/get-article-text",
+  "authorization": {
+    "sync_token_saved_by_owner_in_mac_keychain": true,
+    "same_vps_credential_transfer": "SSH stdin; separate private 0600 file; existing AI Token retained"
+  },
+  "tests": {
+    "full_suite": {
+      "run": 782,
+      "passed": 773,
+      "skipped": 9
+    },
+    "local_agent_suite": {
+      "run": 453,
+      "passed": 452,
+      "skipped": 1
+    },
+    "final_wucai_suite": {
+      "run": 25,
+      "passed": 25
+    },
+    "actual_astrbot_sdk_import": true,
+    "registered_tools": 11,
+    "synthetic_owner_group_stranger_disabled_gates": true,
+    "synthetic_utf16_decode_pagination_version_guard_and_errors": true
+  },
+  "live_reads": {
+    "mac_saved_clipping": {
+      "status": "ok",
+      "chars": 5260,
+      "complete_blob": true
+    },
+    "vps_saved_clipping": {
+      "status": "ok",
+      "chars": 5260,
+      "complete_blob": true
+    },
+    "installed_vps_adapter_exact_url": {
+      "status": "ok",
+      "chars": 5260,
+      "content_hash_present": true
+    }
+  },
+  "deployment": {
+    "service": "active",
+    "wucai_tool_registration": "confirmed",
+    "files_verified": 5,
+    "final_revision_backup": "/home/mac/astrbot/plugin_backups/wucai-20261105_203754_619059",
+    "pre_feature_rollback": "/home/mac/astrbot/plugin_backups/wucai-20261105_203514_988707",
+    "dashboard_service": "active",
+    "credential_mode": "0600",
+    "metadata_mode": "0600",
+    "metadata_directory_mode": "0700",
+    "records_before": 108,
+    "original_record_payloads_preserved": true
+  },
+  "data_boundaries": {
+    "real_model_calls": 0,
+    "platform_messages_sent": 0,
+    "original_obsidian_writes": 0,
+    "article_or_platform_setting_mutations": 0,
+    "export_progress_init_download_ack_used": true,
+    "bulk_clipping_body_download": false,
+    "background_collection_added": false,
+    "saved_bodies_automatically_added_to_shared_library": false,
+    "signed_urls_returned_to_model": false,
+    "token_absent_from_diff_and_new_code": true
+  },
+  "not_accepted": [
+    "Owner private-chat model tool selection and response quality",
+    "Complete coverage of all historical clippings; official export settings may restrict visibility"
+  ]
+}

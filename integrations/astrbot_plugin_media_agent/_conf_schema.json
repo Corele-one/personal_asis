@@ -1,0 +1,6 @@
+{
+  "enabled": {"description": "启用本人私聊中的附件处理工具", "type": "bool", "default": false},
+  "owner_platform": {"description": "沿用已有本人平台ID，不自动绑定", "type": "string", "default": ""},
+  "owner_id": {"description": "沿用已有本人私聊ID，不自动绑定", "type": "string", "default": ""},
+  "audio_backend": {"description": "经本人授权的Groq Whisper云端转写；凭据存VPS独立私密文件", "type": "string", "default": ""}
+}

@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 
 from personal_asis import life_freewrite as prose, life_sync as sync, life_journal as journal
-from personal_asis.life_layout import Editor, LayoutUnavailable, slots, validate
+from personal_asis.life_layout import Editor, LayoutUnavailable, slots, validate,normalize_document,validate_document
 from personal_asis.model_provider import MiMo, ProviderUnknown
 
 
@@ -228,3 +228,109 @@ class LayoutTests(unittest.TestCase):
         first=next(a for a in anchors if a['preceding']=='第一段')
         self.assertFalse(first['new_heading'])
         self.assertFalse(any(a['preceding']=='- 一个条目' for a in anchors))
+
+    def test_one_message_can_place_distinct_paragraphs_under_different_topics_and_recover_receipts(self):
+        state=self.state('课程越来越难，我想换个方法。\n\n饭后散步看到一只小猫。')
+        note=self.vault/'2026-10-27.md';note.write_text(self.template)
+        def choose(document):
+            self.assertEqual([r['source'] for r in document['records']],['s0','s0'])
+            self.assertEqual(len(document['records']),2)
+            course=next(a for a in document['slots'] if '课程越来越难' in a['preceding'])
+            return dict(groups=[dict(slot=course['id'],title='',records=['r0']),
+                dict(slot=len(document['slots'])-1,title='散步',records=['r1'])])
+        with patch.object(self.editor,'decision',side_effect=choose):
+            files,changes=sync.plan(state,self.vault,'.',editor=self.editor)
+        self.assertLess(files[0]['after'].index('我想换个方法'),files[0]['after'].index('#### 晚饭'))
+        self.assertEqual(len(changes[0][1]['locations']),2)
+        state['pending_projection']=journal.pending(state,files,changes,{},self.vault)
+        sync.apply(files);journal.recover(state,self.vault)
+        self.assertEqual(sync.plan(state,self.vault,'.',editor=self.editor),([],[]))
+        next(iter(state['records'].values())).update(deleted=True,revision=2)
+        files,_=sync.plan(state,self.vault,'.',editor=self.editor)
+        self.assertNotIn('我想换个方法',files[0]['after'])
+        self.assertNotIn('散步看到',files[0]['after'])
+
+    def test_image_is_a_model_paragraph_with_caption_provenance_and_remains_on_its_own_line(self):
+        desired=[('a','今天的照片\n\n![[file-20261105200000000.png]]\n')]
+        def choose(document):
+            self.assertFalse(document['records'][0]['image'])
+            self.assertTrue(document['records'][1]['image'])
+            self.assertEqual(document['records'][0]['source'],document['records'][1]['source'])
+            return dict(groups=[dict(slot=0,title='',records=['r0','r1'])])
+        with patch.object(self.editor,'decision',side_effect=choose):
+            after,locs=self.editor.arrange('### 📕Freewrite\n',desired)
+        self.assertIn('今天的照片\n\n![[file-20261105200000000.png]]\n',after)
+        start,body=locs['a']
+        self.assertEqual(after[start:start+len(body)],body)
+
+    def test_prompt_upgrade_does_not_reflow_previously_confirmed_unchanged_days(self):
+        state=self.state('以前确认过的原话。')
+        with patch.object(self.editor,'decision',return_value=dict(groups=[dict(slot=0,title='',records=['r0'])])):
+            files,changes=sync.plan(state,self.vault,'.',editor=self.editor)
+        sync.apply(files);state['applied'].update(changes)
+        for receipt in state['applied'].values():receipt['layout']='contextual-v1'
+        with patch.object(self.editor,'decision') as model:
+            self.assertEqual(sync.plan(state,self.vault,'.',editor=self.editor),([],[]))
+            model.assert_not_called()
+
+    def test_photo_groups_are_locally_ordered_after_their_caption(self):
+        desired=[('a','照片说明\n\n![[file-20261105200000000.png]]\n')]
+        bad=dict(groups=[dict(slot=0,title='',records=['r1']),dict(slot=0,title='',records=['r0'])])
+        with patch.object(self.editor,'decision',return_value=bad):
+            after,_=self.editor.arrange('### 📕Freewrite\n',desired)
+        self.assertIn('照片说明\n\n![[file-20261105200000000.png]]',after)
+
+    def document(self,**kwargs):
+        return dict(slots=[dict(id=0,heading='已有主题',new_heading=False),
+                           dict(id=1,heading='已有主题',new_heading=True)],
+                    records=[dict(id='r0',text='说明',source='s0',image=False),
+                             dict(id='r1',text='图片',source='s0',image=True),
+                             dict(id='r2',text='其他想法',source='s1',image=False)],**kwargs)
+
+    def test_local_normalization_preserves_grouping_and_finishes_topic_before_new_heading(self):
+        doc=self.document()
+        value=dict(groups=[dict(slot='0',title='新话题',records=['r2','r0','r0','r1'])])
+        normalize_document(value,doc)
+        self.assertEqual(value['groups'],[dict(slot=1,title='新话题',records=['r0','r1','r2'])])
+        self.assertEqual(validate_document(value,doc),value['groups'])
+        existing=dict(groups=[dict(slot=0,title='已有主题',records=['r0','r1','r2'])])
+        normalize_document(existing,doc)
+        self.assertEqual(existing['groups'][0]['title'],'')
+        self.assertEqual(existing['groups'][0]['slot'],0)
+        for position in (999,-1,'end',None):
+            value=dict(groups=[dict(slot=position,title='独立话题',records=['r0','r1','r2'])])
+            normalize_document(value,doc)
+            self.assertEqual(value['groups'][0]['slot'],1)
+            self.assertEqual(value['groups'][0]['title'],'独立话题')
+
+    def test_normalization_rejects_missing_foreign_and_conflicting_cross_group_owners(self):
+        doc=self.document()
+        for members in (['r0','r1'],['r0','r1','foreign']):
+            with self.assertRaises(ValueError):
+                normalize_document(dict(groups=[dict(slot=1,title='',records=members)]),doc)
+        duplicate=dict(groups=[dict(slot=1,title='',records=['r0','r1']),
+                               dict(slot=1,title='',records=['r1','r2'])])
+        with self.assertRaisesRegex(ValueError,'coverage'):normalize_document(duplicate,doc)
+
+    def test_photo_anchor_move_keeps_manual_parent_and_caption_sequence(self):
+        doc=self.document()
+        value=dict(groups=[dict(slot=0,title='照片',records=['r1']),
+                           dict(slot=1,title='',records=['r0','r2'])])
+        normalize_document(value,doc)
+        self.assertEqual([g['records'] for g in value['groups']],[['r0','r2'],['r1']])
+        self.assertTrue(all(g['slot']==1 for g in value['groups']))
+        self.assertEqual(value['groups'][1]['title'],'照片')
+
+    def test_validation_failure_caches_specific_safe_reason_without_model_reply(self):
+        from personal_asis.life_review import failure_message
+        bad=self.response([dict(slot=0,title='',records=['r0'])])
+        with patch.object(MiMo,'credential',return_value='synthetic'),patch.object(MiMo,'complete',return_value=bad) as call:
+            for _ in range(2):
+                with self.assertRaises(LayoutUnavailable) as result:
+                    self.editor.arrange('### 📕Freewrite\n',[('a','原话甲\n'),('b','原话乙\n')])
+                self.assertEqual(result.exception.validation,dict(code='coverage'))
+                self.assertIn('遗漏或重复',failure_message(result.exception))
+            self.assertEqual(call.call_count,1)
+        cached=(self.profile/'journal-layout-cache.json').read_text()
+        self.assertNotIn('原话甲',cached)
+        self.assertNotIn('原话乙',cached)

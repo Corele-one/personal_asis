@@ -51,10 +51,15 @@ class LifeStore:
         self.db.execute('INSERT INTO changes(id,payload) VALUES(?,?)', (value['id'], payload))
         return value
 
-    def capture(self, platform, sender, message, text, occurred_at=None, origin='', *, capture_source='life_command'):
+    def capture(self, platform, sender, message, text, occurred_at=None, origin='', *, capture_source='life_command', images=None):
         from .life_intake import SOURCES
         if capture_source not in SOURCES:
             raise ValueError('invalid_capture_source')
+        if images is not None:
+            from .life_images import validate
+            validate(images)
+            if images and capture_source != 'life_command':
+                raise ValueError('diary_images_require_explicit_entry')
         if not all(isinstance(v, str) and 0 < len(v) <= 512 for v in (platform, sender, message)):
             raise ValueError('invalid_message_identity')
         if not isinstance(text, str) or not text.strip() or len(text.encode()) > 16000 or '\x00' in text:
@@ -64,8 +69,18 @@ class LifeStore:
             self.db.execute('BEGIN IMMEDIATE')
             if self.db.execute('SELECT 1 FROM records WHERE id=?', (rid,)).fetchone():
                 current = self.get(rid)
+                changed = False
                 if current.get('capture_source') == 'conversation' and capture_source != 'conversation' and not current['deleted']:
-                    current.update(capture_source=capture_source, revision=current['revision']+1, updated_at=timestamp())
+                    current.update(capture_source=capture_source)
+                    changed = True
+                if images and not current['deleted']:
+                    if current.get('images') and current['images'] != images:
+                        raise ValueError('diary_image_identity_conflict')
+                    if not current.get('images'):
+                        current['images'] = images
+                        changed = True
+                if changed:
+                    current.update(revision=current['revision']+1, updated_at=timestamp())
                     self._save(current)
                 return current, False
             at = timestamp(occurred_at)
@@ -73,6 +88,8 @@ class LifeStore:
                          text=text, summary='', kind='journal', occurred_at=at,
                          day=datetime.fromisoformat(at).astimezone(TZ).date().isoformat(),
                          due_at=None, task_status='pending', deleted=False, updated_at=timestamp(), capture_source=capture_source)
+            if images:
+                value['images'] = images
             self._save(value)
         return value, True
 
@@ -112,13 +129,22 @@ class LifeStore:
                 return value
             value.update(text='', summary='', due_at=None, deleted=True,
                          revision=value['revision']+1, updated_at=timestamp())
+            removed_images = value.pop('images', [])
             if 'tracking' in value:
                 value['tracking'] = {'habits': [], 'learning': []}
             attention.scrub(rid)
             # Remove prior plaintext snapshots; retain sequence and a tombstone for sync.
             self.db.execute('UPDATE changes SET payload=? WHERE id=?', (json.dumps(value), rid))
             self.db.execute('DELETE FROM reminders WHERE id=?', (rid,))
-            return self._save(value)
+            self._save(value)
+        if removed_images:
+            from .life_images import filename
+            used = {filename(i) for row in self.db.execute('SELECT payload FROM records')
+                    for i in json.loads(row[0]).get('images', [])}
+            for item in removed_images:
+                if filename(item) not in used:
+                    (self.path.parent / 'images' / filename(item)).unlink(missing_ok=True)
+        return value
 
     def export(self, after=0, limit=200):
         from .life_intake import sync_record

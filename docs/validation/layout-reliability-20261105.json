@@ -1,0 +1,62 @@
+{
+  "date": "2026-11-05",
+  "reported_failure": "Smart layout rejected a completed model decision before preview",
+  "historical_limit": "Old failed cache had only layout_output_invalid, without the exact validation category or response; the precise historical cause cannot be reconstructed",
+  "observed_issues": [
+    "Strict placement/order/title constraints could reject a whole batch for locally resolvable differences",
+    "Unnamed independent groups inherited the preceding H4 and mixed unrelated topics",
+    "A real feedback request returned an invalid insertion slot"
+  ],
+  "user_authorized_real_requests": {
+    "limit": 4,
+    "used": 4,
+    "initial_decisions_accepted": 3,
+    "feedback_decision_rejected": 1,
+    "feedback_validation": {"code": "slot", "group": 0},
+    "additional_requests_after_limit": 0,
+    "provider": "Existing authorized MiMo",
+    "real_note_or_asset_writes": 0
+  },
+  "repair": {
+    "shared_between_initial_and_feedback": true,
+    "local_normalization": [
+      "Order and deduplicate paragraph IDs within one group",
+      "Reuse an identical existing heading",
+      "Move new headings to an insertion boundary that preserves handwritten parent headings",
+      "Resolve out-of-range or explicit end positions only to the bounded section end",
+      "Order photo groups by source paragraph dependencies without changing source prose"
+    ],
+    "still_rejected": ["Unknown IDs", "Missing paragraphs", "Cross-group duplicate ownership", "Photo dependency cycles", "Invalid schema or unsafe title content"],
+    "topic_policy": "Independent topics require explicit titles; an empty title inherits the active H4",
+    "diagnostics": "Fixed validation reason and optional group index; no raw model replies or source text in error metadata"
+  },
+  "current_preview": {
+    "basis": "Three completed real model decisions, then local review of topic titles and section assignment",
+    "days": 3,
+    "paragraph_and_image_units": 29,
+    "images": 6,
+    "topic_groups": 12,
+    "learning_units": 3,
+    "source_paragraphs_kept_once": true,
+    "frozen_private_draft_saved": true,
+    "cli_restored_reviewed_draft": true,
+    "cli_previewed_then_skipped": true,
+    "new_model_calls_on_resume": 0,
+    "real_note_or_asset_writes": 0
+  },
+  "tests": {
+    "life_total": 160,
+    "life_passed": 160,
+    "local_total": 476,
+    "local_passed": 475,
+    "local_optional_dependency_skipped": 1,
+    "full_total": 805,
+    "full_passed": 796,
+    "full_optional_dependency_skipped": 9
+  },
+  "limits": [
+    "The fourth response was not retained, so no verbatim replay is claimed",
+    "Normalization covers the observed invalid-slot category; fresh arbitrary model generations are not guaranteed to be correct",
+    "Final owner confirmation and Obsidian rendering remain pending"
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "date": "2026-11-05",
+  "scope": "Investigate access to saved WuCai clipping text using existing authorization",
+  "official_cli_latest": "26.3.50",
+  "official_obsidian_plugin_reviewed": "26.4.11",
+  "live_vps_cli": {
+    "article_details_success": true,
+    "detail_is_clipped": true,
+    "list_is_clipped_for_same_article": false,
+    "full_text_returned": false,
+    "clipping_download_url_returned": false
+  },
+  "official_sync_auth_probe": {
+    "region": "cn",
+    "operation": "profile",
+    "credential": "existing_ai_token_on_same_vps",
+    "business_code": 10000,
+    "account_data_returned": false,
+    "attempts": 1
+  },
+  "official_full_text_path": "Obsidian sync returns sou; plugin downloads and decodes saved Markdown",
+  "existing_obsidian_sync_plugin": {"life": false, "study": false},
+  "outcome": "Existing CLI does not return saved clipping text; official sync authorization is required to continue validating the alternative path",
+  "runtime_changes": false,
+  "deployment": false,
+  "new_credentials": false,
+  "sync_init_download_ack_or_config_mutation": false,
+  "original_note_writes": 0,
+  "model_calls": 0,
+  "platform_messages": 0,
+  "private_titles_urls_ids_and_content_recorded": false
+}

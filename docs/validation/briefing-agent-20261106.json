@@ -1,0 +1,128 @@
+{
+  "date": "2026-11-06",
+  "plugin_version": "2.10.0",
+  "evidence_review": {
+    "owner_chat_reviewed": true,
+    "observed_failure": "2026-11-01 owner-quoted fallback included empty Missing/C++/Research placeholders and truncated reading extracts",
+    "historical_generation_failure_cause": "not recoverable from generic failure notices and withdrawn cached payloads; no claim of a reproduced provider failure"
+  },
+  "behavior": {
+    "native_astrbot_agent": true,
+    "max_steps": 5,
+    "total_timeout_seconds": 150,
+    "chat_history": false,
+    "tools": [
+      "briefing_library"
+    ],
+    "read_only": true,
+    "initial_evidence_json_characters": 28000,
+    "extra_read_calls": 8,
+    "extra_read_characters": 20000,
+    "page_characters": 4000,
+    "sources": [
+      "owner explicit life records",
+      "windowed complete Life Journal copies",
+      "related synced WUCAI text",
+      "related synced Xiaohongshu text"
+    ],
+    "template_filter": [
+      "empty checkboxes including -[]",
+      "zero-valued fields",
+      "empty headings",
+      "End-of-Day Checklist",
+      "Backup Vault",
+      "calendar confirmation fragments"
+    ],
+    "preserve": [
+      "authored learning prose including C++/Missing/Research",
+      "specific checked tasks with source/date",
+      "start/progress/end distinctions",
+      "source account/coverage/acquisition attribution"
+    ],
+    "synthesis": "Core events, learning progress, reading ideas; natural paragraphs, 500-900 Chinese characters suggested; omit unsupported parts",
+    "citations": "Only actually supplied/read body text earns E IDs; titles returned by search cannot support article opinions; references and revisions checked before dispatch",
+    "fallback": "Short honest failure/insufficient-material notice; no concatenated source extracts; no automatic rerun",
+    "output_parsing": "Strict JSON or a complete JSON code fence; citation, length and transport validation retained",
+    "failure_diagnostics": "Allowlisted agent/timeout/format/citation reason only; no provider errors or raw model output",
+    "cadence_changed": false,
+    "new_platform_fetch": false,
+    "new_providers": false
+  },
+  "verification": {
+    "briefing_tests": {
+      "run": 18,
+      "passed": 18
+    },
+    "life_tests": {
+      "run": 163,
+      "passed": 163
+    },
+    "local_tests": {
+      "run": 479,
+      "passed": 478,
+      "skipped": 1
+    },
+    "full_tests": {
+      "run": 808,
+      "passed": 799,
+      "skipped": 9
+    },
+    "actual_sdk": {
+      "import_verified": true,
+      "registered_tool_methods": 11,
+      "native_tool_loop_signature": true,
+      "native_executor_search_then_read": true,
+      "read_body_and_dynamic_citation_checked": true,
+      "reservation_and_single_agent_dispatch": true
+    },
+    "deployment": {
+      "release": "20261106_110802_512350",
+      "manifest_files": 59,
+      "hash_mismatches": [],
+      "original_records": 114,
+      "original_records_unchanged": true,
+      "policy_unchanged": true,
+      "goals_unchanged": true,
+      "services": [
+        "active",
+        "active"
+      ],
+      "private_db_permissions": "0o600",
+      "proactive_enabled": true,
+      "next_brief": "2026-11-08T08:00:00+08:00",
+      "next_weekly": "2026-11-09T08:00:00+08:00",
+      "read_only_real_replica": {
+        "start": "2026-11-03",
+        "end": "2026-11-05",
+        "sources": {
+          "astrbot": 10,
+          "journal": 3,
+          "wucai": 2,
+          "xiaohongshu": 2,
+          "idea": 3
+        },
+        "available": true
+      },
+      "real_replica_tool_reads": {
+        "wucai": {
+          "matches": 6,
+          "read_characters": 126,
+          "has_evidence_id": true
+        },
+        "xiaohongshu": {
+          "matches": 1,
+          "read_characters": 340,
+          "has_evidence_id": true
+        }
+      }
+    },
+    "real_model_calls": 0,
+    "real_platform_test_messages": 0,
+    "real_obsidian_writes": 0,
+    "real_pi_sync_runs": 0,
+    "pending": [
+      "Actual selected provider generation, final writing quality and scheduled platform delivery require the next normal report; no synthetic test is claimed as real model acceptance"
+    ]
+  },
+  "rollback": "Existing code-only rollback at /home/mac/personal-asis-v2-rollbacks/20261106_110802_512350; life-before.sqlite3 retained privately"
+}

@@ -148,7 +148,7 @@ class BedtimeTests(unittest.TestCase):
 class PluginTests(unittest.TestCase):
     def setUp(self):
         # Synthetic API only; deployed-SDK validation is performed separately.
-        from personal_asis import life_store, life_bedtime, bootstrap_context, personal_profile, life_tracking, life_attention, life_intake, life_briefing
+        from personal_asis import life_store, life_images, life_bedtime, bootstrap_context, personal_profile, life_tracking, life_attention, life_intake, life_briefing
         modules = {name: types.ModuleType(name) for name in ('astrbot', 'astrbot.api', 'astrbot.api.event', 'astrbot.api.star', 'synthetic_life_plugin')}
         decorator = lambda *a, **kw: lambda fn: fn
         modules['astrbot.api'].logger = types.SimpleNamespace(warning=lambda *a: None)
@@ -165,13 +165,20 @@ class PluginTests(unittest.TestCase):
         modules['astrbot.api.star'].register = decorator
         modules['synthetic_life_plugin'].__path__ = []
         modules.update({'synthetic_life_plugin.life_store': life_store,
+                        'synthetic_life_plugin.life_images': life_images,
                         'synthetic_life_plugin.life_bedtime': life_bedtime,
                         'synthetic_life_plugin.bootstrap_context': bootstrap_context,
                         'synthetic_life_plugin.personal_profile': personal_profile})
         modules.update({'synthetic_life_plugin.life_tracking': life_tracking,
                         'synthetic_life_plugin.life_attention': life_attention, 'synthetic_life_plugin.life_intake': life_intake,
                         'synthetic_life_plugin.life_briefing': life_briefing})
+        agent_path = Path(__file__).resolve().parents[1] / 'integrations/astrbot_plugin_life_agent/briefing_agent.py'
+        agent_spec = importlib.util.spec_from_file_location('synthetic_life_plugin.briefing_agent', agent_path)
+        # Load after the synthetic package has been registered below.
         mocked = patch.dict(sys.modules, modules); mocked.start(); self.addCleanup(mocked.stop)
+        agent_module = importlib.util.module_from_spec(agent_spec); agent_spec.loader.exec_module(agent_module)
+        agent_mock = patch.dict(sys.modules, {'synthetic_life_plugin.briefing_agent': agent_module})
+        agent_mock.start(); self.addCleanup(agent_mock.stop)
         path = Path(__file__).resolve().parents[1] / 'integrations/astrbot_plugin_life_agent/main.py'
         spec = importlib.util.spec_from_file_location('synthetic_life_plugin.main', path)
         mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
@@ -195,6 +202,7 @@ class PluginTests(unittest.TestCase):
         return types.SimpleNamespace(message_str=text, message_obj=types.SimpleNamespace(message_id='synthetic-message'),
             unified_msg_origin='p:FriendMessage:owner', is_private_chat=lambda: private,
             get_platform_id=lambda: 'p', get_sender_id=lambda: 'owner' if owner else 'other',
+            get_messages=lambda: [],
             plain_result=lambda text: text, stop_event=lambda: None,
             set_extra=lambda key,value: extras.update({key:value}), get_extra=lambda key: extras.get(key),
             request_llm=lambda **kwargs: dict(native_request=kwargs))

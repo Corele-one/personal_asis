@@ -1,0 +1,71 @@
+{
+  "date": "2026-10-30",
+  "plugin": "astrbot_plugin_media_agent",
+  "version": "1.0.0",
+  "architecture": "AstrBot native agent; no DSH, PPT or local ASR model",
+  "tests": {
+    "media_specialized": 7,
+    "local_regression": 429,
+    "life_regression": 137,
+    "full_suite": {
+      "total": 758,
+      "passed": 750,
+      "optional_skips": 8
+    }
+  },
+  "installed_sdk": {
+    "tools_registered": [
+      "attachment_media",
+      "attachment_send_result"
+    ],
+    "owner_private_and_current_attachment_guards": true,
+    "gemini_payload_mock_transport": true,
+    "retryable_503_attempts": 1
+  },
+  "vps_local_fixtures": {
+    "chinese_english_scan_pdf_ocr": "passed",
+    "text_pdf": "passed",
+    "audio_301_seconds_last_chunk": [
+      300,
+      301
+    ],
+    "flac_sample_rate": 16000,
+    "flac_channels": 1
+  },
+  "deployment": {
+    "backup": "media-20261030_174557_051536",
+    "service": "active",
+    "dashboard": "active",
+    "online_tool_registration": true,
+    "verified_file_hashes": {
+      "metadata.yaml": "ac4d03a0e768211450199cda3d89dddc222f6031d03294b7c128970db9e6761a",
+      "_conf_schema.json": "cb4fe6f5b6726039bcafa325b0b62a8e382998d6f2fb459ed14195699b3d4e59",
+      "main.py": "91fe0d5504a594acc7a652d19ecba5652198ccba7c4a92ef3226a53d09c2bb95",
+      "media_files.py": "ef55636d796ed2fc163fc6bc5873de621470fadc08b3d26de9d8906daa6640c8",
+      "media_worker.py": "e2b72e746f7f6d627ae66a88ecb56eb2f5d34aa3b47e7d558b3d244d0978aff7"
+    },
+    "existing_model_configuration": "unchanged",
+    "owner_binding": "matches existing Life binding",
+    "config_mode": "0600",
+    "cache_directory_mode": "0700",
+    "real_cache_files": 0,
+    "life_change": "only remove stale attachment-unavailable sentence",
+    "startup_probe_empty_journal_status_fixed": true
+  },
+  "resource_snapshot": {
+    "total_mib": 964,
+    "available_mib": 258,
+    "swap_used_mib": 105,
+    "astrbot_service_current_bytes": 431439872,
+    "astrbot_service_peak_bytes": 443592704,
+    "note": "Includes existing AstrBot and its Calendar MCP; not attributable to the new plugin"
+  },
+  "real_model_calls": 0,
+  "real_platform_test_messages": 0,
+  "real_obsidian_writes": 0,
+  "pending": [
+    "Real Gemini transcription quality and endpoint audio support",
+    "Real Feishu current/quoted attachment processing and result delivery",
+    "Large or complex scan recognition quality and sustained workload behavior"
+  ]
+}

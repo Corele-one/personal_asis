@@ -1,0 +1,40 @@
+#!/usr/bin/env python3
+"""Save the owner's WuCai Obsidian sync token in the local OS keychain."""
+
+import getpass
+from pathlib import Path
+import sys
+import warnings
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
+from personal_asis.credentials import CredentialStore
+
+
+def main():
+    if not sys.stdin.isatty():
+        print('请在 Mac 终端直接运行此入口；不接受管道或命令参数中的 Token。')
+        return 1
+    if len(sys.argv) != 1:
+        print('此入口不接受参数，请在隐藏输入提示后粘贴 Token。')
+        return 1
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter('error', getpass.GetPassWarning)
+            token = getpass.getpass('粘贴五彩 Obsidian Token 后按回车（隐藏输入）：').strip()
+        if not token or len(token) > 16384 or any(c.isspace() or ord(c) < 32 or ord(c) == 127 for c in token):
+            print('未保存：Token 为空或含无效字符，请重新复制。')
+            return 1
+        CredentialStore('wucai:obsidian:cn', 'local.personal-asis.reading').set(token)
+    except (EOFError, KeyboardInterrupt):
+        print('\n已取消，未保存。')
+        return 1
+    except Exception:
+        # Never print the credential or an exception that could contain it.
+        print('未能确认保存成功，请检查系统钥匙串权限后重试。')
+        return 1
+    print('已保存到 Mac 系统钥匙串。未上传服务器；回到聊天告诉我“已保存”即可。')
+    return 0
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

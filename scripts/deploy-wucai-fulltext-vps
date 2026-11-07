@@ -1,0 +1,72 @@
+#!/usr/bin/env python3
+"""Deploy the authorized saved-clipping reader without exposing credentials."""
+
+import argparse
+import hashlib
+import json
+from pathlib import Path
+import shlex
+import shutil
+import subprocess
+import sys
+import tempfile
+
+REPO = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO / 'src'))
+from personal_asis.credentials import CredentialStore
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--host', default='mac@35.209.202.207')
+    parser.add_argument('--code-only', action='store_true', help='Keep existing VPS credentials unchanged')
+    args = parser.parse_args()
+    if args.host != 'mac@35.209.202.207':
+        raise ValueError('existing_authorized_vps_required')
+    ssh = ['ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=5', args.host]
+    root = '/home/mac/astrbot/data/wucai-cli-stage'
+    token = None if args.code_only else CredentialStore('wucai:obsidian:cn', 'local.personal-asis.reading').get()
+    if not args.code_only and (not token or not token.isascii() or any(ord(c) < 33 or ord(c) > 126 for c in token)):
+        raise ValueError('invalid_sync_credential')
+    with tempfile.TemporaryDirectory(prefix='asis-wucai-code-') as tmp:
+        stage = Path(tmp)
+        plugin = REPO / 'integrations/astrbot_plugin_life_agent'
+        files = {name: plugin / name for name in ('main.py', 'metadata.yaml', '_conf_schema.json')}
+        files.update({name: REPO / 'src/personal_asis' / name for name in ('wucai_cli.py', 'wucai_fulltext.py', 'wucai_chat.py')})
+        files.update({name: REPO / 'deploy' / name for name in ('validate-life-sdk.py', 'activate-wucai-vps.py')})
+        for name, source in files.items():
+            shutil.copyfile(source, stage / name)
+        (stage / 'manifest.json').write_text(json.dumps({name: hashlib.sha256((stage / name).read_bytes()).hexdigest() for name in files}))
+        subprocess.run([*ssh, 'mkdir -p -m 700 ' + root], check=True)
+        subprocess.run(['scp', '-q', *[str(p) for p in stage.iterdir()], args.host + ':' + root + '/'], check=True)
+        # The secret crosses SSH stdin only. It never appears in argv or the
+        # staged code bundle; the existing AI Token is not modified.
+        install = '''
+import json,os,tempfile,shutil
+from pathlib import Path
+from datetime import datetime
+os.umask(0o077)
+p=Path('/home/mac/astrbot/data/config/wucai-obsidian-private.json')
+if any(x.is_symlink() for x in (p,*p.parents)):raise ValueError('symlink_denied')
+data=json.loads(__import__('sys').stdin.read(20000))
+if set(data)!={'region','sync_token'} or data['region']!='cn':raise ValueError('invalid_scope')
+token=data['sync_token']
+if not isinstance(token,str) or not token or not token.isascii() or any(ord(c)<33 or ord(c)>126 for c in token):raise ValueError('invalid_credential')
+if p.exists():
+ b=Path('/home/mac/astrbot/plugin_backups')/('wucai-credential-'+datetime.now().strftime('%Y%m%d_%H%M%S_%f'))
+ b.mkdir(mode=0o700);shutil.copyfile(p,b/p.name);(b/p.name).chmod(0o600)
+fd,name=tempfile.mkstemp(prefix='.wucai-obsidian-',dir=p.parent)
+try:
+ with os.fdopen(fd,'w') as f:json.dump(data,f);f.flush();os.fsync(f.fileno())
+ os.replace(name,p);p.chmod(0o600)
+finally:Path(name).unlink(missing_ok=True)
+print('WuCai sync credential installed privately; existing AI credential preserved.')
+'''
+        if not args.code_only:
+            subprocess.run([*ssh, 'python3 -c ' + shlex.quote(install)],
+                input=json.dumps(dict(region='cn', sync_token=token)).encode(), check=True)
+        subprocess.run([*ssh, 'python3 ' + root + '/activate-wucai-vps.py'], check=True)
+
+
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,59 @@
+{
+  "date": "2026-10-29",
+  "plugin_version": "2.9.0",
+  "upstream_cli": "wucai-cli==26.3.50",
+  "region": "cn",
+  "authorization": {
+    "vps_read_only_cli_requested": true,
+    "existing_mac_wucai_token_transfer_explicitly_authorized": true,
+    "transfer": "SSH standard input; no credential in argv or output",
+    "vps_credential_mode": "0600",
+    "new_accounts_or_other_source_credentials": false
+  },
+  "tests": {
+    "cli_specific": {"run": 8, "passed": 8},
+    "full": {"run": 731, "passed": 723, "optional_dependency_skips": 8},
+    "actual_installed_astrbot_sdk": {
+      "registered_tool_methods": 11,
+      "synthetic_owner_private_read": true,
+      "disabled_group_and_stranger_gates": true,
+      "synthetic_transport_only": true,
+      "real_model_calls": 0,
+      "real_platform_messages": 0
+    }
+  },
+  "deployment": {
+    "method": "incremental existing Life plugin update",
+    "backup": "wucai-20261029_212417_548126",
+    "online_plugin_hashes_matched": 4,
+    "wucai_enabled": true,
+    "wucai_read_startup_registration_confirmed": true,
+    "astrbot_service": "active",
+    "dashboard_service": "active",
+    "prior_attempts_automatically_rolled_back": [
+      "case-sensitive startup log check mismatched Added llm tool",
+      "existing low-memory VPS startup exceeded 90 seconds"
+    ],
+    "final_startup_window_seconds": 300
+  },
+  "preservation": {
+    "prior_records": 51,
+    "all_prior_raw_payloads_identical": true,
+    "bedtime_policy_and_ack_unchanged": true,
+    "attention_policy_unchanged": true,
+    "focus_goals_unchanged": true,
+    "task_reminders_unchanged": true
+  },
+  "live_wucai_read": {
+    "api_code": 1,
+    "user_selected_target_exact_url_match": true,
+    "expected_title_match": true,
+    "is_clipped": true,
+    "returned_highlights": 0,
+    "page_note_available": false,
+    "clipped_full_text_returned": false,
+    "private_title_url_and_body_omitted": true
+  },
+  "not_performed": ["real model generation", "platform test message", "platform mutation", "Obsidian write"],
+  "pending": ["owner chat model tool selection and answer quality"]
+}
