@@ -1,0 +1,114 @@
+{
+  "date": "2026-11-08",
+  "plugin_version": "2.11.2",
+  "root_cause": {
+    "evidence": "VPS AstrBot journal for the actual 08:00 report",
+    "http_status": 400,
+    "provider": "existing selected Gemini provider",
+    "reason": "GenerateContentRequest.tools[0].function_declarations[0].parameters.properties[source].enum[0]: cannot be empty",
+    "secondary_fault": "AstrBot returned role=err; strict JSON parsing mislabeled the provider error as format failure",
+    "previous_sdk_check_limitation": "Synthetic SDK invocation did not call the real provider schema validator"
+  },
+  "changes": {
+    "empty_source_enum_removed": true,
+    "sdk_error_role_rejected_before_render": true,
+    "diagnostics": [
+      "allowlisted failure category",
+      "response role",
+      "response text length",
+      "remaining tool call count",
+      "allowlisted provider error type",
+      "HTTP status if present",
+      "provider status category if present"
+    ],
+    "plain_prose": true,
+    "optional_source_markers": true,
+    "no_required_json": true,
+    "no_required_sections_or_wordcount": true,
+    "no_paragraph_or_citation_count_gate": true,
+    "markdown_links_allowed": true,
+    "overlong_response": "shorten at platform byte limit instead of fail",
+    "template_filter_retained": true,
+    "source_scope_and_withdrawal_retained": true,
+    "native_steps": 12,
+    "native_timeout_seconds": 300,
+    "failure_notice": "Show known HTTP status/timeout cause without provider error text; 503 is unavailable, 429 is call limit."
+  },
+  "verification": {
+    "briefing_tests": {
+      "run": 21,
+      "passed": 21
+    },
+    "life_tests": {
+      "run": 166,
+      "passed": 166
+    },
+    "local_tests": {
+      "run": 498,
+      "passed": 497,
+      "skipped": 1
+    },
+    "full_tests": {
+      "run": 827,
+      "passed": 818,
+      "skipped": 9
+    },
+    "actual_sdk": {
+      "import_verified": true,
+      "registered_global_tools": 11,
+      "native_executor_search_and_read": true,
+      "gemini_enum_nonempty_assertion": true,
+      "prose_dispatch_with_optional_citations": true
+    },
+    "deployment": {
+      "release": "20261108_154712_312680",
+      "files": 60,
+      "hash_mismatches": [],
+      "original_records": 129,
+      "original_records_unchanged": true,
+      "policy_unchanged": true,
+      "goals_unchanged": true,
+      "services": [
+        "active",
+        "active"
+      ]
+    },
+    "platform_test_messages": 0,
+    "source_note_writes": 0,
+    "non_generative_checks": {
+      "existing_model_metadata_status": 200,
+      "existing_model_available": true,
+      "proxy_environment_matches_service": true,
+      "offline_transport_reached_with_network_blocked": true,
+      "count_tokens_with_tools": "unsupported by this SDK in Developer API mode; rejected locally, not a generation test"
+    },
+    "authorized_previews": {
+      "authorized_runs": 2,
+      "used_runs": 2,
+      "successful_runs": 0,
+      "additional_generation_attempts_after_authorization_exhausted": 0,
+      "first": {
+        "sdk_model_calls": 1,
+        "result": "brief_provider_error",
+        "upstream_reason_not_retained_by_initial_preview_driver": true
+      },
+      "second": {
+        "sdk_model_calls": 1,
+        "explicit_generate_content_calls": 1,
+        "request_max_attempts": 1,
+        "configured_sdk_http_attempts": 1,
+        "http_status": 503,
+        "error_type": "ServerError",
+        "upstream_high_demand_confirmed": true,
+        "upstream_unavailable_confirmed": true,
+        "raw_error": "redacted, private receipt only under specific owner authorization"
+      },
+      "platform_messages": 0,
+      "note_writes": 0
+    }
+  },
+  "pending": [
+    "Real generation did not succeed: the second authorized preview definitively received Gemini 503/high demand. Final prose quality and normal scheduled platform delivery remain unverified. No third generation run is authorized."
+  ],
+  "rollback": "20261108_154712_312680"
+}

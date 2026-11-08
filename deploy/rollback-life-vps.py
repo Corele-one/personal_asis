@@ -24,6 +24,10 @@ for name,present in state['previous_units'].items():
     else:run('sudo','rm','-f',target)
 link=Path('/home/mac/personal-asis-v2');link.unlink(missing_ok=True)
 if state['previous_link']:link.symlink_to(state['previous_link'],target_is_directory=True)
+if 'router_metadata' in state:
+    router_metadata=Path('/home/mac/.local/share/personal-asis-router/deployment.json')
+    if state['router_metadata'] is None:router_metadata.unlink(missing_ok=True)
+    else:router_metadata.write_text(json.dumps(state['router_metadata']))
 run('sudo','systemctl','daemon-reload')
 for name,present in state['previous_units'].items():
     if present:run('sudo','systemctl','enable','--now',name)

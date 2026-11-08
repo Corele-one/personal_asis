@@ -200,8 +200,10 @@ async def fixture():
                     pass
                 async def get_current_chat_provider_id(self,umo):
                     assert umo == event.unified_msg_origin
-                    return 'synthetic-no-generation'
+                    return 'asis_router/auto'
                 async def tool_loop_agent(self,**kwargs):
+                    assert kwargs['chat_provider_id']=='asis_router/auto'
+                    assert kwargs['request_max_retries']==1 and kwargs['fallback_providers']==[]
                     assert kwargs['max_steps']==4
                     tool=kwargs['tools'].get_tool('correct_record')
                     assert tool is not None
@@ -226,10 +228,13 @@ async def fixture():
             calls = {'model': 0, 'send': 0}
             class BriefContext(SyntheticContext):
                 async def tool_loop_agent(self, **kwargs):
+                    assert kwargs['chat_provider_id']=='asis_router/complex'
+                    assert kwargs['request_max_retries']==1 and kwargs['fallback_providers']==[]
                     inspect.signature(module.Context.tool_loop_agent).bind(self, **kwargs)
-                    assert kwargs['contexts'] == [] and kwargs['max_steps']==5
+                    assert kwargs['contexts'] == [] and kwargs['max_steps']==12
                     tool=kwargs['tools'].get_tool('briefing_library')
                     assert tool is not None and len(kwargs['tools'].tools)==1
+                    assert all(v != '' for field in tool.parameters['properties'].values() for v in field.get('enum',[]))
                     assert bot.store.db.execute("SELECT state FROM attention_delivery").fetchone()[0] == 'sending'
                     context=AgentContextWrapper(context=AstrAgentContext(context=self,event=kwargs['event']),tool_call_timeout=10)
                     outputs=[v async for v in FunctionToolExecutor.execute(tool,context,action='search',source='wucai',query='共享电路')]
@@ -241,8 +246,9 @@ async def fixture():
                     calls['model'] += 1
                     evidence = json.loads(kwargs['prompt'])['evidence']
                     idea = next(v for v in evidence if v['source']=='idea')
-                    return types.SimpleNamespace(completion_text=json.dumps({'paragraphs': [
-                        {'text': '你之前想看的那部合成旧片，后来还没见你聊起。', 'refs': [idea['id'], read['evidence']['id']]}]},ensure_ascii=False))
+                    return types.SimpleNamespace(role='assistant',completion_text=
+                        '你之前想看的那部合成旧片，后来还没见你聊起。['+idea['id']+']\n\n'
+                        '阅读中关于先理解基本模块的想法，也可以一起想想。['+read['evidence']['id']+']')
                 async def send_message(self, origin, message):
                     assert origin == event.unified_msg_origin
                     calls['send'] += 1

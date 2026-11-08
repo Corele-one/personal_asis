@@ -3,6 +3,7 @@ import json
 import re
 from .life_store import timestamp
 from .life_tracking import HABITS, clean, observations, validate, evidence_text
+from .model_display import model_emoji, display_reply
 
 FIELDS = ('summary','tracking','entry_excluded','revision')
 
@@ -50,7 +51,14 @@ class LifeFeedback:
     def thread(self, thread):
         if not re.fullmatch('[a-f0-9]{32}',thread):raise ValueError('invalid_feedback_identity')
         rows=self.db.execute('SELECT state,payload FROM feedback_jobs WHERE thread=? ORDER BY created DESC LIMIT 12',(thread,)).fetchall()
-        return [dict(json.loads(row['payload']),state=row['state']) for row in reversed(rows)]
+        result=[]
+        for row in reversed(rows):
+            item=dict(json.loads(row['payload']),state=row['state'])
+            if model_emoji(item.get('reply_model')) and item['reply']:
+                item['raw_reply']=item['reply']
+                item['reply']=display_reply(item['reply'],item['reply_model'])
+            result.append(item)
+        return result
 
     def claim(self):
         with self.db:
@@ -64,6 +72,8 @@ class LifeFeedback:
         with self.db:
             current=self.db.execute('SELECT payload FROM feedback_jobs WHERE id=?',(job['id'],)).fetchone()
             value=json.loads(current[0]);value.update(reply=clean(reply,16000),error=error)
+            model=getattr(reply,'asis_router_model','')
+            if not error and model_emoji(model):value['reply_model']=model
             self.db.execute('UPDATE feedback_jobs SET state=?,payload=? WHERE id=?',('unknown' if error else 'done',json.dumps(value,ensure_ascii=False),job['id']))
 
     def recover(self):

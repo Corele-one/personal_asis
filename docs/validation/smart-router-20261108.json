@@ -1,0 +1,197 @@
+{
+  "date": "2026-11-08",
+  "implementation": "AstrBot native Provider plugin; no replacement Agent or gateway",
+  "verification_state": "deployed_and_verified",
+  "scope": [
+    "bound owner private chat",
+    "briefing",
+    "dashboard correction",
+    "outbound history summary"
+  ],
+  "unchanged": [
+    "Mac Pi",
+    "pi_sync",
+    "Groq transcription",
+    "other session model selection"
+  ],
+  "offline": {
+    "router_tests": 25,
+    "life_chain_tests": 166,
+    "local_suite": {
+      "total": 498,
+      "passed": 497,
+      "skipped": 1
+    },
+    "complete_suite": {
+      "total": 852,
+      "passed": 843,
+      "skipped": 9
+    },
+    "checks": [
+      "atomic quota reservation across connections",
+      "Pacific DST and daily reset",
+      "minute and daily quota distinction",
+      "flash reserve",
+      "complex fallback to Lite",
+      "no fallback on unknown or gateway timeout",
+      "no tool replay",
+      "incremental summary cache",
+      "linear history token scanning",
+      "outbound copy preserves original history",
+      "empty enabled model set sends nothing"
+    ]
+  },
+  "installed_sdk": {
+    "virtual_providers": 3,
+    "single_shot_google_transport": true,
+    "thought_signature_and_usage_preserved": true,
+    "owner_only_hints_and_status": true,
+    "native_tool_loops_executed_once": [
+      "life_organize",
+      "google_calendar_propose_write"
+    ],
+    "life_plugin_fixture": "passed including explicit Router profiles for briefing and PWA correction",
+    "real_generations": 0,
+    "platform_messages": 0,
+    "source_disable_refresh": true
+  },
+  "shadow": {
+    "owner_current_conversations": 1,
+    "sampled_recent_turns": 30,
+    "daily": 28,
+    "complex": 2,
+    "needs_compaction": 30,
+    "limitation": "stored messages only; excludes live tool schemas; not actual API request sizes",
+    "real_generations": 0
+  },
+  "live": {
+    "task_limit": 16,
+    "calls_consumed": 15,
+    "completed": 12,
+    "failed": 3,
+    "transport_unknown_in_original_receipts": 0,
+    "models": [
+      {
+        "name": "gemma-4-26b-a4b-it",
+        "status": "completed",
+        "short_prompt_seconds": 3.89
+      },
+      {
+        "name": "gemma-4-31b-it",
+        "status": "completed",
+        "short_prompt_seconds": 36.88
+      },
+      {
+        "name": "gemini-3.5-flash-lite",
+        "status": "completed",
+        "short_prompt_seconds": 0.57
+      },
+      {
+        "name": "gemini-3.1-flash-lite",
+        "status": "completed",
+        "short_prompt_seconds": 0.9
+      },
+      {
+        "name": "gemini-3.8-flash",
+        "status": "HTTP 504",
+        "action": "recorded; not replayed; final policy treats gateway timeout as terminal unknown"
+      },
+      {
+        "name": "gemini-3.6-flash",
+        "status": "completed",
+        "short_prompt_seconds": 2.06
+      },
+      {
+        "name": "gemini-2.5-flash-lite",
+        "status": "HTTP 404",
+        "action": "configuration quarantine"
+      },
+      {
+        "name": "gemini-2.5-flash",
+        "status": "HTTP 404",
+        "action": "configuration quarantine"
+      },
+      {
+        "name": "gemini-3-flash-preview",
+        "status": "completed",
+        "short_prompt_seconds": 1.28
+      },
+      {
+        "name": "mimo-v2.6-flash",
+        "status": "completed",
+        "short_prompt_seconds": 4.36,
+        "input_tokens": 23,
+        "output_tokens": 28
+      },
+      {
+        "name": "deepseek-v4-flash",
+        "status": "completed",
+        "short_prompt_seconds": 1.96,
+        "input_tokens": 45,
+        "output_tokens": 106
+      }
+    ],
+    "additional_cases": [
+      {
+        "case": "Lite tool call and tool response roundtrip",
+        "calls": 2,
+        "passed": true
+      },
+      {
+        "case": "Router history summary then ordinary generation",
+        "calls": 2,
+        "passed": true,
+        "original_input_unchanged": true
+      }
+    ],
+    "cost": "provider token usage recorded; no monetary cost invented",
+    "platform_messages": 0,
+    "real_note_or_calendar_writes": 0,
+    "limitation": "synthetic prompts only; latency samples are not real conversation speed acceptance"
+  },
+  "rollout": {
+    "initial_release": "20261108_163427_053184",
+    "initial_pre_router_rollback": "/home/mac/personal-asis-router-rollbacks/20261108_163427_053184/rollback.sh",
+    "startup_check_correction": "An intermediate update exceeded the initial 30-second startup check and automatically restored the previous release. Readiness now waits up to 240 seconds for all virtual providers and AstrBot started.",
+    "history_snapshot_before_final_release": {
+      "conversations": 6,
+      "updated_during_normal_use": true,
+      "comparison_pending": false
+    },
+    "life_snapshot_before_final_release": {
+      "baseline_records": 129,
+      "current_records": 132,
+      "original_129_unchanged": true,
+      "comparison_pending": false
+    },
+    "pending": [
+      "explicit owner feedback on normal chat and scheduled briefing experience"
+    ],
+    "final_release": "/home/mac/personal-asis-router-releases/20261108_202225_588360",
+    "final_rollback": "/home/mac/personal-asis-router-rollbacks/20261108_202225_588360/rollback.sh",
+    "services": {
+      "astrbot.service": "active",
+      "personal-asis-dashboard.service": "active"
+    },
+    "service_ready": true,
+    "loaded_virtual_profiles": [
+      "auto",
+      "complex",
+      "summary"
+    ],
+    "runtime_hashes_match_release": true,
+    "runtime_hashes_match_workspace": true,
+    "existing_source_configuration_unchanged": true,
+    "native_virtual_source_migration": [
+      "asis_router/auto_source",
+      "asis_router/complex_source",
+      "asis_router/summary_source"
+    ],
+    "default_model_settings_unchanged": true,
+    "original_physical_models_unchanged": true,
+    "other_session_routes_unchanged": true,
+    "owner_model": "asis_router/auto",
+    "outer_fallbacks": [],
+    "interrupted_receipt_fix": "Completed release receipts are emitted outside the rollback block; a closed output stream cannot undo a healthy deployment. Rollback restores the prior deployment marker, and deployment takes an exclusive lock."
+  }
+}

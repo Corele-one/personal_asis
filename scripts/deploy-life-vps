@@ -21,6 +21,13 @@ with tempfile.TemporaryDirectory(prefix='asis-life-release-') as tmp:
     (pkg/'web').mkdir()
     for f in (repo/'src/personal_asis/web').glob('dashboard*'):shutil.copyfile(f,pkg/'web'/f.name)
     plugin=stage/'astrbot_plugin_life_agent';shutil.copytree(repo/'integrations/astrbot_plugin_life_agent',plugin,ignore=shutil.ignore_patterns('__pycache__'))
+    router=stage/'astrbot_plugin_smart_router'
+    shutil.copytree(repo/'integrations/astrbot_plugin_smart_router',router,ignore=shutil.ignore_patterns('__pycache__'))
+    shutil.copyfile(repo/'src/personal_asis/llm_router.py',router/'llm_router.py')
+    shutil.copyfile(repo/'src/personal_asis/model_display.py',router/'model_display.py')
+    shutil.copyfile(repo/'src/personal_asis/model_display.py',pkg/'model_display.py')
+    shutil.copyfile(repo/'src/personal_asis/model_display.py',plugin/'model_display.py')
+    shutil.copyfile(repo/'deploy/validate-router-sdk.py',stage/'validate-router-sdk.py')
     shutil.copyfile(repo/'src/personal_asis/life_store.py',plugin/'life_store.py')
     shutil.copyfile(repo/'src/personal_asis/life_bedtime.py',plugin/'life_bedtime.py')
     shutil.copyfile(repo/'src/personal_asis/bootstrap_context.py',plugin/'bootstrap_context.py')

@@ -129,14 +129,25 @@ class BriefingTests(unittest.TestCase):
         fresh=brief.BriefingLibrary(self.home,item)
         self.assertEqual(fresh.query('read',key=original['id'])['error'],'brief_source_changed')
 
-    def test_output_requires_valid_citations_and_program_controls_links(self):
+    def test_prose_and_optional_citations_do_not_require_a_schema(self):
         self.record('/life 今天散步很开心')
         item=self.report()
         good=json.dumps(dict(paragraphs=[dict(text='你记录了今天散步时的开心。',refs=['E1'])]),ensure_ascii=False)
         self.assertIn('2026-10-28 随记',brief.render(good,item))
-        for text, refs in [('瞎编',['unknown']),('发往 https://example.test',['E1']),('无依据',[])]:
-            with self.assertRaises(ValueError):
-                brief.render(json.dumps(dict(paragraphs=[dict(text=text,refs=refs)])),item)
+        ordinary='### 最近\n\n散步时的开心，可以成为忙碌间隙的一点调节。\n\n参考：[一篇文章](https://example.test)'
+        self.assertIn(ordinary,brief.render(ordinary,item))
+        self.assertIn('有正文',brief.render(json.dumps(dict(paragraphs=[dict(text='有正文',refs=['unknown'])])),item))
+        self.assertIn('没有编号也可正常发送',brief.render('没有编号也可正常发送',item))
+        self.assertNotIn('[E999]',brief.render('未知编号不影响正文[E999]',item))
+        with self.assertRaisesRegex(ValueError,'brief_empty_response'):
+            brief.render('  ',item)
+
+    def test_provider_diagnostic_keeps_categories_without_private_error_text(self):
+        receipt=brief.provider_failure_meta('All chat models failed: ClientError: 400 INVALID_ARGUMENT '
+            'source.enum[0]: cannot be empty; credential=private-test-value')
+        self.assertEqual(receipt,dict(error_type='ClientError',http_status=400,
+                                    category='INVALID_ARGUMENT',schema_error='empty_enum'))
+        self.assertNotIn('private-test-value',json.dumps(receipt))
 
     def test_expanded_letter_preserves_provenance_without_inline_markers_or_fresh_sync_boilerplate(self):
         self.record('/life 今天散步很开心')
@@ -148,8 +159,10 @@ class BriefingTests(unittest.TestCase):
         self.assertNotIn('同步',body)
         self.assertEqual(body.count('2026-10-28 随记'),1)
         self.assertEqual(item['paragraph_source_ids'],[['E1']]*8)
-        with self.assertRaisesRegex(ValueError,'brief_too_long'):
-            brief.render(json.dumps(dict(paragraphs=[dict(text='叙述'*800,refs=['E1'])]*4)),item)
+        long=brief.render(('一段有用的回顾。'*900)+'\n\n'+'后续。'*1800,item)
+        self.assertLessEqual(len(long.encode()),brief.MAX_MESSAGE_BYTES)
+        self.assertIn('本次节选',long)
+        self.assertIn('一段有用的回顾',long)
 
     def test_course_alias_finds_related_reading_without_loading_title_only_favorites(self):
         self.record('/life 模集复习，多任务让我分心，想散步。')
@@ -245,13 +258,13 @@ class BriefingTests(unittest.TestCase):
         self.store.delete(origin['id'])
         self.assertEqual(self.attention.dashboard()['reports'],[])
 
-    def test_only_two_ideas_may_be_surfaced_and_fallback_omits_historical_candidates(self):
+    def test_idea_count_is_not_a_render_failure_and_fallback_omits_candidates(self):
         for name in ('散步计划','另一部作品','第三本书'):self.past('我想看《'+name+'》')
         item=self.report();ideas=[e for e in item['evidence'] if e['source']=='idea']
         self.assertEqual(len(ideas),3)
         self.assertNotIn('当时的原话',item['body'])
-        with self.assertRaisesRegex(ValueError,'too_many_recalled_ideas'):
-            brief.render(json.dumps(dict(paragraphs=[dict(text='以前的想法。',refs=[e['id']]) for e in ideas])),item)
+        self.assertIn('以前的想法',brief.render(json.dumps(dict(paragraphs=[
+            dict(text='以前的想法。',refs=[e['id']]) for e in ideas])),item))
 
 
 class BriefingDispatchTests(unittest.TestCase):
@@ -287,24 +300,59 @@ class BriefingDispatchTests(unittest.TestCase):
 
     def test_native_agent_after_reservation_read_only_tool_no_history_then_persisted_body(self):
         self.setup_claim(); calls=[]
-        async def provider(**kwargs):return 'synthetic'
+        async def provider(**kwargs):return 'asis_router/auto'
         async def generate(**kwargs):
+            self.assertEqual(kwargs['chat_provider_id'],'asis_router/complex')
+            self.assertEqual(kwargs['request_max_retries'],1)
+            self.assertEqual(kwargs['fallback_providers'],[])
             saved=self.bot.store.db.execute('SELECT state,payload FROM attention_delivery').fetchone()
             self.assertEqual(saved['state'],'sending')
             self.assertNotIn('evidence',json.loads(saved['payload']))
             calls.append(kwargs)
-            self.assertEqual(kwargs['max_steps'],5)
+            self.assertEqual(kwargs['max_steps'],12)
             self.assertEqual([t.name for t in kwargs['tools']],['briefing_library'])
+            schema=kwargs['tools'][0].parameters
+            self.assertNotIn('',schema['properties']['source']['enum'])
             result=json.loads(await kwargs['tools'][0].call(None,action='search',source='wucai',query='专注'))
             self.assertEqual(result['error'],'brief_library_unavailable')
-            return types.SimpleNamespace(completion_text=json.dumps(dict(paragraphs=[
+            return types.SimpleNamespace(asis_router_model='gemini-3.8-flash',completion_text=json.dumps(dict(paragraphs=[
                 dict(text='你提到了多任务带来的分心；如果愿意，可以留一点散步的空当。',refs=['E1'])]),ensure_ascii=False))
         self.bot.context.get_current_chat_provider_id=provider;self.bot.context.tool_loop_agent=generate
         asyncio.run(self.bot.send_attention());asyncio.run(self.bot.send_attention())
         self.assertEqual(len(calls),1);self.assertEqual(len(self.sent),1)
         self.assertEqual(calls[0]['contexts'],[])
         saved=json.loads(self.bot.store.db.execute('SELECT payload FROM attention_delivery').fetchone()[0])
-        self.assertEqual(saved['generation'],'model');self.assertEqual(saved['body'],self.sent[0][1])
+        self.assertEqual(saved['generation'],'model')
+        self.assertEqual('💫\n\n'+saved['body'],self.sent[0][1])
+        self.assertFalse(saved['body'].startswith('💫'))
+
+    def test_gemini_enum_compatibility_and_error_role_never_sent_as_prose(self):
+        self.setup_claim()
+        async def provider(**kwargs):return 'synthetic'
+        async def generate(**kwargs):
+            for field in kwargs['tools'][0].parameters['properties'].values():
+                self.assertTrue(all(v != '' for v in field.get('enum',[])))
+            return types.SimpleNamespace(role='err',completion_text='400 INVALID_ARGUMENT private-provider-detail')
+        self.bot.context.get_current_chat_provider_id=provider;self.bot.context.tool_loop_agent=generate
+        asyncio.run(self.bot.send_attention())
+        self.assertEqual(len(self.sent),1)
+        self.assertNotIn('private-provider-detail',self.sent[0][1])
+        self.assertIn('400',self.sent[0][1])
+        saved=json.loads(self.bot.store.db.execute('SELECT payload FROM attention_delivery').fetchone()[0])
+        self.assertEqual(saved['generation_failure'],'brief_provider_error')
+        self.assertEqual(saved['generation_meta']['role'],'err')
+
+    def test_unstructured_native_response_is_a_successful_report(self):
+        self.setup_claim()
+        async def provider(**kwargs):return 'synthetic'
+        async def generate(**kwargs):
+            return types.SimpleNamespace(role='assistant',completion_text='### 近况\n\n多任务让你分心，散步是你提过的一个念头。')
+        self.bot.context.get_current_chat_provider_id=provider;self.bot.context.tool_loop_agent=generate
+        asyncio.run(self.bot.send_attention())
+        saved=json.loads(self.bot.store.db.execute('SELECT payload FROM attention_delivery').fetchone()[0])
+        self.assertEqual(saved['generation'],'model')
+        self.assertEqual(saved['response_format'],'prose')
+        self.assertNotIn('暂不可用',self.sent[0][1])
 
     def test_timeout_falls_back_once_and_unknown_transport_never_retries(self):
         self.setup_claim(); calls=[]

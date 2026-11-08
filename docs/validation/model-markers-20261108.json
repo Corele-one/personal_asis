@@ -1,0 +1,59 @@
+{
+  "date": "2026-11-08",
+  "feature": "model reply emoji markers",
+  "state": "deployed_and_verified",
+  "mapping": {
+    "DeepSeek": "🐳",
+    "MiMo": "🍚",
+    "Gemini Flash": "💫",
+    "Gemini Flash Lite": "✨",
+    "Gemma": "🧊"
+  },
+  "behavior": {
+    "uses_final_successful_model": true,
+    "prefix": "emoji on separate first line",
+    "ordinary_reply_display_only": true,
+    "briefing_stored_body_plain": true,
+    "dashboard_stored_reply_plain": true,
+    "dashboard_model_history_uses_raw_reply": true,
+    "tools_and_internal_summaries_unmarked": true,
+    "fixed_receipts_and_errors_unmarked": true
+  },
+  "checks": {
+    "router_tests": 25,
+    "life_chain_tests": 167,
+    "local_suite": {
+      "total": 499,
+      "passed": 498,
+      "skipped": 1
+    },
+    "complete_suite": {
+      "total": 853,
+      "passed": 844,
+      "skipped": 9
+    },
+    "actual_sdk_marker_hooks": true,
+    "all_five_families": true,
+    "idempotent_prefix": true,
+    "original_message_chain_preserved": true,
+    "fallback_attribution": true,
+    "real_generations": 0,
+    "platform_test_messages": 0
+  },
+  "pending": [
+    "owner visual acceptance during normal chat"
+  ],
+  "deployment": {
+    "release": "/home/mac/personal-asis-v2-releases/20261108_204404_919406",
+    "backup": "/home/mac/personal-asis-v2-rollbacks/20261108_204404_919406",
+    "profile": "personal-asis-smart-router",
+    "deployment_kind": "life_bundle"
+  },
+  "services": {
+    "astrbot.service": "active",
+    "personal-asis-dashboard.service": "active"
+  },
+  "service_ready": true,
+  "runtime_matches_release": true,
+  "runtime_matches_workspace": true
+}

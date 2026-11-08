@@ -29,6 +29,10 @@ def main(stage):
     try:
         preflight = run('/home/mac/.local/share/uv/tools/astrbot/bin/python', str(stage/'validate-life-sdk.py'), str(stage))
         print(preflight.stdout.strip().splitlines()[-1],flush=True)
+        if (stage/'validate-router-sdk.py').exists():
+            router_preflight=run('/home/mac/.local/share/uv/tools/astrbot/bin/python',
+                str(stage/'validate-router-sdk.py'),str(stage))
+            print(router_preflight.stdout.strip().splitlines()[-1],flush=True)
     except subprocess.CalledProcessError as error:
         # This fixture only uses temporary synthetic state; expose its failure
         # before stopping any service, without ever printing private config.
@@ -42,7 +46,7 @@ def main(stage):
     previous_units={name:(units/name).exists() for name in managed}
     for name,present in previous_units.items():
         if present:shutil.copyfile(units/name,backup/name)
-    names=('astrbot_plugin_personal_asis','astrbot_plugin_life_agent')
+    names=('astrbot_plugin_personal_asis','astrbot_plugin_life_agent','astrbot_plugin_smart_router')
     previous_plugins={name:(plugins/name).exists() for name in names}
     for name,present in previous_plugins.items():
         if present:shutil.copytree(plugins/name,backup/name)
@@ -68,7 +72,9 @@ def main(stage):
         (home/'web-auth.sqlite3').chmod(0o600)
     release=Path('/home/mac/personal-asis-v2-releases')/stamp;release.parent.mkdir(mode=0o700,exist_ok=True)
     shutil.copytree(stage,release)
-    state=dict(previous_units=previous_units,previous_plugins=previous_plugins,previous_link=previous_link)
+    router_metadata=Path('/home/mac/.local/share/personal-asis-router/deployment.json')
+    state=dict(previous_units=previous_units,previous_plugins=previous_plugins,previous_link=previous_link,
+        router_metadata=json.loads(router_metadata.read_text()) if router_metadata.exists() else None)
     (backup/'rollback.json').write_text(json.dumps(state))
     # Rollback script is in place before any active service is changed.
     rollback=backup/'rollback.py';shutil.copyfile(Path(__file__).with_name('rollback-life-vps.py'),rollback)
@@ -91,6 +97,8 @@ def main(stage):
         old_config=config_dir/'astrbot_plugin_personal_asis_config.json'
         old_config.unlink(missing_ok=True)
         shutil.copytree(release/'astrbot_plugin_life_agent',plugins/'astrbot_plugin_life_agent')
+        if previous_plugins['astrbot_plugin_smart_router']:
+            shutil.copytree(release/'astrbot_plugin_smart_router',plugins/'astrbot_plugin_smart_router')
         current.write_text(json.dumps(config));current.chmod(0o600)
         temporary=link.with_name('personal-asis-v2-next');temporary.unlink(missing_ok=True);temporary.symlink_to(release,target_is_directory=True);temporary.replace(link)
         # Services are stopped and SQLite has been backed up. Retag legacy
@@ -106,6 +114,11 @@ def main(stage):
         run('sudo','systemctl','daemon-reload');run('sudo','nginx','-t')
         run('sudo','systemctl','enable','--now',managed[2]);run('sudo','systemctl','start','astrbot.service')
         run('sudo','systemctl','is-active',managed[2],'astrbot.service')
+        if previous_plugins['astrbot_plugin_smart_router']:
+            temporary=router_metadata.with_suffix('.next')
+            temporary.write_text(json.dumps(dict(release=str(release),backup=str(backup),
+                profile='personal-asis-smart-router',deployment_kind='life_bundle')))
+            temporary.replace(router_metadata)
     except BaseException:
         subprocess.run(['python3',str(rollback)],check=True)
         raise

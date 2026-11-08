@@ -148,12 +148,13 @@ class BedtimeTests(unittest.TestCase):
 class PluginTests(unittest.TestCase):
     def setUp(self):
         # Synthetic API only; deployed-SDK validation is performed separately.
-        from personal_asis import life_store, life_images, life_bedtime, bootstrap_context, personal_profile, life_tracking, life_attention, life_intake, life_briefing
+        from personal_asis import life_store, life_images, life_bedtime, bootstrap_context, personal_profile, life_tracking, life_attention, life_intake, life_briefing, wucai_chat, model_display
         modules = {name: types.ModuleType(name) for name in ('astrbot', 'astrbot.api', 'astrbot.api.event', 'astrbot.api.star', 'synthetic_life_plugin')}
         decorator = lambda *a, **kw: lambda fn: fn
         modules['astrbot.api'].logger = types.SimpleNamespace(warning=lambda *a: None)
         modules['astrbot.api.event'].filter = types.SimpleNamespace(event_message_type=decorator,
-            EventMessageType=types.SimpleNamespace(ALL=1), on_llm_request=decorator, command=decorator, llm_tool=decorator)
+            EventMessageType=types.SimpleNamespace(ALL=1), on_llm_request=decorator, on_llm_response=decorator,
+            on_decorating_result=decorator, command=decorator, llm_tool=decorator)
         modules['astrbot.api.event'].AstrMessageEvent = object
         class Chain:
             def message(self, text): return text
@@ -170,8 +171,9 @@ class PluginTests(unittest.TestCase):
                         'synthetic_life_plugin.bootstrap_context': bootstrap_context,
                         'synthetic_life_plugin.personal_profile': personal_profile})
         modules.update({'synthetic_life_plugin.life_tracking': life_tracking,
+                        'synthetic_life_plugin.model_display': model_display,
                         'synthetic_life_plugin.life_attention': life_attention, 'synthetic_life_plugin.life_intake': life_intake,
-                        'synthetic_life_plugin.life_briefing': life_briefing})
+                        'synthetic_life_plugin.life_briefing': life_briefing, 'synthetic_life_plugin.wucai_chat': wucai_chat})
         agent_path = Path(__file__).resolve().parents[1] / 'integrations/astrbot_plugin_life_agent/briefing_agent.py'
         agent_spec = importlib.util.spec_from_file_location('synthetic_life_plugin.briefing_agent', agent_path)
         # Load after the synthetic package has been registered below.
@@ -192,7 +194,7 @@ class PluginTests(unittest.TestCase):
             self.assertEqual(cid, 'synthetic-conversation')
             return self.conversation
         manager = types.SimpleNamespace(get_curr_conversation_id=current, get_conversation=get_conversation)
-        with patch.object(Path, 'home', return_value=Path(self.tmp.name)):
+        with patch.object(Path, 'home', return_value=Path(self.tmp.name).resolve()):
             self.bot = mod.LifeAgent(types.SimpleNamespace(send_message=send, conversation_manager=manager),
                                      dict(owner_platform='p', owner_id='owner'))
         self.addCleanup(self.bot.store.close)

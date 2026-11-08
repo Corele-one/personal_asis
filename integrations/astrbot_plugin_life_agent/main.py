@@ -21,9 +21,10 @@ from .personal_profile import load as load_profile, render as render_profile
 from .life_tracking import LifeTracking
 from .life_attention import LifeAttention
 from .life_intake import entry_content
+from .model_display import display_reply
 
 
-@register('life_agent', 'Personal Asis', '主动记录、习惯学习、共享资料与用户纠正', '2.10.1')
+@register('life_agent', 'Personal Asis', '主动记录、习惯学习、共享资料与用户纠正', '2.11.2')
 class LifeAgent(Star):
     def __init__(self, context: Context, config):
         super().__init__(context)
@@ -1050,7 +1051,7 @@ class LifeAgent(Star):
                 # claim() persisted the reservation before any paid request.
                 # One bounded native Agent run, read-only tools, no chat history.
                 from .briefing_agent import synthesize
-                from .life_briefing import render
+                from .life_briefing import render, fallback
                 body, generation = item['body'], 'fallback'
                 if item.get('evidence'):
                     stage = 'agent'
@@ -1064,12 +1065,12 @@ class LifeAgent(Star):
                         # Safe classification only; never persist provider errors,
                         # model output, chat contents or credential-bearing traces.
                         reason = 'timeout' if isinstance(error, (TimeoutError, asyncio.TimeoutError)) else stage
-                        if stage == 'format' and str(error) in (
-                                'brief_invalid_paragraphs', 'brief_invalid_evidence', 'brief_too_long',
-                                'brief_personal_evidence_required', 'brief_too_many_recalled_ideas',
-                                'brief_transport_too_long'):
+                        if isinstance(error, ValueError) and str(error) in (
+                                'brief_provider_error', 'brief_agent_incomplete', 'brief_empty_response',
+                                'brief_invalid_response'):
                             reason = str(error)
                         item['generation_failure'] = reason
+                        body = fallback(item)
                         logger.warning('life_agent brief synthesis unavailable (%s); no retry', reason)
                 if (self.config.get('owner_platform'), self.config.get('owner_id')) != bound_owner:
                     self.attention.withdraw(item)
@@ -1078,7 +1079,8 @@ class LifeAgent(Star):
                     self.attention.withdraw(item)
                     return
                 self.attention.save_body(item, body, generation)
-                sent = await self.context.send_message(item['origin'], MessageChain().message(body))
+                model = item.get('generation_meta',{}).get('model','') if generation=='model' else ''
+                sent = await self.context.send_message(item['origin'], MessageChain().message(display_reply(body,model)))
                 self.attention.result(item, 'sent' if sent else 'unknown')
             except asyncio.CancelledError:
                 self.attention.result(item, 'unknown')

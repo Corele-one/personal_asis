@@ -29,6 +29,16 @@ class FeedbackTests(unittest.TestCase):
     def start(self,**kwargs):
         self.feedback.submit(self.request(**kwargs));return self.feedback.claim()
 
+    def test_model_marker_is_display_only_and_stored_reply_stays_plain(self):
+        from personal_asis.model_display import ModelReply
+        job=self.start()
+        self.feedback.finish(job,reply=ModelReply('已核对这条记录。','mimo-v2.6-flash'))
+        visible=self.feedback.thread(job['thread'])[0]
+        self.assertEqual(visible['reply'],'🍚\n\n已核对这条记录。')
+        self.assertEqual(visible['raw_reply'],'已核对这条记录。')
+        saved=json.loads(self.store.db.execute('SELECT payload FROM feedback_jobs').fetchone()[0])
+        self.assertEqual(saved['reply'],'已核对这条记录。')
+
     def test_memory_kept_but_never_projected_or_automatically_tracked(self):
         r=self.store.capture('p','owner','ordinary','阅读完成，开始学习一份作业要求',capture_source='conversation')[0]
         r=self.tracking.auto(r)
