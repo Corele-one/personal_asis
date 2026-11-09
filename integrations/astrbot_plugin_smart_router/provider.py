@@ -198,7 +198,10 @@ class SmartProvider(Provider):
         messages = [as_dict(m) for m in contexts or []]
         if system_prompt:
             messages.insert(0, dict(role='system',content=system_prompt))
-        if prompt is not None or image_urls or audio_urls or extra_user_content_parts:
+        # Native Agent contexts already contain the user prompt and its extra
+        # parts. Those same parts are passed again on every tool-loop step.
+        # Append them only when assembling a new prompt, as the stock SDK does.
+        if prompt is not None or image_urls or audio_urls:
             content = []
             if prompt:
                 content.append(dict(type='text',text=prompt))

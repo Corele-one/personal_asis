@@ -21,6 +21,7 @@ async def main():
     from astrbot.core.platform.astrbot_message import AstrBotMessage
     from astrbot.core.platform.platform_metadata import PlatformMetadata
     from astrbot.core.provider.entities import LLMResponse, TokenUsage
+    from astrbot.core.agent.message import TextPart
     from google.genai import types
 
     registered=importlib.import_module('astrbot.core.provider.register').provider_cls_map
@@ -28,6 +29,27 @@ async def main():
     for profile in ('auto','complex','summary'):
         p=adapter.SmartProvider(dict(type='asis_smart_router',id='asis_router/'+profile,model=profile),{})
         assert p.get_model()==profile and await p.get_models()==['auto','complex','summary']
+
+    # Real SDK repeats extra_user_content_parts on follow-up tool steps. They
+    # are already in contexts and must never become a new metadata-only turn.
+    captured=[]
+    async def capture(messages, *args, **kwargs):
+        captured.append(messages)
+        return LLMResponse(role='assistant',completion_text='synthetic')
+    reminder=TextPart(text='<system_reminder>Current datetime: synthetic</system_reminder>')
+    greeting=[dict(role='user',content=[dict(type='text',text='你好'),reminder.model_dump()])]
+    chain=[dict(role='user',content='深入分析材料'),
+           dict(role='assistant',content='',tool_calls=[dict(id='test',type='function',
+                function=dict(name='astrbot_execute_python',arguments='{}'))]),
+           dict(role='tool',tool_call_id='test',content='synthetic result')]
+    virtual=adapter.SmartProvider(dict(id='asis_router/auto',type='asis_smart_router',model='auto'),{})
+    with patch.object(adapter,'runtime',return_value=NS(refresh=lambda:None,router=NS(generate=capture))):
+        await virtual.text_chat(contexts=greeting,extra_user_content_parts=[reminder])
+        await virtual.text_chat(contexts=chain,extra_user_content_parts=[reminder])
+        await virtual.text_chat(prompt='你好',extra_user_content_parts=[reminder])
+    assert captured[:2]==[greeting,chain]
+    assert core.task_for(captured[0])=='simple' and core.task_for(captured[1])=='complex'
+    assert len(captured[2])==1 and len(captured[2][0]['content'])==2
 
     # Owner hooks and status are exercised without reading the real binding.
     with tempfile.TemporaryDirectory(prefix='asis-router-owner-sdk-') as temp:
@@ -171,7 +193,7 @@ async def main():
             state.db.close()
     adapter._runtime=None
     print(json.dumps(dict(sdk='passed',virtual_providers=3,single_shot_transport=True,
-        signature_and_usage=True,owner_hooks=True,source_disable_refresh=True,
+        signature_and_usage=True,owner_hooks=True,source_disable_refresh=True,extra_parts_replay=False,
         native_loops=loops,real_generations=0,platform_messages=0)))
 
 

@@ -137,6 +137,13 @@ class RoutingTests(unittest.IsolatedAsyncioTestCase):
             await Router(self.state,self.send,available=[]).generate(self.messages(),None)
         self.assertEqual(self.calls,[])
 
+    async def test_native_time_part_does_not_hide_user_intent(self):
+        reminder = dict(type='text', text='<system_reminder>Current datetime: synthetic</system_reminder>')
+        for text, expected in [('你好', 'simple'), ('深入分析材料', 'complex')]:
+            messages = [dict(role='user', content=[dict(type='text', text=text), reminder])]
+            self.assertEqual(task_for(messages), expected)
+            self.assertEqual(messages[0]['content'][-1], reminder)
+
     async def test_gemma_simple_and_tools_not_discarded_for_regular_request(self):
         router=Router(self.state,self.send)
         tools=NS(empty=lambda:False,get_func_desc_openai_style=lambda:[{'name':'life_organize'}])

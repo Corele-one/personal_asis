@@ -329,7 +329,10 @@ def estimate(value):
 
 
 def current_user(messages):
-    return next((plain(m.get('content')) for m in reversed(messages) if m.get('role') == 'user'), '')
+    text = next((plain(m.get('content')) for m in reversed(messages) if m.get('role') == 'user'), '')
+    # AstrBot adds time/metadata in text parts alongside the real user prompt.
+    # Ignore that wrapper for classification only; preserve the outbound input.
+    return re.sub(r'<system_reminder>[\s\S]*?</system_reminder>', '', text).strip()
 
 
 def modalities(messages):
