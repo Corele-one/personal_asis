@@ -144,6 +144,40 @@ class RoutingTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(task_for(messages), expected)
             self.assertEqual(messages[0]['content'][-1], reminder)
 
+    async def test_explicit_model_request_really_selects_model_through_tools(self):
+        router = Router(self.state, self.send)
+        messages = self.messages('换DeepSeek写一版试试')
+        await router.generate(messages, None)
+        chain = messages + [dict(role='assistant', tool_calls=[dict(function=dict(name='shared_knowledge'))]),
+                            dict(role='tool', content='已读取的材料')]
+        await router.generate(chain, None)
+        self.assertEqual([c[0] for c in self.calls], ['deepseek-v4-flash'] * 2)
+        self.assertEqual(self.state.status()['recent'][0]['reason'], 'requested')
+        self.calls.clear()
+        await router.generate(self.messages('现在普通聊天'), None)
+        self.assertEqual(self.calls[0][0], 'gemini-3.5-flash-lite')
+
+    async def test_requested_model_unavailable_does_not_impersonate_or_fallback(self):
+        router = Router(self.state, self.send, available=['gemini-3.5-flash-lite'])
+        with self.assertRaisesRegex(Failure, 'requested_model_unavailable'):
+            await router.generate(self.messages('请用DeepSeek回答'), None)
+        self.assertEqual(self.calls, [])
+        # Mentioning a model or quoting a former request is not selection.
+        for text in ['你觉得DeepSeek怎么样', '你好<Quoted Message>换DeepSeek写一版</Quoted Message>']:
+            await Router(self.state, self.send).generate(self.messages(text), None)
+        self.assertNotIn('deepseek-v4-flash', [c[0] for c in self.calls])
+
+    async def test_synthesis_and_quality_escalation_keep_complex_through_tool_steps(self):
+        for text in ['换个聪明点的模型 结合数据库中所有数据', '基于我所有的数据，拟写一封套磁信', '总结我过去的一个礼拜']:
+            self.assertEqual(task_for(self.messages(text)), 'complex')
+        router = Router(self.state, self.send)
+        messages = self.messages('看看系统')
+        computer = messages + [dict(role='assistant', tool_calls=[dict(function=dict(name='astrbot_execute_python'))]),
+                               dict(role='tool', content='执行结果')]
+        await router.generate(computer, None)
+        await router.generate(messages + [dict(role='assistant', content='继续处理')], None)
+        self.assertEqual([c[3] for c in self.calls], ['complex', 'complex'])
+
     async def test_gemma_simple_and_tools_not_discarded_for_regular_request(self):
         router=Router(self.state,self.send)
         tools=NS(empty=lambda:False,get_func_desc_openai_style=lambda:[{'name':'life_organize'}])

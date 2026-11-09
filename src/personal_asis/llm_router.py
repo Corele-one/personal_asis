@@ -332,7 +332,22 @@ def current_user(messages):
     text = next((plain(m.get('content')) for m in reversed(messages) if m.get('role') == 'user'), '')
     # AstrBot adds time/metadata in text parts alongside the real user prompt.
     # Ignore that wrapper for classification only; preserve the outbound input.
-    return re.sub(r'<system_reminder>[\s\S]*?</system_reminder>', '', text).strip()
+    text = re.sub(r'<system_reminder>[\s\S]*?</system_reminder>', '', text)
+    return re.sub(r'<Quoted Message>[\s\S]*?</Quoted Message>', '', text).strip()
+
+
+def requested_model(text):
+    """Explicit, current-turn selection only; quoted model names are not commands."""
+    match = re.match(r'^(?:请\s*)?(?:换(?:成)?|切换(?:到)?|改用|使用|用)\s*'
+        r'(DeepSeek|MiMo|Gemma|Gemini\s*(?:Flash[ -]?Lite|Flash)|Flash[ -]?Lite|Lite|Flash)'
+        r'(?=$|[\s，,：:。！!]|[\u4e00-\u9fff])', text, re.I)
+    if not match:
+        return ''
+    name = re.sub(r'[\s-]', '', match[1]).lower()
+    return {'deepseek':'deepseek-v4-flash','mimo':'mimo-v2.6-flash',
+            'gemma':'gemma-4-26b-a4b-it','geminiflashlite':'gemini-3.5-flash-lite',
+            'flashlite':'gemini-3.5-flash-lite','lite':'gemini-3.5-flash-lite',
+            'geminiflash':'gemini-3.8-flash','flash':'gemini-3.8-flash'}[name]
 
 
 def modalities(messages):
@@ -349,7 +364,12 @@ def task_for(messages, profile='auto'):
     computer_use = any(call.get('function',{}).get('name') in (
         'astrbot_execute_shell','astrbot_execute_python','astrbot_browser_use')
         for m in messages[max(0,last_user):] for call in m.get('tool_calls',[]) or [] if isinstance(call,dict))
-    if profile == 'complex' or computer_use or re.search(r'深入|综合分析|对比分析|全面分析|分析.{0,12}(文章|论文|长文)|多来源|写代码|调试|运行代码|执行命令|简报|周报', text):
+    if profile == 'complex' or computer_use or re.search(
+            r'深入|综合分析|对比分析|全面分析|分析.{0,12}(文章|论文|长文)|多来源|'
+            r'写代码|调试|运行代码|执行命令|简报|周报|套磁信|'
+            r'换.{0,6}(聪明|强|更好).{0,6}模型|'
+            r'(基于|结合).{0,16}(所有|全部).{0,8}(数据|资料)|'
+            r'(总结|回顾).{0,12}(过去|上周|一周|一星期)', text):
         return 'complex'
     if profile == 'daily':
         return 'daily'
@@ -460,7 +480,10 @@ class Router:
         run_key = fingerprint([scope, messages[:user_index+1]])
         if len(self.runs) > 512:
             self.runs.clear()
-        run = self.runs.setdefault(run_key, {'complex':False,'last':''})
+        run = self.runs.setdefault(run_key, {'complex':False,'last':'', 'requested':''})
+        if profile != 'summary':
+            run['requested'] = requested_model(current_user(messages)) or run['requested']
+        requested = run['requested']
         task = task_for(messages, profile)
         if run['complex']:
             task = 'complex'
@@ -480,7 +503,8 @@ class Router:
         image, audio = modalities(messages)
         deadline = started + (180 if task == 'complex' else 90)
         free_attempts, last_error = 0, None
-        for model in ordered_models(task, run['last']):
+        candidates = [BY_NAME[requested]] if requested else ordered_models(task, run['last'])
+        for model in candidates:
             if abort and abort.is_set():
                 raise asyncio.CancelledError()
             if model.name not in self.available or (not model.paid and free_attempts >= 2):
@@ -501,7 +525,7 @@ class Router:
             if self.clock() >= deadline:
                 raise Failure('timeout')
             attempt, blocked = self.state.reserve(model, tokens, task,
-                'sticky' if model.name == run['last'] else 'priority')
+                'requested' if requested else 'sticky' if model.name == run['last'] else 'priority')
             if blocked:
                 continue
             if not model.paid:
@@ -533,4 +557,4 @@ class Router:
                 last_error = failure
                 if failure.terminal:
                     raise failure from None
-        raise last_error or Failure('no_available_model', terminal=True)
+        raise last_error or Failure('requested_model_unavailable' if requested else 'no_available_model', terminal=True)

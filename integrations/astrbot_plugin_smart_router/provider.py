@@ -231,6 +231,7 @@ class SmartProvider(Provider):
                 'content_filter':'模型未能处理这次内容。',
                 'empty_response':'模型没有返回可用内容，这次已停止自动重发。',
                 'invalid_tool_response':'模型返回的工具结果格式不可用，这次已停止自动重发。',
+                'requested_model_unavailable':'你指定的模型当前不可用、额度不足或不支持这次输入，本次没有改用其他模型。',
             }
             text = messages.get(error.kind,'当前模型暂时不可用，请稍后再试。')
             if error.status:
