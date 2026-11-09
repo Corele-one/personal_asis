@@ -1,0 +1,159 @@
+{
+  "date": "2026-11-09",
+  "feature": "Personal Asis Router 1.1.0 conversation and context repair",
+  "state": "deployed_and_verified",
+  "behavior": {
+    "native_extra_parts_not_reappended": true,
+    "classification_excludes_time_and_quotes": true,
+    "explicit_selection": "single user event; real provider; unavailable fails without impersonation",
+    "synthesis_task_escalation": true,
+    "native_repair_steps_share_turn_and_tool_chain": true,
+    "working_input_target": 32768,
+    "necessary_current_input_limit": 65536,
+    "gemma_input_limit": 8192,
+    "native_summary_and_turn_limit_disabled": true,
+    "virtual_history_buffer_capacity": 2147483647,
+    "virtual_capacity_is_not_model_window": true,
+    "native_capacity_persisted_after_restart": true,
+    "unknown_fallback_config_is_not_used": true,
+    "summary_cache_reuses_headroom": true,
+    "summary_prompt_distinguishes_facts_assumptions_and_failed_receipts": true,
+    "legacy_error_summary": "excluded from outbound copy with missing-history notice; stored original untouched",
+    "recall": "owner-origin-scoped recent/search/read/summary; paginated original dialogue; source-matched 7-day summaries",
+    "new_chat": "separate scope; old summaries retained only for explicit recall",
+    "reset_and_withdrawal_invalidate": true,
+    "automatic_global_long_term_memory": false,
+    "models_removed": false
+  },
+  "tests": {
+    "router_offline": 36,
+    "conversation_recall_offline": 6,
+    "life_chain": 167,
+    "local_suite": {
+      "total": 499,
+      "passed": 498,
+      "skipped": 1
+    },
+    "complete_suite": {
+      "total": 870,
+      "passed": 861,
+      "skipped": 9
+    }
+  },
+  "actual_installed_sdk": {
+    "sdk": "passed",
+    "virtual_providers": 3,
+    "single_shot_transport": true,
+    "signature_and_usage": true,
+    "owner_hooks": true,
+    "source_disable_refresh": true,
+    "extra_parts_replay": false,
+    "native_loops": [
+      "life_organize",
+      "google_calendar_propose_write",
+      "astrbot_execute_python"
+    ],
+    "native_history_untouched": true,
+    "real_generations": 0,
+    "platform_messages": 0
+  },
+  "services": {
+    "astrbot.service": "active",
+    "personal-asis-dashboard.service": "active"
+  },
+  "deployment": {
+    "release": "/home/mac/personal-asis-router-releases/20261109_110914_148969",
+    "backup": "/home/mac/personal-asis-router-rollbacks/20261109_110914_148969",
+    "profile": "personal-asis-smart-router"
+  },
+  "runtime_matches_release": true,
+  "runtime_matches_workspace": true,
+  "private_data_preservation": {
+    "against_first_task_snapshot": {
+      "chat_histories": {
+        "before": 8,
+        "all_preserved": true
+      },
+      "life": {
+        "before": 193,
+        "all_preserved": true
+      },
+      "router": {
+        "before": 159,
+        "all_preserved": true
+      }
+    },
+    "against_final_activation_snapshot": {
+      "conversations": {
+        "before": 8,
+        "preserved": 8,
+        "all_preserved": true
+      },
+      "life_records": {
+        "before": 193,
+        "all_preserved": true
+      },
+      "quota_records": {
+        "before": 159,
+        "all_preserved": true
+      }
+    },
+    "provider_sources_unchanged": true,
+    "physical_models_unchanged": true,
+    "snapshots_private": true,
+    "configuration_quarantines": 2
+  },
+  "real_database_readonly_recall": {
+    "conversations": 3,
+    "matches": 5,
+    "page_read": true,
+    "foreign_denied": true
+  },
+  "real_model_validation": {
+    "task_limit": 16,
+    "calls_consumed": 16,
+    "results": [
+      {
+        "model": "gemma-4-26b-a4b-it",
+        "task": "simple",
+        "status": "completed",
+        "seconds": 12.17,
+        "input_tokens": 20,
+        "output_tokens": 41
+      },
+      {
+        "test": "native_time_route",
+        "passed": true,
+        "original_unchanged": true
+      }
+    ],
+    "platform_messages": 0,
+    "real_note_writes": 0,
+    "cost": "provider_usage_only_no_price_estimate"
+  },
+  "new_real_generation_calls": 1,
+  "platform_test_messages": 0,
+  "real_note_writes": 0,
+  "real_calendar_writes": 0,
+  "implementation_commits": [
+    "b8f866a fix(router): preserve user intent across native tool steps",
+    "da2fd4e fix(router): honor explicit model requests and synthesis tasks",
+    "63d8277 fix(context): keep one outbound compactor and stable working summaries",
+    "1e7f308 feat(memory): add bounded owner conversation recall and routing facts",
+    "018afe7 fix(deploy): disable native compression and snapshot recovery evidence",
+    "b47a4c4 fix(router): keep native repair steps bound to the same user turn",
+    "330c6ae chore(router): release context and recall fixes as 1.1.0",
+    "8050b08 fix(context): preserve native history guard through AstrBot config migration",
+    "f149f0d test(router): exercise the real native truncation threshold",
+    "fdf2821 fix(memory): retain verified summaries across new conversations"
+  ],
+  "pending": [
+    "Owner normal-chat quality, complex synthesis, and cross-conversation continuation acceptance.",
+    "Previously replaced native history has not been automatically restored."
+  ],
+  "measurement_limits": [
+    "The 12.17-second Gemma probe is one synthetic request, not an overall latency improvement benchmark.",
+    "New live probe used explicit Gemma selection; automatic classification and fallback were tested offline and in the real SDK with synthetic transports.",
+    "Billing amount was not returned; only provider usage is reported."
+  ]
+}
