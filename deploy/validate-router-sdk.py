@@ -64,9 +64,16 @@ async def main():
         enforce_max_turns=native.max_context_length))
     original_history=[Message(role='user',content='synthetic history '*50000),
                       Message(role='assistant',content='synthetic result')]
-    manager.compressor=AsyncMock(side_effect=AssertionError('native_compression_must_be_disabled'))
+    native_compressor=manager.compressor
+    class GuardProbe:
+        calls=0
+        def should_compress(self,*args):return native_compressor.should_compress(*args)
+        async def __call__(self,messages):
+            self.calls+=1
+            raise AssertionError('native_compression_must_be_disabled')
+    manager.compressor=GuardProbe()
     assert await manager.process(original_history) is original_history
-    assert manager.compressor.await_count==0
+    assert manager.compressor.calls==0
 
     # Owner hooks and status are exercised without reading the real binding.
     with tempfile.TemporaryDirectory(prefix='asis-router-owner-sdk-') as temp:

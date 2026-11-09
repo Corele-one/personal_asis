@@ -26,7 +26,12 @@ def main(stage):
         p=stage/name
         if p.is_symlink() or not p.resolve().is_relative_to(stage) or hashlib.sha256(p.read_bytes()).hexdigest()!=digest:
             raise ValueError('router_release_integrity')
-    test=run(sys.executable,str(stage/'validate-router-sdk.py'),str(stage))
+    try:
+        test=run(sys.executable,str(stage/'validate-router-sdk.py'),str(stage))
+    except subprocess.CalledProcessError as error:
+        # Synthetic fixtures contain no private config or real API responses.
+        print(error.stderr[-8000:],file=sys.stderr,flush=True)
+        raise
     print(test.stdout.strip().splitlines()[-1],flush=True)
     data=Path('/home/mac/astrbot/data');plugins=data/'plugins'
     cfg=json.loads((data/'cmd_config.json').read_text(encoding='utf-8-sig'))
