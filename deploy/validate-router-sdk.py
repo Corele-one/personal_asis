@@ -133,6 +133,13 @@ async def main():
             assert result.chain[0].text=='本地错误说明'
             status=[v async for v in plugin.status(event)]
             assert len(status)==1 and '本地估算' in status[0]
+            adapter.runtime().state.save_summary('older-chat','verified-prefix',1,'合成历史摘要')
+            event.message_str='/new'
+            await plugin.withdrawal(event)
+            assert adapter.runtime().state.summary('older-chat','verified-prefix',1)=='合成历史摘要'
+            event.message_str='reset'  # native slash-stripped form
+            await plugin.withdrawal(event)
+            assert adapter.runtime().state.summary('older-chat','verified-prefix',1) is None
             event.get_sender_id=lambda:'stranger'
             assert await plugin.conversation_memory(event)=='owner_required'
             stopped=[];event.stop_event=lambda:stopped.append(True)

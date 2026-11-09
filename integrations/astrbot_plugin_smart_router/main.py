@@ -122,10 +122,12 @@ class SmartRouterPlugin(Star):
 
     @filter.event_message_type(filter.EventMessageType.PRIVATE_MESSAGE, priority=100)
     async def withdrawal(self, event: AstrMessageEvent):
-        if self.owner(event) and event.message_str.strip().split(' ',1)[0] in (
-                '/del','/delete','/reset','/new','/life'):
-            # Conservative invalidation covers Life deletion and context revocation.
-            if event.message_str.startswith(('/del','/delete','/reset','/new','/life delete','/life forget-context')):
+        if self.owner(event):
+            text = event.message_str.strip().removeprefix('/')
+            # Starting another conversation is not withdrawal of the old one.
+            # Keep source-verified old summaries available for explicit recall.
+            if (text.split(' ',1)[0] in ('del','delete','reset')
+                    or text.startswith(('life delete','life forget-context'))):
                 provider.runtime().state.invalidate()
 
     async def terminate(self):
