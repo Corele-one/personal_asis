@@ -89,9 +89,11 @@ async def main():
             event=NS(is_private_chat=lambda:True,get_platform_id=lambda:'synthetic',
                 get_sender_id=lambda:'owner',get_extra=lambda key:'saved',
                 unified_msg_origin='synthetic:FriendMessage:owner',plain_result=lambda text:text)
-            req=NS(conversation=NS(cid='synthetic-conversation'),model=None)
+            req=NS(conversation=NS(cid='synthetic-conversation'),model=None,system_prompt='')
             await plugin.hint(event,req)
             assert req.model.startswith('daily|')
+            assert '工作上下文目标32K' in req.system_prompt
+            assert await plugin.conversation_memory(event,action='recent') == '{"error": "conversation_memory_unavailable"}'
             from astrbot.core.message.message_event_result import MessageChain, MessageEventResult, ResultContentType
             from astrbot.core.message.components import Plain
             extras={}
@@ -123,6 +125,7 @@ async def main():
             status=[v async for v in plugin.status(event)]
             assert len(status)==1 and '本地估算' in status[0]
             event.get_sender_id=lambda:'stranger'
+            assert await plugin.conversation_memory(event)=='owner_required'
             stopped=[];event.stop_event=lambda:stopped.append(True)
             try:await plugin.hint(event,req)
             except ValueError:pass
@@ -167,7 +170,7 @@ async def main():
     # Run two real native tool loops. A generated tool is executed once, then
     # the next model request encounters a quota error and changes model.
     loops=[]
-    for tool_name in ('life_organize','google_calendar_propose_write'):
+    for tool_name in ('life_organize','google_calendar_propose_write','astrbot_execute_python'):
         with tempfile.TemporaryDirectory(prefix='asis-router-sdk-') as temp:
             state=core.State(Path(temp)/'quota.sqlite3',startup_cooldown=0)
             calls=[];executed=[]
@@ -180,6 +183,7 @@ async def main():
                 if len(calls)==2:
                     raise core.Failure('rate_limit',429)
                 assert any(m.get('role')=='tool' for m in messages)
+                assert messages[-1]['role']=='tool', 'extra metadata must not follow the current tool result'
                 return LLMResponse(role='assistant',completion_text='合成完成',usage=TokenUsage(input_other=100,output=10))
             router=core.Router(state,send)
             adapter._runtime=NS(router=router,state=state,refresh=lambda:None)
@@ -195,15 +199,24 @@ async def main():
             message.message=[];message.sender=NS(user_id='synthetic',nickname='Synthetic')
             event=AstrMessageEvent('整理合成记录',message,
                 PlatformMetadata(name='synthetic',description='Synthetic',id='synthetic',support_proactive_message=False),'synthetic')
-            result=await TestContext().tool_loop_agent(event=event,chat_provider_id='asis_router/auto',
-                prompt='整理合成记录',tools=ToolSet([Once(name=tool_name,description='No real effects',
-                    parameters={'type':'object','properties':{'value':{'type':'string'}},'required':['value']})]),
-                max_steps=4,request_max_retries=1,fallback_providers=[])
+            from astrbot.core.agent.runners.tool_loop_agent_runner import ToolLoopAgentRunner
+            reset=ToolLoopAgentRunner.reset
+            async def with_time(self,*args,**kwargs):
+                kwargs['request'].extra_user_content_parts=[reminder]
+                return await reset(self,*args,**kwargs)
+            with patch.object(ToolLoopAgentRunner,'reset',with_time):
+                result=await TestContext().tool_loop_agent(event=event,chat_provider_id='asis_router/auto',
+                    prompt='整理合成记录',tools=ToolSet([Once(name=tool_name,description='No real effects',
+                        parameters={'type':'object','properties':{'value':{'type':'string'}},'required':['value']})]),
+                    max_steps=4,request_max_retries=1,fallback_providers=[])
             assert executed==['synthetic'] and len(calls)==3, dict(executed=executed,
                 models=[c[0] for c in calls],role=result.role,text=result.completion_text)
             assert result.completion_text=='合成完成'
             assert result.asis_router_model==calls[-1][0]
-            assert calls[0][0]==calls[1][0] and calls[1][0]!=calls[2][0]
+            if tool_name=='astrbot_execute_python':
+                assert [c[0] for c in calls]==['gemini-3.5-flash-lite','gemini-3.8-flash','gemini-3.6-flash']
+            else:
+                assert calls[0][0]==calls[1][0] and calls[1][0]!=calls[2][0]
             loops.append(tool_name)
             state.db.close()
     adapter._runtime=None

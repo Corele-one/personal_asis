@@ -167,6 +167,15 @@ class RoutingTests(unittest.IsolatedAsyncioTestCase):
             await Router(self.state, self.send).generate(self.messages(text), None)
         self.assertNotIn('deepseek-v4-flash', [c[0] for c in self.calls])
 
+    async def test_explicit_gemma_keeps_simple_only_guard_and_flash_is_complex(self):
+        router = Router(self.state, self.send)
+        await router.generate(self.messages('用Gemma 你好'), None)
+        self.assertEqual(self.calls[-1][0], 'gemma-4-26b-a4b-it')
+        with self.assertRaisesRegex(Failure, 'requested_model_unavailable'):
+            await router.generate(self.messages('用Gemma 帮我创建日历'), None)
+        await router.generate(self.messages('用Flash 分析这些材料'), None)
+        self.assertEqual(self.calls[-1][3], 'complex')
+
     async def test_synthesis_and_quality_escalation_keep_complex_through_tool_steps(self):
         for text in ['换个聪明点的模型 结合数据库中所有数据', '基于我所有的数据，拟写一封套磁信', '总结我过去的一个礼拜']:
             self.assertEqual(task_for(self.messages(text)), 'complex')

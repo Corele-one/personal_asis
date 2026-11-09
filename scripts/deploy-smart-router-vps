@@ -16,6 +16,7 @@ with tempfile.TemporaryDirectory(prefix='asis-router-release-') as temp:
     shutil.copytree(repo/'integrations/astrbot_plugin_smart_router',plugin,
                     ignore=shutil.ignore_patterns('__pycache__'))
     shutil.copyfile(repo/'src/personal_asis/llm_router.py',plugin/'llm_router.py')
+    shutil.copyfile(repo/'src/personal_asis/conversation_memory.py',plugin/'conversation_memory.py')
     shutil.copyfile(repo/'src/personal_asis/model_display.py',plugin/'model_display.py')
     shutil.copyfile(repo/'src/personal_asis/model_display.py',stage/'model_display.py')
     for name in ('briefing_agent.py','feedback_agent.py'):

@@ -373,18 +373,23 @@ def current_user(messages):
     return re.sub(r'<Quoted Message>[\s\S]*?</Quoted Message>', '', text).strip()
 
 
-def requested_model(text):
+def model_request(text):
     """Explicit, current-turn selection only; quoted model names are not commands."""
     match = re.match(r'^(?:请\s*)?(?:换(?:成)?|切换(?:到)?|改用|使用|用)\s*'
         r'(DeepSeek|MiMo|Gemma|Gemini\s*(?:Flash[ -]?Lite|Flash)|Flash[ -]?Lite|Lite|Flash)'
         r'(?=$|[\s，,：:。！!]|[\u4e00-\u9fff])', text, re.I)
     if not match:
-        return ''
+        return '', text
     name = re.sub(r'[\s-]', '', match[1]).lower()
-    return {'deepseek':'deepseek-v4-flash','mimo':'mimo-v2.6-flash',
+    selected = {'deepseek':'deepseek-v4-flash','mimo':'mimo-v2.6-flash',
             'gemma':'gemma-4-26b-a4b-it','geminiflashlite':'gemini-3.5-flash-lite',
             'flashlite':'gemini-3.5-flash-lite','lite':'gemini-3.5-flash-lite',
             'geminiflash':'gemini-3.8-flash','flash':'gemini-3.8-flash'}[name]
+    return selected, text[match.end():].lstrip(' ，,：:')
+
+
+def requested_model(text):
+    return model_request(text)[0]
 
 
 def modalities(messages):
@@ -397,16 +402,18 @@ def task_for(messages, profile='auto'):
     text = current_user(messages).strip()
     if profile == 'summary':
         return 'summary'
+    selected, text = model_request(text)
     last_user = max((i for i,m in enumerate(messages) if m.get('role') == 'user'), default=-1)
     computer_use = any(call.get('function',{}).get('name') in (
         'astrbot_execute_shell','astrbot_execute_python','astrbot_browser_use')
         for m in messages[max(0,last_user):] for call in m.get('tool_calls',[]) or [] if isinstance(call,dict))
-    if profile == 'complex' or computer_use or re.search(
+    if profile == 'complex' or (selected and BY_NAME[selected].pool == 'flash') or computer_use or re.search(
             r'深入|综合分析|对比分析|全面分析|分析.{0,12}(文章|论文|长文)|多来源|'
             r'写代码|调试|运行代码|执行命令|简报|周报|套磁信|'
             r'换.{0,6}(聪明|强|更好).{0,6}模型|'
             r'(基于|结合).{0,16}(所有|全部).{0,8}(数据|资料)|'
-            r'(总结|回顾).{0,12}(过去|上周|一周|一星期)', text):
+            r'(总结|回顾).{0,12}(过去|上周|一周|一星期)|'
+            r'(翻|读|查).{0,10}(然后|再)总结', text):
         return 'complex'
     if profile == 'daily':
         return 'daily'
