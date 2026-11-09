@@ -8,6 +8,9 @@
 flowchart LR
   User[本人] --> Pi[Mac · 原生 Pi]
   User --> Bot[VPS · AstrBot]
+  User --> Phone[iPhone · Alma]
+  Phone -->|官方加密relay| Work[VPS · 独立 Alma Work]
+  Work --> WorkFiles[独立工作文件]
   Pi <--> Sources[Obsidian / WUCAI / 小红书]
   Bot <--> Plugin[生活增量插件]
   Plugin --> Events[VPS 生活事件库]
@@ -23,6 +26,10 @@ flowchart LR
 ```
 
 Mac 与 VPS 各自执行职责，均可在另一端不在线时使用。没有旧协调队列、跨节点模型综合、全库复制或替代 AstrBot 的自建模型循环。
+
+2026-11-09新增独立 Work：iPhone Alma 通过官方端到端加密 relay 连接 VPS 官方 Alma Server，固定0.4.530。独立服务、身份、数据与工作区；不连接 Mac，不从 Chat 派单，不共享活动会话或读取 AstrBot 私密配置。现已配置VPS既有MiMo及DeepSeek两个原生提供商，默认MiMo、可手动选择DeepSeek；主对话和新会话自动使用默认工作区，无需点名VPS Work或手工选Project，原生技能／Agents／子任务已开放，工具选择模型复用MiMo；自动个人记忆关闭，不接共用资料、Mem0、日历或日记写入。本人随后明确要求常规Bash不逐条批准，Work采用原生auto执行自有文件／终端，系统权限和资源限制保持；网络自动重试0、原生主动Check in／heartbeat关闭。原生iPhone审批实际未连通，旧ask测试仅作历史，不冒称已修复或仍逐条询问；日记、日历与外部平台写工具未接入，各自确认规则不变。当前只验收串行轻任务，资源与真人手机任务分别记录，见[Work 运维与验收](docs/alma-work.md)。
+
+2026-11-09 Work上下文修正：MiMo V2.6 Flash与既有DeepSeek Flash的Alma原生模型窗口均按官方1M设为1,000,000 token，替代初始化器不当的32768覆盖；自动压缩保持80%，输出仍为4096。此为模型容量，不强制每轮发送1M，也不修改AstrBot Router的独立请求预算。配置可通过原生API在线生效，不重启服务或重放旧会话／任务；既有压缩归档不自动重新展开。
 
 ## 2. Mac 知识 Agent
 

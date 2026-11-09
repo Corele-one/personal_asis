@@ -1,0 +1,108 @@
+{
+  "date": "2026-11-09",
+  "timezone": "Asia/Shanghai",
+  "scope": "Alma usability, conversations/projects, native skills and two model providers",
+  "user_requests": [
+    "No required VPS Work wording or manual Project selection",
+    "Relax artificial execution restrictions",
+    "Clarify fixed Alma main conversation and other chats",
+    "Configure both existing DeepSeek and MiMo accounts"
+  ],
+  "native_settings_readback": {
+    "models": [
+      {
+        "name": "DeepSeek V4 Flash",
+        "id": "deepseek-v4-flash",
+        "provider": "DeepSeek",
+        "tools": true
+      },
+      {
+        "name": "MiMo 2.6 Flash",
+        "id": "mimo-v2.6-flash",
+        "provider": "MiMo",
+        "tools": true
+      }
+    ],
+    "default_model": "mimo-v2.6-flash",
+    "tool_model": "mimo-v2.6-flash",
+    "agents": true,
+    "delegation": true,
+    "skills": "auto",
+    "workspace_name": "默认工作区",
+    "main_title": "个人助手 · 主对话",
+    "main_identity_unchanged": true,
+    "main_workspace_is_default": true,
+    "proactive": false,
+    "cron_count": 0,
+    "memory": false
+  },
+  "behavior": {
+    "main_and_new_default_threads_use_default_workspace": true,
+    "main_conversation_identity_and_history_preserved": true,
+    "ordinary_chat_can_execute_work": true,
+    "manual_project_selection_required": false,
+    "required_prompt_prefix": null,
+    "forced_single_foreground_only_rule_removed": true,
+    "native_skills_and_subtasks_enabled": true,
+    "background_execution_allowed_as_needed": true,
+    "not_a_concurrent_load_acceptance": true,
+    "global_memory_service_not_connected": true,
+    "native_mobile_icon_style_not_modified": true,
+    "workspace_markdown_not_claimed_to_be_automatically_injected": true
+  },
+  "real_model_tests": [
+    {
+      "provider": "MiMo",
+      "model": "mimo-v2.6-flash",
+      "task": "Create natural-workflow-check.txt with hello and read back",
+      "prompt_mentions_vps_project_or_bash": false,
+      "model_workspace_or_tool_selected_in_request": false,
+      "passed": true,
+      "completed_tool_parts": 1,
+      "elapsed_ms": 22394,
+      "file_verified": true,
+      "approvals": 0,
+      "tool_stdout_readback_verified": "hello"
+    },
+    {
+      "provider": "DeepSeek",
+      "model": "deepseek-v4-flash",
+      "task": "Bounded file creation with W1_OK",
+      "passed": true,
+      "stream_deltas": 30,
+      "completed_tool_parts": 1,
+      "elapsed_ms": 14574,
+      "file_verified": true,
+      "approvals": 0
+    }
+  ],
+  "provider_configuration": {
+    "existing_vps_accounts_only": true,
+    "mac_credentials_read_or_migrated": false,
+    "key_in_chat_arguments_git_or_intermediate_files": false,
+    "original_mimo_provider_identity_preserved": true,
+    "existing_user_models_preserved_by_updater": true,
+    "providers_only_does_not_change_chat_default_or_user_settings": true,
+    "chat_default_remains_mimo": true
+  },
+  "checks": {
+    "deployment_unit_tests": 3,
+    "full_regression": {
+      "run": 872,
+      "passed": 863,
+      "skipped": 9
+    },
+    "python_compile": "passed",
+    "node_syntax": "passed",
+    "git_diff_check": "passed",
+    "chat_config_hashes_unchanged": 14,
+    "chat_and_dashboard_pids_unchanged": true,
+    "work_health": "ok",
+    "work_service": "Result=success\nMemoryCurrent=247627776\nMemoryPeak=336060416\nActiveState=active\n"
+  },
+  "remaining": [
+    "Native iPhone display and model-picker refresh after settings change not directly observed",
+    "Concurrent and long-running resource validation",
+    "Physical Mac powered-off acceptance"
+  ]
+}

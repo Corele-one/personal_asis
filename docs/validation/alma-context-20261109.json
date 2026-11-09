@@ -1,0 +1,74 @@
+{
+  "date": "2026-11-09",
+  "timezone": "Asia/Shanghai",
+  "scope": "Alma Work native model context configuration only",
+  "runtime": "official Alma Server 0.4.530",
+  "root_cause": {
+    "initializer_context_override": 32768,
+    "auto_compact_threshold_percent": 80,
+    "approximate_old_compact_threshold_tokens": 26214,
+    "main_thread_fixed_overhead_estimate_tokens": 20208
+  },
+  "official_sources": [
+    "https://mimo.mi.com/models/en-US/mimo-v2.6-flash",
+    "https://api-docs.deepseek.com/quick_start/pricing/"
+  ],
+  "change": {
+    "context_window_tokens": 1000000,
+    "output_limit_tokens_unchanged": 4096,
+    "auto_compact_threshold_percent_unchanged": 80,
+    "keep_recent_messages_unchanged": 4,
+    "method": "native PUT provider models endpoint; no direct application database writes",
+    "initializer_corrected": true,
+    "private_model_descriptor_rollback_retained": true
+  },
+  "preservation_checks_at_update": {
+    "all_native_user_settings_hash_unchanged": true,
+    "cron_jobs_hash_unchanged": true,
+    "astrbot_config_hash_unchanged": true,
+    "work_chat_dashboard_pids_unchanged": true,
+    "existing_model_ids_and_enabled_model_lists_unchanged": true,
+    "old_history_or_task_replay": false
+  },
+  "local_validation": {
+    "deployment_regression_tests": 3,
+    "passed": 3
+  },
+  "real_model_validation": {
+    "requests": 4,
+    "input": "4500 synthetic random rows, with unique beginning/end markers; follow-up recalls markers without resending the document",
+    "transport": "actual native REST and WebSocket APIs with tools disabled for context isolation",
+    "cases": [
+      {
+        "model": "mimo-v2.6-flash",
+        "rounds": [
+          {"input_tokens": 109385, "output_tokens": 42, "cached_input_tokens": 0, "elapsed_ms": 27224},
+          {"input_tokens": 110530, "output_tokens": 36, "cached_input_tokens": 109376, "elapsed_ms": 14376}
+        ],
+        "all_marker_recalls_correct": true,
+        "compaction_indicators": 0,
+        "native_reported_context_window": 1000000
+      },
+      {
+        "model": "deepseek-v4-flash",
+        "rounds": [
+          {"input_tokens": 74902, "output_tokens": 47, "cached_input_tokens": 1664, "elapsed_ms": 8590},
+          {"input_tokens": 76001, "output_tokens": 38, "cached_input_tokens": 74880, "elapsed_ms": 4429}
+        ],
+        "all_marker_recalls_correct": true,
+        "compaction_indicators": 0,
+        "native_reported_context_window": 1000000
+      }
+    ]
+  },
+  "not_claimed": [
+    "full 1M token workload quality or latency validation",
+    "same-input before/after latency benchmark",
+    "normal automatic tool-selection or mobile UI acceptance",
+    "notification repair or delivery acceptance",
+    "automatic restoration of previously compacted conversation content"
+  ],
+  "plan_files_modified": false,
+  "feishu_test_messages": 0,
+  "journal_or_calendar_writes": 0
+}

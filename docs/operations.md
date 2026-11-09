@@ -95,3 +95,7 @@ PWA沿用同一HTTPS与本人会话，新增/api/feedback GET／POST；POST必�
 `chat_status.py`每15秒原子更新私密插件心跳，停止时标记ready=false；Overview按90秒过期，Mac及共享副本按24小时标记旧观测。`overview.py`只读现有SQLite／状态文件，各数据源异常独立降为未知，不打开Work管理端口，不创建记忆服务，不调用模型。`/api/overview`沿用认证与不缓存，`/dashboard`继续原详情。
 
 Mem0试点位于VPS独立虚拟环境与私密合成数据目录，不进入AstrBot依赖环境；当前没有常驻记忆服务。不得把包已安装或CRUD试验成功当作自动个人记忆已验收。独立服务、并发修订／来源撤回语义及常驻资源测量通过后才进入M2。代码部署仍先实际SDK合成预检与私密回退；发布包采用单个压缩流传输，并保留逐文件清单校验。
+
+## 独立 Work 的维护
+
+Alma Work不使用Chat发布／回退脚本。安装、固定版本、资源上限、手机配对、独立启停及数据保留见[Alma Work](alma-work.md)；本机维护入口为`scripts/alma-work`。Work失败不自动重放任务，不用旧数据覆盖新会话，也不通过停止Chat来释放容量。

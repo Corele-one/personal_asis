@@ -1,0 +1,238 @@
+{
+  "date": "2026-11-09",
+  "timezone": "Asia/Shanghai",
+  "phase": "2A / Work W0-W1",
+  "status": "deployed_phone_auto_file_task_accepted_residency_and_physical_poweroff_checks_remaining",
+  "version": {
+    "installed": "0.4.530",
+    "architecture": "linux-x64",
+    "sha256": "05ca4bccddf1c96cd528ae6bd0a20495c73346eeb1b2208646750918069eee49",
+    "official_release": "https://github.com/yetone/alma-releases/releases/tag/v0.4.530",
+    "candidate_static_review_only": {
+      "version": "0.4.547",
+      "sha256": "eb98f75452952f58a6282b3851d6bb998930e6eb2781ee9d1d499af260d1a9b9",
+      "installed": false,
+      "approval_notification_logic_unchanged": true
+    }
+  },
+  "user_policy": {
+    "initial": "ask",
+    "phone_test_initial_failed": true,
+    "latest_instruction": "审批不要太严格，不要弄成执行个bash命令都要我来批准",
+    "current_headless_approval": "auto",
+    "scope": "Work-owned files and terminal within existing OS restrictions",
+    "journal_calendar_platform_write_tools_exposed": false,
+    "original_source_confirmation_requirements_preserved": true
+  },
+  "deployment": {
+    "unit": "alma-work.service",
+    "identity": "alma-work",
+    "non_login_no_sudo": true,
+    "loopback": "127.0.0.1:23001",
+    "public_proxy_added": false,
+    "enabled_on_boot": true,
+    "restart_on_failure": false,
+    "data_private": true,
+    "mac_control_connection": false,
+    "chat_configuration_changed": false,
+    "native_bundle_modified": false,
+    "sanitized_process_wrapper": true,
+    "core_dump_limit": 0,
+    "unit_and_runner_match_workspace": true,
+    "final_health": "ok",
+    "final_relay": "connected",
+    "only_approved_native_provider_count": 2,
+    "pending_approvals": 0,
+    "workspace_instruction_template_installed": true
+  },
+  "isolation_actual_service_mount_namespace": {
+    "read_chat_configuration": "denied",
+    "read_life_home": "denied",
+    "write_system_directory": "denied",
+    "own_workspace_read_write": "passed"
+  },
+  "models": {
+    "native_provider": "existing VPS MiMo and DeepSeek accounts",
+    "default_model": "mimo-v2.6-flash",
+    "context_window_configured": 32768,
+    "output_limit": 4096,
+    "network_automatic_retries": 0,
+    "new_account_added": false,
+    "mac_credentials_migrated": false,
+    "shared_model_gateway_added": false,
+    "selectable_models": [
+      "mimo-v2.6-flash",
+      "deepseek-v4-flash"
+    ]
+  },
+  "background": {
+    "native_memory_enabled": false,
+    "native_memory_auto_summarize": false,
+    "native_memory_auto_retrieve": false,
+    "personal_proactive": false,
+    "automatic_inbound_routing": false,
+    "heartbeat_enabled": false,
+    "native_cron_count": 0,
+    "unexpected_native_default_check_in": {
+      "observed_created": true,
+      "run_count_before_disabled": 1,
+      "removed_by_supported_personal_settings": true,
+      "existing_results_and_usage_retained": true
+    },
+    "mem0_connected": false,
+    "real_history_imported": false
+  },
+  "resources": {
+    "initial_host": {
+      "ram_mib": 964,
+      "available_mib": 301,
+      "swap_used_mib": 333,
+      "root_disk_free_gib_approx": 21,
+      "tmpfs_mib": 483
+    },
+    "initial_failed_configuration": {
+      "node_heap_mib": 128,
+      "memory_max_mib": 256,
+      "memory_swap_max_mib": 128,
+      "exit_signal": "SIGABRT",
+      "observed_cgroup_oom": false,
+      "peak_resident_cgroup_mib": 225.3,
+      "root_cause": "unknown; raw stderr was not retained"
+    },
+    "final_limits": {
+      "node_heap_mib": 256,
+      "memory_high_mib": 320,
+      "memory_max_mib": 384,
+      "memory_swap_max_mib": 128,
+      "cpu_quota_percent": 70,
+      "tasks_max": 96
+    },
+    "short_window_same_heap_before_final_auto_policy_restart": {
+      "sample_count": 11,
+      "duration_seconds": 301,
+      "all_healthy": true,
+      "same_process": true,
+      "memory_current_min_mib": 273.5,
+      "memory_current_max_mib": 319.7,
+      "host_available_min_mib": 254.8
+    },
+    "long_running_stability": "not_accepted; initial abort must remain visible",
+    "concurrency": "only sequential light tasks tested"
+  },
+  "native_api_synthetic": {
+    "historical_ask_mode": {
+      "allow": "executed exactly one disposable Bash removal",
+      "deny": "marker retained",
+      "cancel": "marker retained after stop and late allow response",
+      "stale_approval_after_stop": 1,
+      "offline_no_interactive_client": "automatically denied, marker retained, 326ms",
+      "not_phone_ui_acceptance": true
+    },
+    "current_auto_mode": {
+      "passed": true,
+      "approvals": 0,
+      "tool_calls": 1,
+      "fixture_provider_requests": 2,
+      "elapsed_ms": 2626,
+      "disposable_marker_removed": true,
+      "no_interactive_client_required": true
+    },
+    "fixture_providers_removed": true,
+    "existing_sdk_runtime": "actual official bundled Node 24.22.2 and native REST/WebSocket; no personal_asis plugin loaded into Alma"
+  },
+  "real_model_synthetic_tasks": [
+    {
+      "model": "mimo-v2.6-flash",
+      "task": "plain answer W1_OK",
+      "passed": true,
+      "streamed_deltas": 94,
+      "elapsed_ms": 16129
+    },
+    {
+      "model": "mimo-v2.6-flash",
+      "task": "bounded file creation",
+      "passed": true,
+      "file_content_verified": "W1_OK",
+      "elapsed_ms": 20980,
+      "approvals": 0,
+      "note": "Ran under original ask policy; native classifier exempted this simple printf."
+    }
+  ],
+  "observed_native_app_usage_before_later_phone_acceptance": {
+    "mimo_completed_message_count": 7,
+    "input_tokens": 128068,
+    "output_tokens": 1569,
+    "cached_tokens": 69760,
+    "app_estimated_cost": 0.018564168,
+    "limitations": "Includes native auxiliary/default check-in activity; not an exact HTTP call count or provider invoice."
+  },
+  "maintenance": {
+    "work_stop_chat_and_dashboard_pids_unchanged": true,
+    "chat_config_hashes_unchanged_count": 14,
+    "overview_without_auth_while_work_stopped_http": 403,
+    "four_selected_synthetic_threads_persisted_after_restart": true,
+    "synthetic_result_file_persisted_after_restart": true,
+    "phone_pairing_preserved_after_restart": true,
+    "relay_temporarily_disabled_and_restored_without_rotating_pairing": true
+  },
+  "phone": {
+    "user_confirmed_pairing": true,
+    "observed_app_version": "1.69 (202611081827)",
+    "e2e_encryption": true,
+    "initial_ask_acceptance": {
+      "passed": false,
+      "native_bash_permission_denials": 4,
+      "native_error": "No active window available for approval. Command denied automatically."
+    },
+    "temporary_listener_diagnostic": "user changed execution policy; listener stopped and outstanding synthetic approval denied",
+    "current_auto_task_acceptance": {
+      "passed": true,
+      "user_confirmed": "已成功创建并读回 hello",
+      "vps_file_exists": true,
+      "vps_file_content_verified": "hello",
+      "local_mac_settings_tunnel": "closed_during_test",
+      "scope": "iPhone initiated creation and read-back of a synthetic VPS Work file without per-command approval"
+    },
+    "mac_physically_powered_off_test": "not_performed",
+    "local_mac_settings_tunnel": "closed_during_phone_tests",
+    "post_acceptance_services": {
+      "work": "active",
+      "work_result": "success",
+      "chat": "active",
+      "dashboard": "active",
+      "chat_and_dashboard_original_pids_preserved": true,
+      "encrypted_relay": "connected",
+      "work_memory_current_mib": 301.3,
+      "work_memory_peak_mib": 320.5
+    }
+  },
+  "tests": {
+    "local_agent_suite": {
+      "run": 497,
+      "passed": 496,
+      "skipped": 1
+    },
+    "full_repository": {
+      "run": 871,
+      "passed": 862,
+      "skipped": 9
+    },
+    "new_deployment_tests": 2,
+    "syntax": "python compile and node --check passed",
+    "systemd_unit_verify": "passed",
+    "git_diff_check": "passed"
+  },
+  "untouched": {
+    "chat_services_restarted": false,
+    "pi_sync_run": false,
+    "real_journal_or_calendar_writes": false,
+    "feishu_test_messages_sent": false,
+    "shared_library_or_mem0_access_added": false
+  },
+  "remaining": [
+    "Mac physically powered-off acceptance",
+    "Longer residency and complex-task resource validation",
+    "W2-W6 remain out of scope; native phone ask-mode approval remains unverified/failed in this client"
+  ],
+  "usability_followup": "alma-usability-models-20261109.json"
+}

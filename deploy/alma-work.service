@@ -1,0 +1,54 @@
+[Unit]
+Description=Independent Alma Work server
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=2
+
+[Service]
+Type=simple
+User=alma-work
+Group=alma-work
+WorkingDirectory=/srv/alma-work
+Environment=HOME=/var/lib/alma-work
+Environment=ALMA_DATA_DIR=/var/lib/alma-work/data
+Environment=ALMA_PORT=23001
+Environment=ALMA_TOOL_APPROVAL=auto
+Environment=NODE_OPTIONS=--max-old-space-size=256
+ExecStart=/usr/bin/python3 /opt/alma-work/run-alma-work.py
+StandardOutput=null
+StandardError=journal
+Restart=no
+TimeoutStopSec=30
+UMask=0077
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/lib/alma-work /srv/alma-work
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictSUIDSGID=yes
+RestrictRealtime=yes
+RestrictNamespaces=yes
+LockPersonality=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+InaccessiblePaths=-/run/user -/run/dbus -/run/docker.sock -/run/containerd
+MemoryAccounting=yes
+MemoryHigh=320M
+MemoryMax=384M
+MemorySwapMax=128M
+CPUQuota=70%
+TasksMax=96
+LimitNOFILE=4096
+LimitCORE=0
+
+[Install]
+WantedBy=multi-user.target

@@ -8,6 +8,7 @@
 | [使用指南](assistant-usage.md) | Pi、AstrBot、Dashboard 与写入操作 |
 | [运行与回退](operations.md) | 配置、部署、检查与恢复 |
 | [当前状态](project-status.md) | 已实现、已验证、仍待验收 |
+| [独立 Alma Work](alma-work.md) | 2A／W0–W1，手机配对、权限、资源、部署与独立停用 |
 | [习惯、学习与持续跟进](habits-learning.md) | 飞书证据整理、开放学习主题、Habit／Learning投影、早间简报与周报 |
 | [实施计划](implementation-plan.md) | 本轮交付与后续事项 |
 | [原生 Pi](native-pi.md) | 模型／会话、资料说明、窄写入扩展与费用 |
