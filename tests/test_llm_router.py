@@ -187,6 +187,32 @@ class RoutingTests(unittest.IsolatedAsyncioTestCase):
         await router.generate(messages + [dict(role='assistant', content='继续处理')], None)
         self.assertEqual([c[3] for c in self.calls], ['complex', 'complex'])
 
+    async def test_native_repair_user_message_cannot_reset_turn_selection_or_tier(self):
+        router = Router(self.state, self.send)
+        messages = self.messages('换DeepSeek 深入分析材料')
+        await router.generate(messages, None, scope='same-chat', run_id='one-event')
+        repaired = messages + [dict(role='assistant', content='已读取'),
+                               dict(role='user', content='Native tool argument repair: continue.')]
+        await router.generate(repaired, None, scope='same-chat', run_id='one-event')
+        self.assertEqual([c[0] for c in self.calls], ['deepseek-v4-flash'] * 2)
+        self.assertEqual([c[3] for c in self.calls], ['complex'] * 2)
+        await router.generate(self.messages('新一轮普通问题'), None, scope='same-chat', run_id='new-event')
+        self.assertEqual(self.calls[-1][0], 'gemini-3.5-flash-lite')
+
+    async def test_native_repair_preserves_original_current_tool_chain_during_compaction(self):
+        router = Router(self.state, self.send)
+        messages = []
+        for i in range(12):
+            messages.extend([dict(role='user', content='旧历史。'*650+str(i)),dict(role='assistant',content='旧答复')])
+        messages.append(dict(role='user', content='深入分析当前材料'))
+        await router.generate(messages, None, run_id='repair')
+        chain = [dict(role='assistant',tool_calls=[dict(id='current',function=dict(name='read'))]),
+                 dict(role='tool',tool_call_id='current',content='必要材料。'*5200),
+                 dict(role='user',content='Native repair: continue.')]
+        await router.generate(messages+chain, None, run_id='repair')
+        self.assertEqual(self.calls[-1][1][-3:], chain)
+        self.assertIn(messages[-1], self.calls[-1][1])
+
     async def test_gemma_simple_and_tools_not_discarded_for_regular_request(self):
         router=Router(self.state,self.send)
         tools=NS(empty=lambda:False,get_func_desc_openai_style=lambda:[{'name':'life_organize'}])

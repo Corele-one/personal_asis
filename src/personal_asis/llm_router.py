@@ -458,7 +458,7 @@ class Router:
         return system + [dict(role='user',content=notice),
                          dict(role='assistant',content='已了解摘要覆盖范围。')] + body[end:]
 
-    async def compact(self, messages, schema, scope):
+    async def compact(self, messages, schema, scope, turn_anchor=''):
         if estimate(messages) + estimate(schema) <= 32768:
             return messages
         system = [m for m in messages if m.get('role') in ('system','developer')]
@@ -472,7 +472,7 @@ class Router:
         starts = [i for i,m in enumerate(body) if m.get('role') == 'user']
         if not starts:
             raise Failure('context_too_large')
-        cut = starts[-1]
+        cut = next((i for i in reversed(starts) if fingerprint(body[i]) == turn_anchor), starts[-1])
         mandatory = system + body[cut:]
         if base_tokens + prefix_tokens[-1] - prefix_tokens[cut] > 65536:
             raise Failure('context_too_large')
@@ -541,16 +541,17 @@ class Router:
             raise Failure('context_too_large')
         return result
 
-    async def generate(self, messages, tools, profile='auto', scope='private', compact=True, abort=None):
+    async def generate(self, messages, tools, profile='auto', scope='private', compact=True, abort=None, run_id=''):
         if abort and abort.is_set():
             raise asyncio.CancelledError()
         messages = working_messages(messages)
         schema = tools.get_func_desc_openai_style() if tools and not tools.empty() else []
         user_index = max((i for i,m in enumerate(messages) if m.get('role') == 'user'), default=len(messages)-1)
-        run_key = fingerprint([scope, messages[:user_index+1]])
+        run_key = fingerprint([scope, run_id]) if run_id else fingerprint([scope, messages[:user_index+1]])
         if len(self.runs) > 512:
             self.runs.clear()
-        run = self.runs.setdefault(run_key, {'complex':False,'last':'', 'requested':''})
+        run = self.runs.setdefault(run_key, {'complex':False,'last':'', 'requested':'',
+            'anchor':fingerprint(messages[user_index]) if user_index >= 0 else ''})
         if profile != 'summary':
             run['requested'] = requested_model(current_user(messages)) or run['requested']
         requested = run['requested']
@@ -560,7 +561,7 @@ class Router:
         started = self.clock()
         if compact and task != 'summary':
             try:
-                messages = await asyncio.wait_for(self.compact(messages, schema, scope),
+                messages = await asyncio.wait_for(self.compact(messages, schema, scope, run['anchor']),
                     180 if task=='complex' else 90)
             except asyncio.TimeoutError:
                 raise Failure('timeout') from None

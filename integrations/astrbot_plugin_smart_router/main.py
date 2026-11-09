@@ -46,7 +46,9 @@ class SmartRouterPlugin(Star):
         scope = fingerprint([event.unified_msg_origin,cid])
         profile = ('complex' if current == 'asis_router/complex' else
                    'daily' if event.get_extra('life_capture_status')=='saved' else 'auto')
-        req.model = profile+'|'+scope
+        message_id = getattr(getattr(event,'message_obj',None),'message_id',None)
+        turn = fingerprint([cid, message_id or getattr(req,'prompt','')])
+        req.model = profile+'|'+scope+'|'+turn
         req.system_prompt += ('\n实际运行说明：本次由Personal Asis Router选择模型，不是通用网关。'
             '工作上下文目标32K，当前必要材料最多64K；旧历史可能只有带覆盖范围的摘要。'
             '不要编造窗口容量、模型身份、已连接全部数据库或后台任务状态。'

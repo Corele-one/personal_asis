@@ -220,7 +220,7 @@ class SmartProvider(Provider):
             current = runtime()
             current.refresh()
             return await current.router.generate(messages, func_tool, profile, scope,
-                abort=kwargs.get('abort_signal'))
+                abort=kwargs.get('abort_signal'), run_id=pieces[2] if len(pieces)>2 else '')
         except Failure as error:
             # A non-empty role=err avoids AstrBot's empty-output retries.
             messages = {
