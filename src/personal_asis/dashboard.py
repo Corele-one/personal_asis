@@ -104,6 +104,10 @@ def server(home, origin, port=8766):
                         except ProtocolError:
                             info = {'authenticated':False}
                         return self.write(dict(initialized=auth.initialized(),**info))
+                    if route == '/api/overview':
+                        auth.session(self.token())
+                        from .overview import snapshot as overview
+                        return self.write(overview(home))
                     if route == '/api/dashboard':
                         auth.session(self.token())
                         day = parse_qs(urlsplit(self.path).query).get('day', [None])[0]
@@ -124,7 +128,9 @@ def server(home, origin, port=8766):
                             return self.write({'messages':LifeFeedback(store).thread(thread)})
                         finally:
                             store.close()
-                files = {'/':('dashboard.html','text/html'), '/dashboard.js':('dashboard.js','application/javascript'),
+                files = {'/':('dashboard.html','text/html'), '/overview':('dashboard.html','text/html'),
+                         '/dashboard':('dashboard.html','text/html'),
+                         '/dashboard-overview.js':('dashboard-overview.js','application/javascript'), '/dashboard.js':('dashboard.js','application/javascript'),
                          '/dashboard-learning.js':('dashboard-learning.js','application/javascript'),
                          '/dashboard.css':('dashboard.css','text/css'), '/sw.js':('dashboard-sw.js','application/javascript'),
                          '/manifest.webmanifest':('dashboard.webmanifest','application/manifest+json'),

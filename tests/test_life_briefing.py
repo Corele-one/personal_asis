@@ -291,7 +291,7 @@ class BriefingDispatchTests(unittest.TestCase):
 
     def setup_claim(self):
         self.bot.store.capture('p','owner','source','/life 多任务让我分心，想散步', '2026-10-28T20:00:00+08:00')
-        self.bot.attention.configure(self.bot.bedtime_owner(),'p:FriendMessage:owner',True,'2026-10-26T12:00:00+08:00')
+        self.bot.attention.configure(self.bot.owner_scope(),'p:FriendMessage:owner',True,'2026-10-26T12:00:00+08:00')
         original=self.bot.attention.claim
         self.claim_patch=patch.object(self.bot.attention,'claim',side_effect=lambda *a,**kw: original(*a,now=NOW,**kw))
         self.claim_patch.start();self.addCleanup(self.claim_patch.stop)
@@ -375,14 +375,14 @@ class BriefingDispatchTests(unittest.TestCase):
                 # Each subtest uses the same already-reserved date only once.
                 if mode=='disable':
                     self.bot.store.db.execute('DELETE FROM attention_delivery');self.bot.store.db.commit()
-                    self.bot.attention.configure(self.bot.bedtime_owner(),'p:FriendMessage:owner',True,'2026-10-26T12:00:00+08:00')
-                    value=self.bot.attention.policy(self.bot.bedtime_owner());value['next_brief']='2026-10-29T00:00:00+00:00'
-                    with self.bot.store.db:self.bot.attention._policy(self.bot.bedtime_owner(),value)
+                    self.bot.attention.configure(self.bot.owner_scope(),'p:FriendMessage:owner',True,'2026-10-26T12:00:00+08:00')
+                    value=self.bot.attention.policy(self.bot.owner_scope());value['next_brief']='2026-10-29T00:00:00+00:00'
+                    with self.bot.store.db:self.bot.attention._policy(self.bot.owner_scope(),value)
                 else:self.setup_claim()
                 async def provider(**kwargs):return 'synthetic'
                 async def generate(**kwargs):
                     if mode=='delete':self.bot.store.delete(self.bot.store.recent()[0]['id'])
-                    else:self.bot.attention.configure(self.bot.bedtime_owner(),'p:FriendMessage:owner',False)
+                    else:self.bot.attention.configure(self.bot.owner_scope(),'p:FriendMessage:owner',False)
                     return types.SimpleNamespace(completion_text='bad json')
                 if mode=='disable':self.bot.store.capture('p','owner','another','/life 今天散步了','2026-10-28T21:00:00+08:00')
                 self.bot.context.get_current_chat_provider_id=provider;self.bot.context.tool_loop_agent=generate

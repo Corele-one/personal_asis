@@ -402,3 +402,20 @@ class RoutingTests(unittest.IsolatedAsyncioTestCase):
 
 
 if __name__=='__main__':unittest.main()
+
+
+class BackgroundHistoryTests(unittest.TestCase):
+    def test_synthetic_reports_removed_only_from_copy(self):
+        from personal_asis.llm_router import working_messages
+        history = [dict(role='user',content='继续讨论架构'), dict(role='assistant',content='好的'),
+            dict(role='user',content='Output your last task result below.'),
+            dict(role='assistant',content='[CronJob] synthetic: old reminder rule'),
+            dict(role='user',content='Output your last task result below.'),
+            dict(role='assistant',content='[BackgroundTask] synthetic complete'),
+            dict(role='user',content='Output your last task result below.'),
+            dict(role='assistant',content='真实问答，保留'),
+            dict(role='user',content='当前问题')]
+        before = json.dumps(history)
+        result = working_messages(history)
+        self.assertEqual(result, history[:2]+history[6:])
+        self.assertEqual(json.dumps(history), before)

@@ -25,15 +25,7 @@ async def fixture():
                                    dict(owner_platform='synthetic', owner_id='owner', google_calendar_enabled=True,
                                         google_calendar_write_enabled=True))
         try:
-            bedtime = importlib.import_module('astrbot_plugin_life_agent.life_bedtime')
-            bot.bedtime.set_enabled(bot.bedtime_owner(), 'synthetic:FriendMessage:owner', True,
-                                    '2026-10-27T23:00:00+08:00')
-            item = bot.bedtime.claim(bot.bedtime_owner(), '2026-10-28T01:00:00+08:00')
-            assert item['number'] == 1
-            assert '晚安' in bedtime.nudge_text(item)
-            assert bot.bedtime.claim(bot.bedtime_owner(), '2026-10-28T01:09:59+08:00') is None
-            assert bot.bedtime.claim(bot.bedtime_owner(), '2026-10-28T01:10:00+08:00') is not None
-            assert '每 10 分钟' in bot.bedtime_status()
+            assert not hasattr(bot, 'bedtime')
             extras = {}
             event = types.SimpleNamespace(message_str='/life 冥想完成，开始学习模拟滤波器',
                 message_obj=types.SimpleNamespace(message_id='synthetic-learning'),
@@ -191,7 +183,7 @@ async def fixture():
             from astrbot_plugin_life_agent.life_feedback import LifeFeedback
             from astrbot_plugin_life_agent.feedback_agent import respond
             feedback=LifeFeedback(bot.store)
-            bot.attention.configure(bot.bedtime_owner(),event.unified_msg_origin,False)
+            bot.attention.configure(bot.owner_scope(),event.unified_msg_origin,False)
             target=bot.store.get(r['id'])
             feedback.submit(dict(id='a'*32,thread='b'*32,text='这条冥想是误判，请去掉。',record_id=r['id'],revision=target['revision']))
             job=feedback.claim()
@@ -255,9 +247,9 @@ async def fixture():
                     return True
             bot.store.capture('synthetic','owner','brief-source','/life 多任务让我分心，想散步。','2026-10-28T20:00:00+08:00')
             bot.store.capture('synthetic','owner','old-idea-source','我想看《合成旧片》','2026-10-23T20:00:00+08:00',capture_source='conversation')
-            bot.attention.configure(bot.bedtime_owner(),event.unified_msg_origin,True)
-            policy=bot.attention.policy(bot.bedtime_owner());policy['next_brief']='2026-10-29T00:00:00+00:00'
-            with bot.store.db:bot.attention._policy(bot.bedtime_owner(),policy)
+            bot.attention.configure(bot.owner_scope(),event.unified_msg_origin,True)
+            policy=bot.attention.policy(bot.owner_scope());policy['next_brief']='2026-10-29T00:00:00+00:00'
+            with bot.store.db:bot.attention._policy(bot.owner_scope(),policy)
             bot.context=BriefContext()
             with patch.object(life_attention,'local',return_value=datetime.fromisoformat('2026-10-29T08:10:00+08:00')):
                 await bot.send_attention()
@@ -313,13 +305,33 @@ async def fixture():
                 pass
             bot.store.delete(photo['id'])
             assert not (bot.home/'images'/life_images.filename(descriptor)).exists()
+            # Date enumeration and complete source reads use actual SDK tool
+            # registration/event receipts, with synthetic replica state only.
+            long_text = '合成周复盘材料。'*2200
+            bodies = sources.document_bodies('life','Calendar/Journal/Daily/2026-11-02.md','2026-11-02',long_text)
+            with shared.SharedStore(bot.home/'shared.sqlite3','vps') as library:
+                changes=[dict(origin='mac',collection='notes',id=shared.identity('synthetic-week',body['part']),version=100+i,body=body) for i,body in enumerate(bodies)]
+                library.receive(dict(changes=changes,cursor=changes[-1]['version'],more=False),'mac')
+            page=json.loads(await bot.shared_knowledge(event,'list',source='life',start='2026-11-02',end='2026-11-08',limit=1))
+            assert page['coverage']['total_documents']==1 and page['next_cursor']
+            final_page=json.loads(await bot.shared_knowledge(event,'list',source='life',start='2026-11-02',end='2026-11-08',limit=1,cursor=page['next_cursor']))
+            assert final_page['coverage']['catalog_complete']
+            part=page['results'][0]
+            result=json.loads(await bot.shared_knowledge(event,'read',origin=part['origin'],collection=part['collection'],record_id=part['id'],expected_version=part['version'],expected_hash=part['content_hash']))
+            assert not result['read_complete']
+            for _ in range(8):
+                if not result['next_arguments']:break
+                result=json.loads(await bot.shared_knowledge(event,**result['next_arguments']))
+            assert result['read_complete'] and result['next_arguments'] is None
+
         finally:
             bot.store.close()
 
 
 asyncio.run(fixture())
-print(json.dumps(dict(actual_sdk_import=True, registered_tool_methods=len(tools),
-    synthetic_ten_minute_bedtime=True,
+print(json.dumps(dict(actual_sdk_import=True,
+    synthetic_date_enumeration_and_versioned_source_pagination=True, registered_tool_methods=len(tools),
+    synthetic_bedtime_retired=True,
     synthetic_owner_tracking=True, synthetic_goal=True, synthetic_prompt=True,
     synthetic_shared_search_read_annotation=True, synthetic_pwa_feedback_executor=True, conversation_memory_isolated=True,
     installed_brief_generate_signature=True, synthetic_brief_reserved_single_call_and_delivery=True,

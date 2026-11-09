@@ -20,7 +20,7 @@ import time
 from zoneinfo import ZoneInfo
 
 PACIFIC = ZoneInfo('America/Los_Angeles')
-SUMMARY_POLICY = '20261109-current-turn-and-receipts'
+SUMMARY_POLICY = '20261109-background-isolation-no-bedtime'
 # Virtual Provider capacity is a history buffer, not a real model window.
 # AstrBot removes unknown fallback settings and replaces zero with 128K. A
 # supported positive capacity keeps native truncation away from stored history;
@@ -326,6 +326,19 @@ def as_dict(message):
 def working_messages(messages):
     """Do not treat a legacy native compressor error receipt as history facts."""
     messages = [as_dict(m) for m in messages]
+    # Recognize only the SDK's exact synthetic report pair. Do not delete user
+    # requests, quoted examples, tool chains or original persisted history.
+    filtered, i = [], 0
+    while i < len(messages):
+        if (i + 1 < len(messages) and messages[i].get('role') == 'user'
+                and plain(messages[i].get('content')) == 'Output your last task result below.'
+                and messages[i+1].get('role') == 'assistant'
+                and plain(messages[i+1].get('content')).startswith(('[CronJob] ', '[BackgroundTask] '))):
+            i += 2
+            continue
+        filtered.append(messages[i])
+        i += 1
+    messages = filtered
     for i, message in enumerate(messages[:-1]):
         text = plain(message.get('content'))
         if (message.get('role') == 'user'

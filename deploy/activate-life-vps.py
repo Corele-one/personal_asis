@@ -29,6 +29,9 @@ def main(stage):
     try:
         preflight = run('/home/mac/.local/share/uv/tools/astrbot/bin/python', str(stage/'validate-life-sdk.py'), str(stage))
         print(preflight.stdout.strip().splitlines()[-1],flush=True)
+        isolation_preflight = run('/home/mac/.local/share/uv/tools/astrbot/bin/python',
+            str(stage/'validate-chat-isolation-sdk.py'), str(stage))
+        print(isolation_preflight.stdout.strip().splitlines()[-1],flush=True)
         if (stage/'validate-router-sdk.py').exists():
             router_preflight=run('/home/mac/.local/share/uv/tools/astrbot/bin/python',
                 str(stage/'validate-router-sdk.py'),str(stage))
@@ -81,6 +84,21 @@ def main(stage):
     (backup/'rollback.sh').write_text('#!/bin/sh\nexec python3 "$(dirname "$0")/rollback.py"\n');(backup/'rollback.sh').chmod(0o700)
     try:
         run('sudo','systemctl','stop','astrbot.service')
+        # Read-only recovery evidence; rollback never restores chat or usage data.
+        for source, name in (
+                (plugins.parent/'data_v4.db', 'chat-before.sqlite3'),
+                (Path('/home/mac/.local/share/personal-asis-router/router.sqlite3'), 'router-before.sqlite3')):
+            if source.exists():
+                src = sqlite3.connect(source.as_uri()+'?mode=ro', uri=True)
+                dest = sqlite3.connect(backup/name)
+                try:
+                    src.backup(dest)
+                finally:
+                    dest.close(); src.close()
+                (backup/name).chmod(0o600)
+        for source in (plugins.parent/'cmd_config.json', config_dir/'abconf_personal-asis-smart-router.json'):
+            if source.exists():
+                shutil.copyfile(source, backup/source.name)
         life_db = home/'life.sqlite3'
         if life_db.exists():
             src = sqlite3.connect(life_db.as_uri()+'?mode=ro', uri=True)

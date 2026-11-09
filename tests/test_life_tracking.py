@@ -218,11 +218,11 @@ class TrackingPluginTests(unittest.TestCase):
 
     def test_pause_not_captured_and_private_sender_dispatch_uses_persisted_reservation(self):
         async def run():
-            self.bot.attention.configure(self.bot.bedtime_owner(),'p:FriendMessage:owner',True,'2026-10-26T12:00:00+08:00')
+            self.bot.attention.configure(self.bot.owner_scope(),'p:FriendMessage:owner',True,'2026-10-26T12:00:00+08:00')
             [reply async for reply in self.bot.collect(self.event('这周别问'))]
             self.assertEqual(self.bot.store.recent(),[])
             # A fixture controls time and transport. No real platform send or model.
-            item=dict(owner=self.bot.bedtime_owner(),origin='p:FriendMessage:owner',day='2026-10-29',body='合成简报')
+            item=dict(owner=self.bot.owner_scope(),origin='p:FriendMessage:owner',day='2026-10-29',body='合成简报')
             with patch.object(self.bot.attention,'claim',return_value=item) as claim,patch.object(self.bot.attention,'valid',return_value=True),patch.object(self.bot.attention,'result') as result:
                 await self.bot.send_attention()
                 self.assertEqual(self.sent[-1],('p:FriendMessage:owner','合成简报'))

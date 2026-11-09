@@ -1,0 +1,100 @@
+{
+  "date": "2026-11-09",
+  "stage": "Chat C0-C1",
+  "status": "deployed_C0_C1_pending_natural_platform_acceptance",
+  "changes": [
+    "bedtime_scheduler_removed_and_legacy_policy_disabled",
+    "background_execution_histories_isolated",
+    "life_writer_tools_filtered_by_entry_intent",
+    "exact_legacy_scheduler_pairs_removed_only_from_working_copy",
+    "derived_summary_cache_policy_updated"
+  ],
+  "synthetic": {
+    "local_suite": {
+      "total": 486,
+      "passed": 485,
+      "skipped": 1
+    },
+    "life_suite": {
+      "total": 154,
+      "passed": 154
+    },
+    "router_suite": {
+      "total": 37,
+      "passed": 37
+    },
+    "full_suite": {
+      "total": 858,
+      "passed": 849,
+      "skipped": 9
+    }
+  },
+  "installed_sdk": {
+    "life": true,
+    "background_cron_and_tool_completion": true,
+    "router": true,
+    "transport": "synthetic_only",
+    "background_concurrent_message_preserved": true,
+    "adapter_uninstall_restores_native_entrypoints": true,
+    "three_virtual_providers_and_native_tools_execute_once": true
+  },
+  "real_model_calls": 0,
+  "platform_test_messages": 0,
+  "obsidian_writes": 0,
+  "calendar_writes": 0,
+  "real_ssh": {
+    "code_staging": true,
+    "pi_sync": false
+  },
+  "pending": [
+    "user_natural_feishu_chat_acceptance",
+    "next_naturally_scheduled_notification_delivery",
+    "authenticated_PWA_UI_not_retested"
+  ],
+  "scope_excluded": [
+    "C2_Mem0",
+    "C3_model_selection_changes",
+    "C4_C5_C6",
+    "C7_Overview_implementation",
+    "Alma_Work"
+  ],
+  "baseline": {
+    "owner_binding_verified": true,
+    "owner_profile": "personal-asis-smart-router",
+    "default_provider": "asis_router/auto",
+    "native_summary_disabled": true,
+    "native_max_context_length": -1,
+    "enabled_bedtime_policies_before": 1,
+    "raw_records_before": 200,
+    "bedtime_delivery_rows_before": 160,
+    "native_cron_jobs_before": 2,
+    "private_baseline_backup": "20261109_162854_563859"
+  },
+  "deployment": {
+    "release": "20261109_163504_881343",
+    "backup": "20261109_163504_881343",
+    "plugin_files_verified": 33,
+    "services_active": true,
+    "plugin_initialized_after_isolation_install": true,
+    "enabled_bedtime_policies": 0,
+    "original_records_preserved": 200,
+    "original_conversation_prefixes_preserved": 8,
+    "quota_attempt_receipts_preserved": 172,
+    "bedtime_delivery_receipts_preserved": true,
+    "cron_jobs_and_preferences_preserved": true,
+    "owner_router_profile_unchanged": true,
+    "native_history_truncation_disabled": true,
+    "installed_sdk_files_unchanged": true,
+    "summary_policy": "20261109-background-isolation-no-bedtime",
+    "unauthenticated_dashboard_status": 403,
+    "release_manifest_files": 72,
+    "existing_intake_migration_changes": 0
+  },
+  "limitations": [
+    "Installed SDK checks used synthetic model/transport boundaries, not real generations.",
+    "No manual cron execution or Feishu test message was sent.",
+    "Existing raw scheduler reports remain in stored chat; only the Router working copy excludes exact SDK report pairs.",
+    "Previously overwritten native summaries are not restored.",
+    "Only derived working summaries are invalidated; chat, sources and quota history are preserved."
+  ]
+}

@@ -45,3 +45,14 @@ def sync_record(record):
     value = dict(record, capture_source=source(record))
     value['tracking'] = observations(record)
     return value
+
+
+def reminder_request(text):
+    """Only an unquoted direct request can expose the reminder writer."""
+    text = re.sub(r'```[\s\S]*?```|`[^`]*`|<system_reminder>[\s\S]*?</system_reminder>', '', text)
+    text = re.sub(r'“[^”]*”|「[^」]*」|"[^"\n]*"|‘[^’]*’', '', text)
+    text = '\n'.join(line for line in text.splitlines() if not line.lstrip().startswith('>')).strip()
+    # Preserve natural phrasing ("我明天有课，提醒我…", "过十分钟提醒我…").
+    # Removing quoted/negated clauses must not turn a discussion into a request.
+    text = re.sub(r'(?:不要|别|不需要|不用)(?:再)?提醒(?:一下)?我[^，。！？;；\n]*', '', text)
+    return bool(re.search(r'提醒我|提醒一下我|设置.{0,12}提醒', text))

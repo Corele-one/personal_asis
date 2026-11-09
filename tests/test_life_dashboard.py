@@ -24,6 +24,8 @@ class DashboardTests(unittest.TestCase):
             try:
                 c=http.client.HTTPConnection('127.0.0.1',srv.server_port)
                 headers={'Host':'dashboard.example','X-Forwarded-Proto':'https'}
+                c.request('GET','/api/overview',headers=headers)
+                r=c.getresponse();self.assertEqual(r.status,401);self.assertNotIn(b'synthetic',r.read())
                 c.request('GET','/api/dashboard',headers=headers)
                 r=c.getresponse();self.assertEqual(r.status,401);self.assertNotIn(b'synthetic',r.read())
                 c.request('POST','/auth/login',json.dumps({'password':'synthetic-long-password'}),{**headers,'Origin':'https://evil.example'})
@@ -37,6 +39,11 @@ class DashboardTests(unittest.TestCase):
                 body=json.loads(r.read());self.assertEqual(body['astrbot']['records'][0]['text'],'<script>synthetic</script>')
                 self.assertNotIn(str(home),json.dumps(body))
                 self.assertEqual(r.getheader('Cache-Control'),'no-store')
+                c.request('GET','/api/overview',headers={**headers,'Cookie':cookie})
+                r=c.getresponse();self.assertEqual(r.status,200)
+                overview=json.loads(r.read());self.assertEqual(overview['work']['state'],'not_connected')
+                self.assertEqual(r.getheader('Cache-Control'),'no-store')
+                self.assertNotIn(str(home),json.dumps(overview))
                 for path in ('/api/search','/api/agent','/api/evidence'):
                     c.request('POST',path,'{}',{**headers,'Cookie':cookie,'Origin':'https://dashboard.example'})
                     r=c.getresponse();self.assertEqual(r.status,404);r.read()

@@ -1,0 +1,75 @@
+{
+  "status": "acceptance_contract_not_implemented_or_passed",
+  "cases": [
+    {
+      "id": "stable_preference",
+      "input": "以后请用中文解释电路原理。",
+      "expected": "save_preference"
+    },
+    {
+      "id": "explicit_decision",
+      "input": "项目甲决定继续使用现有路由。",
+      "expected": "save_project_decision"
+    },
+    {
+      "id": "temporary_request",
+      "input": "这次只写一句话。",
+      "expected": "do_not_generalize"
+    },
+    {
+      "id": "negative_preference",
+      "input": "我不喜欢用表格解释电路。",
+      "expected": "save_negative_preference"
+    },
+    {
+      "id": "quote",
+      "input": "他说“以后只用英文”。",
+      "expected": "do_not_attribute_to_owner"
+    },
+    {
+      "id": "assistant_suggestion",
+      "input": "助手建议我换一个框架，我还没决定。",
+      "expected": "do_not_save_as_decision"
+    },
+    {
+      "id": "cancel_plan",
+      "input": "我取消了明年参加这个活动的计划。",
+      "expected": "save_cancellation_not_completion"
+    },
+    {
+      "id": "correction",
+      "input": "刚才说错了，这个项目改用英文文档。",
+      "expected": "supersede_same_scope"
+    },
+    {
+      "id": "different_projects",
+      "input": "项目甲用中文，项目乙用英文。",
+      "expected": "keep_scopes_separate"
+    },
+    {
+      "id": "concurrent_correction",
+      "input": "两个客户端按同一个预期版本提交不同纠正。",
+      "expected": "one_success_one_conflict"
+    },
+    {
+      "id": "duplicate_source",
+      "input": "同一条来源消息再次送达。",
+      "expected": "single_write"
+    },
+    {
+      "id": "withdraw_and_replay",
+      "input": "撤回记忆后重新读取旧聊天来源。",
+      "expected": "do_not_resurrect"
+    },
+    {
+      "id": "service_failure",
+      "input": "记忆服务中断时继续普通聊天。",
+      "expected": "chat_continues_no_false_memory"
+    },
+    {
+      "id": "life_fact",
+      "input": "我今天读了三页书。",
+      "expected": "existing_life_evidence_not_global_preference"
+    }
+  ]
+}

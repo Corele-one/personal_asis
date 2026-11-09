@@ -25,9 +25,7 @@ async def respond(bot, feedback, job):
     from astrbot.core.platform.astrbot_message import AstrBotMessage
     from astrbot.core.platform.platform_metadata import PlatformMetadata
     owner=(bot.config['owner_platform'],bot.config['owner_id'])
-    origin=bot.attention.policy(bot.bedtime_owner()).get('origin')
-    if not origin:
-        origin=bot.bedtime.status(bot.bedtime_owner()).get('origin')
+    origin=bot.attention.policy(bot.owner_scope()).get('origin')
     if not origin:
         raise ValueError('feedback_bound_origin_required')
     record=None

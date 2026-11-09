@@ -255,9 +255,9 @@ class SharedPluginTests(unittest.TestCase):
         PluginTests.setUp(self)
         self.bot.home=self.bot.home.resolve()
         self.event=lambda *args,**kw:PluginTests.event(self,*args,**kw)
-        from personal_asis import shared_store,shared_sources,shared_cli
+        from personal_asis import shared_store,shared_sources,shared_cli,shared_query
         mappings={'synthetic_life_plugin.'+name:module for name,module in (
-            ('shared_store',shared_store),('shared_sources',shared_sources),('shared_cli',shared_cli))}
+            ('shared_store',shared_store),('shared_query',shared_query),('shared_sources',shared_sources),('shared_cli',shared_cli))}
         mock=patch.dict(sys.modules,mappings);mock.start();self.addCleanup(mock.stop)
 
     def test_owner_can_search_read_and_add_idempotent_annotation_without_editing_source(self):

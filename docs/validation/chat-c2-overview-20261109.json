@@ -1,0 +1,116 @@
+{
+  "date": "2026-11-09",
+  "stage": "Chat C2 source access and C7 Overview foundation",
+  "status": "deployed_pending_natural_platform_acceptance",
+  "deployment": {
+    "overview_heartbeat_running": true,
+    "overview_router_readonly_observed": true,
+    "memory_and_work_not_connected": true,
+    "release": "20261109_170134_552653",
+    "backup": "20261109_170134_552653",
+    "plugin_files_verified": 35,
+    "services_active": true,
+    "plugin_initialized_after_isolation_install": true,
+    "enabled_bedtime_policies": 0,
+    "original_records_preserved": 202,
+    "original_conversation_prefixes_preserved": 8,
+    "quota_attempt_receipts_preserved": 174,
+    "bedtime_delivery_receipts_preserved": true,
+    "cron_jobs_and_preferences_preserved": true,
+    "owner_router_profile_unchanged": true,
+    "native_history_truncation_disabled": true,
+    "installed_sdk_files_unchanged": true,
+    "summary_policy": "20261109-background-isolation-no-bedtime",
+    "unauthenticated_dashboard_status": 401,
+    "release_manifest_files": 78,
+    "existing_intake_migration_changes": 0
+  },
+  "synthetic": {
+    "full_suite": {
+      "total": 869,
+      "passed": 860,
+      "skipped": 9
+    },
+    "local_suite": {
+      "total": 497,
+      "passed": 496,
+      "skipped": 1
+    },
+    "life_suite": {
+      "total": 154,
+      "passed": 154
+    },
+    "shared_suite": {
+      "total": 26,
+      "passed": 26
+    },
+    "overview_suite": {
+      "total": 3,
+      "passed": 3
+    }
+  },
+  "installed_sdk": {
+    "life_tool_registration": true,
+    "date_catalog_and_complete_versioned_source_reads": true,
+    "background_isolation_regression": true,
+    "three_router_providers_and_native_tool_single_execution": true
+  },
+  "browser": {
+    "desktop_and_mobile": true,
+    "no_horizontal_overflow": true,
+    "six_status_cards": true,
+    "source_text_rendered_safely": true,
+    "no_browser_errors": true,
+    "synthetic_authenticated_data": true,
+    "detail_view_preserved": true,
+    "real_logged_in_user_session_tested": false
+  },
+  "real_model": {
+    "status": "success",
+    "model_requests": 4,
+    "tool_calls": 3,
+    "synthetic_sources_only": true,
+    "platform_messages": 0,
+    "actual_model": "mimo-v2.6-flash",
+    "actions": [
+      "list",
+      "read",
+      "read"
+    ],
+    "complete_source_read": true,
+    "final_answer": true,
+    "seconds": 42.75
+  },
+  "real_embedding_requests": 5,
+  "platform_test_messages": 0,
+  "obsidian_writes": 0,
+  "calendar_writes": 0,
+  "pi_sync_executed": false,
+  "mem0": "mem0-pilot-20261109.json",
+  "implemented": [
+    "date_window_catalog_and_coverage",
+    "source_account_and_capture_source_filters",
+    "bounded_relevance_ranking",
+    "snapshot_bound_catalog_cursor",
+    "version_and_hash_bound_read_pagination",
+    "actual_complete_source_read_receipts",
+    "independent_authenticated_overview",
+    "plugin_heartbeat_and_stale_status",
+    "router_local_observations_not_official_quota",
+    "optional_work_and_memory_not_connected_states"
+  ],
+  "pending": [
+    "C2_shared_memory_M1_full_acceptance_and_M2_adaptation",
+    "C3_router_choice_comparison_and_visibility",
+    "C4_C5_C6",
+    "C7_journal_calendar_memory_trajectory_panels",
+    "natural_Feishu_chat_and_scheduled_delivery_acceptance",
+    "real_logged_in_PWA_UI_acceptance"
+  ],
+  "reproducible_checks": [
+    "deploy/validate-life-sdk.py",
+    "deploy/validate-chat-isolation-sdk.py",
+    "deploy/validate-chat-read-live.py",
+    "tests/dashboard-overview-ui.cjs"
+  ]
+}

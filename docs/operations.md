@@ -55,9 +55,11 @@ scripts/deploy-life-vps
 
 每次成功输出release和backup路径。后续增量回退：在对应 `personal-asis-v2-rollbacks/时间戳/` 运行 `./rollback.sh`。它只恢复前一代码／插件／unit选择，不回滚生活事件库、不删除新记录。最初迁移备份 `20261020_153545` 的脚本用于恢复旧架构；后续备份用于恢复上一v2版本。均需按目标核对，不混用回退脚本。
 
-2.5.1催睡调整为01:00起每10分钟；首次加载会幂等延后仍按旧5分钟排定的后续提醒，已关闭及当晚晚安状态保留。轮次从当前睡前窗口内的投递占位计算，重启不从第一条重复。文案仅按需读取既有主动记录的合格学习主题，不新增表、外部请求或模型调用。
+2.12.0删除催睡调度与启用路径，插件启动幂等设置旧`bedtime_policy.enabled=0`；不删除原自报作息、`bedtime_delivery`／`bedtime_ack`。回退只恢复代码，不恢复enabled状态或覆盖新资料。明确事项与简报的占位及未知结果规则保留。
 
-催睡使用同一生活库中独立的 `bedtime_policy`／`bedtime_delivery`／`bedtime_ack` 表；既有记录、同步游标和一次性事项表不迁移。新安装默认关闭，生产针对既有本人平台／私聊绑定开启，后续重启／部署保留规则。用户用 `/life sleep` 查看、`/life sleep off` 停用。切换本人绑定不会继续向旧身份发送。回退到2.0.1会停止催睡，不需要回滚或删除新表。
+`background_isolation.py`在插件初始化时包装当前SDK的Scheduler唤醒与后台工具结果入口，克隆执行Context并为其提供独立conversation manager；投递UMO、Provider配置与工具执行不变。普通Chat会话选择和历史不改动；执行报告存于`asis_background:OtherMessage:…`命名空间。卸载时撤销包装，不修改AstrBot安装文件。SDK升级必须先跑`deploy/validate-chat-isolation-sdk.py`，签名不兼容明确停止初始化。`scripts/deploy-life-vps --check-only`可只做远端合成SDK预检，不停服务、不生成平台消息。
+
+本人Router工作副本过滤精确SDK合成报告对；新摘要策略使旧缓存失效，历史与调用账本保留。预检与代码发布不执行真实生活、日历或笔记写入。
 
 2.2.0部署新增共用的 `personal_profile.py`，保持原生活库和初始化文件；不会打包 `.local/pi-agent/initialization` 或自动上传本人背景。真正发布摘要前核对本人已确认的完整预览、来源哈希及接收范围，只写生活目录的 `personal-profile.json`（0600），保留旧版本回退。`draft` 文件不能作为记忆加载。代码回退不自动回滚私人背景；需要分别处理。
 
@@ -84,4 +86,12 @@ Mac：忽略目录 `.local/pi-agent/knowledge-context.md`、`initialization/evid
 
 部署包加入life_intake／life_feedback和插件feedback_agent。停服务后先备份原生活库，再运行幂等的reconcile_intake：原始消息不删，补capture_source并清除不符合本人实际行为证据的派生观测，变更追加版本以供下次同步。普通聊天仍作为对话记忆提供给助手；不进入Obsidian。
 
-PWA沿用同一HTTPS与本人会话，新增/api/feedback GET／POST；POST必须有Origin与CSRF，写入同一私密生活库队列。AstrBot原生Agent消费队列，使用当前本人渠道选中的提供商，只开放单记录纠正工具。重启将running标为unknown，不自动重发付费调用；用户先核对前后回执。无需新端口或系统服务。反馈worker和催睡／简报worker独立，等待模型不阻塞到期检查。该入口不执行平台发送，也不开放Computer Use或Mac文件写入。
+PWA沿用同一HTTPS与本人会话，新增/api/feedback GET／POST；POST必须有Origin与CSRF，写入同一私密生活库队列。AstrBot原生Agent消费队列，使用当前本人渠道选中的提供商，只开放单记录纠正工具。重启将running标为unknown，不自动重发付费调用；用户先核对前后回执。无需新端口或系统服务。反馈worker和简报／到期事项worker独立，等待模型不阻塞到期检查。该入口不执行平台发送，也不开放Computer Use或Mac文件写入。
+
+## Chat 2.13.0 资料查询与 Overview
+
+共享资料查询只扩展既有副本读取，不修改同步协议或新增授权来源。`shared_query.py`在同一只读事务中绑定目录计数／游标，来源版本变化使旧游标失效；正文回执只存分段范围与版本，不复制第二份原文。AstrBot共享副本的coverage补充capture_source，下一次刷新会更新派生版本，原生活库与笔记不改写。
+
+`chat_status.py`每15秒原子更新私密插件心跳，停止时标记ready=false；Overview按90秒过期，Mac及共享副本按24小时标记旧观测。`overview.py`只读现有SQLite／状态文件，各数据源异常独立降为未知，不打开Work管理端口，不创建记忆服务，不调用模型。`/api/overview`沿用认证与不缓存，`/dashboard`继续原详情。
+
+Mem0试点位于VPS独立虚拟环境与私密合成数据目录，不进入AstrBot依赖环境；当前没有常驻记忆服务。不得把包已安装或CRUD试验成功当作自动个人记忆已验收。独立服务、并发修订／来源撤回语义及常驻资源测量通过后才进入M2。代码部署仍先实际SDK合成预检与私密回退；发布包采用单个压缩流传输，并保留逐文件清单校验。
