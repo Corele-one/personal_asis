@@ -81,7 +81,7 @@ async def main():
             runtime.state.startup_until=previous
 
     selected=sys.argv[2:] or [m.name for m in MODELS]
-    if selected==['--router-context']:
+    if selected in (['--router-context'], ['--native-time-route']):
         from astrbot_plugin_smart_router.llm_router import fingerprint,Failure
         async def counted_send(model,messages,tools,task):
             budget.execute('BEGIN IMMEDIATE')
@@ -90,10 +90,15 @@ async def main():
             token=budget.execute('INSERT INTO calls(model,started,status) VALUES(?,?,?)',
                 (model.name,time.time(),'sending')).lastrowid
             budget.execute('COMMIT')
+            started=time.monotonic()
             try:
                 response=await runtime.send(model,messages,tools,task)
                 budget.execute('UPDATE calls SET status=? WHERE id=?',('completed',token))
-                reports.append(dict(model=model.name,task=task,status='completed'))
+                usage=getattr(response,'usage',None)
+                reports.append(dict(model=model.name,task=task,status='completed',
+                    seconds=round(time.monotonic()-started,2),
+                    input_tokens=(usage.input_other+usage.input_cached) if usage else None,
+                    output_tokens=getattr(usage,'output',None)))
                 return response
             except BaseException as error:
                 failure=classify_error(error)
@@ -103,18 +108,33 @@ async def main():
                 raise
         runtime.router.transport=counted_send
         runtime.state.startup_until=0
-        messages=[dict(role='system',content='这是合成历史压缩验收，不含真人资料。最终只回复“检查完成”。')]
-        for i in range(12):
-            messages.extend([dict(role='user',content='合成资料：学习内容需要保留出处、疑问和进展。'*220+str(i)),
-                             dict(role='assistant',content='合成历史回应')])
-        messages.append(dict(role='user',content='请只回复“检查完成”。'))
+        if selected==['--native-time-route']:
+            from astrbot.core.agent.message import TextPart
+            reminder=TextPart(text='<system_reminder>Current datetime: synthetic</system_reminder>')
+            messages=[dict(role='user',content=[dict(type='text',text='用Gemma 你好'),reminder.model_dump()])]
+            test_name='native_time_route'
+        else:
+            messages=[dict(role='system',content='这是合成历史压缩验收，不含真人资料。最终只回复“检查完成”。')]
+            for i in range(12):
+                messages.extend([dict(role='user',content='合成资料：学习内容需要保留出处、疑问和进展。'*220+str(i)),
+                                 dict(role='assistant',content='合成历史回应')])
+            messages.append(dict(role='user',content='请只回复“检查完成”。'))
+            test_name='router_context'
         before=fingerprint(messages)
         try:
-            response=await runtime.router.generate(messages,None,scope='synthetic-live-compaction')
-            reports.append(dict(test='router_context',passed=bool(response.completion_text),
+            if test_name=='native_time_route':
+                virtual=provider.SmartProvider(dict(id='asis_router/auto',type='asis_smart_router',model='auto'),{})
+                response=await virtual.text_chat(contexts=messages,extra_user_content_parts=[reminder],
+                    model='auto|synthetic-native-time-route')
+                passed=(response.role!='err' and getattr(response,'asis_router_model','')=='gemma-4-26b-a4b-it'
+                    and bool(response.completion_text))
+            else:
+                response=await runtime.router.generate(messages,None,scope='synthetic-live-compaction')
+                passed=bool(response.completion_text)
+            reports.append(dict(test=test_name,passed=passed,
                 original_unchanged=fingerprint(messages)==before))
         except Exception as error:
-            reports.append(dict(test='router_context',passed=False,error=classify_error(error).kind,
+            reports.append(dict(test=test_name,passed=False,error=classify_error(error).kind,
                 original_unchanged=fingerprint(messages)==before))
     elif selected==['--tool']:
         class Probe(FunctionTool):

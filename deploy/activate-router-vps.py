@@ -87,6 +87,19 @@ def main(stage):
     shutil.copytree(stage,release)
     try:
         run('sudo','systemctl','stop','astrbot.service')
+        # Recovery evidence only: rollback must never replace new chat, Life
+        # records, or quota consumption with one of these snapshots.
+        for source,name in ((data/'data_v4.db','chat-before.sqlite3'),
+                (metadata.parent/'router.sqlite3','router-before.sqlite3'),
+                (Path('/home/mac/.local/share/personal-asis-life/life.sqlite3'),'life-before.sqlite3')):
+            if source.exists():
+                before=sqlite3.connect(source.as_uri()+'?mode=ro',uri=True)
+                try:
+                    snapshot=sqlite3.connect(backup/name)
+                    try:before.backup(snapshot)
+                    finally:snapshot.close()
+                finally:before.close()
+                (backup/name).chmod(0o600)
         # Copy the owning configuration, leaving defaults and other sessions untouched.
         from astrbot.core.umop_config_router import UmopConfigRouter
         router=UmopConfigRouter.__new__(UmopConfigRouter);router.umop_to_conf_id=routes
@@ -100,6 +113,9 @@ def main(stage):
                 enable=True,model=model,key=[''],max_context_tokens=0,
                 modalities=['text','image','audio','tool_use'])
             if entry['id'] not in ids:cfg['provider'].append(entry)
+            else:
+                existing=next(p for p in cfg['provider'] if p.get('id')==entry['id'])
+                existing['max_context_tokens']=0
         from astrbot_plugin_smart_router.llm_router import NATIVE_CONTEXT_SETTINGS
         owner_cfg['provider_settings'].update(NATIVE_CONTEXT_SETTINGS,
             default_provider_id='asis_router/auto',fallback_chat_models=[],
