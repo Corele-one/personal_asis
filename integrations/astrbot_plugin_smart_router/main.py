@@ -11,7 +11,7 @@ from .model_display import model_emoji, display_reply
 from .conversation_memory import ConversationMemory
 
 
-@register('smart_router', 'Personal Asis', '免费额度优先的原生模型路由', '1.0.0')
+@register('smart_router', 'Personal Asis', '免费额度优先的原生模型路由', '1.1.0')
 class SmartRouterPlugin(Star):
     def __init__(self, context: Context):
         super().__init__(context)

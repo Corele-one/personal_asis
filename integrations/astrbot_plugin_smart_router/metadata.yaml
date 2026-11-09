@@ -1,6 +1,6 @@
 name: astrbot_plugin_smart_router
 display_name: Personal Asis Smart LLM Router
 desc: 本人私聊免费模型分流、持久额度冷却和单次生成回退
-version: 1.0.0
+version: 1.1.0
 author: Personal Asis
 repo: ""
