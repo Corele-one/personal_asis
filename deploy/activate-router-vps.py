@@ -107,16 +107,17 @@ def main(stage):
         previous_meta=mapping.get(previous,{})
         current=data/'config'/previous_meta.get('path','')
         owner_cfg=json.loads(current.read_text(encoding='utf-8-sig')) if current.is_file() else json.loads(json.dumps(cfg))
+        from astrbot_plugin_smart_router.llm_router import NATIVE_CONTEXT_SETTINGS, NATIVE_HISTORY_CAP
         ids={p.get('id') for p in cfg['provider']}
         for model in ('auto','complex','summary'):
             entry=dict(id='asis_router/'+model,type='asis_smart_router',provider_type='chat_completion',
-                enable=True,model=model,key=[''],max_context_tokens=0,
+                enable=True,model=model,key=[''],max_context_tokens=NATIVE_HISTORY_CAP,
                 modalities=['text','image','audio','tool_use'])
             if entry['id'] not in ids:cfg['provider'].append(entry)
             else:
                 existing=next(p for p in cfg['provider'] if p.get('id')==entry['id'])
-                existing['max_context_tokens']=0
-        from astrbot_plugin_smart_router.llm_router import NATIVE_CONTEXT_SETTINGS
+                existing['max_context_tokens']=NATIVE_HISTORY_CAP
+        owner_cfg['provider_settings'].pop('fallback_max_context_tokens', None)
         owner_cfg['provider_settings'].update(NATIVE_CONTEXT_SETTINGS,
             default_provider_id='asis_router/auto',fallback_chat_models=[],
             request_max_retries=1,streaming_response=False)

@@ -12,7 +12,7 @@ from astrbot.core.provider.entities import LLMResponse
 from astrbot.core.provider.register import register_provider_adapter
 from astrbot.core.provider.sources.gemini_source import ProviderGoogleGenAI
 from astrbot.core.provider.sources.openai_source import ProviderOpenAIOfficial
-from .llm_router import Router, State, Failure, classify_error, MODELS, fingerprint
+from .llm_router import Router, State, Failure, classify_error, MODELS, fingerprint, NATIVE_HISTORY_CAP
 
 _context = None
 _runtime = None
@@ -179,6 +179,7 @@ def runtime():
 class SmartProvider(Provider):
     def __init__(self, provider_config, provider_settings):
         super().__init__(provider_config, provider_settings)
+        self.provider_config['max_context_tokens'] = NATIVE_HISTORY_CAP
         self.set_model(provider_config.get('model','auto'))
 
     def get_current_key(self):

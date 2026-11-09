@@ -29,6 +29,7 @@ async def main():
     for profile in ('auto','complex','summary'):
         p=adapter.SmartProvider(dict(type='asis_smart_router',id='asis_router/'+profile,model=profile),{})
         assert p.get_model()==profile and await p.get_models()==['auto','complex','summary']
+        assert p.provider_config['max_context_tokens']==core.NATIVE_HISTORY_CAP
 
     # Real SDK repeats extra_user_content_parts on follow-up tool steps. They
     # are already in contexts and must never become a new metadata-only turn.
@@ -58,7 +59,8 @@ async def main():
     from astrbot.core.agent.message import Message
     from astrbot.core.astr_main_agent import MainAgentBuildConfig
     native=MainAgentBuildConfig(tool_call_timeout=10,**core.NATIVE_CONTEXT_SETTINGS)
-    manager=ContextManager(ContextConfig(max_context_tokens=native.fallback_max_context_tokens,
+    assert native.fallback_max_context_tokens==128000  # unknown config fields are not a reliable off switch
+    manager=ContextManager(ContextConfig(max_context_tokens=p.provider_config['max_context_tokens'],
         enforce_max_turns=native.max_context_length))
     original_history=[Message(role='user',content='synthetic history '*50000),
                       Message(role='assistant',content='synthetic result')]

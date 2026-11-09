@@ -21,8 +21,13 @@ from zoneinfo import ZoneInfo
 
 PACIFIC = ZoneInfo('America/Los_Angeles')
 SUMMARY_POLICY = '20261109-current-turn-and-receipts'
+# Virtual Provider capacity is a history buffer, not a real model window.
+# AstrBot removes unknown fallback settings and replaces zero with 128K. A
+# supported positive capacity keeps native truncation away from stored history;
+# all actual requests are independently bounded to 32K/64K below.
+NATIVE_HISTORY_CAP = 2_147_483_647
 NATIVE_CONTEXT_SETTINGS = dict(context_limit_reached_strategy='truncate_by_turns',
-    llm_compress_provider_id='', fallback_max_context_tokens=0, max_context_length=-1)
+    llm_compress_provider_id='', max_context_length=-1)
 SUMMARY_RULES = (
     '压缩历史资料，最多1500字，按“当前任务与目标、已证实事实与用户偏好、已完成操作、'
     '待处理/失败/待核对”组织。优先保留最后未回答的问题、当前草稿要点和下一步。'
