@@ -51,6 +51,21 @@ async def main():
     assert core.task_for(captured[0])=='simple' and core.task_for(captured[1])=='complex'
     assert len(captured[2])==1 and len(captured[2][0]['content'])==2
 
+    # Native context management must leave full stored history alone. These
+    # same settings are applied to the owner profile by activation.
+    from astrbot.core.agent.context.config import ContextConfig
+    from astrbot.core.agent.context.manager import ContextManager
+    from astrbot.core.agent.message import Message
+    from astrbot.core.astr_main_agent import MainAgentBuildConfig
+    native=MainAgentBuildConfig(tool_call_timeout=10,**core.NATIVE_CONTEXT_SETTINGS)
+    manager=ContextManager(ContextConfig(max_context_tokens=native.fallback_max_context_tokens,
+        enforce_max_turns=native.max_context_length))
+    original_history=[Message(role='user',content='synthetic history '*50000),
+                      Message(role='assistant',content='synthetic result')]
+    manager.compressor=AsyncMock(side_effect=AssertionError('native_compression_must_be_disabled'))
+    assert await manager.process(original_history) is original_history
+    assert manager.compressor.await_count==0
+
     # Owner hooks and status are exercised without reading the real binding.
     with tempfile.TemporaryDirectory(prefix='asis-router-owner-sdk-') as temp:
         root=Path(temp)
@@ -194,7 +209,7 @@ async def main():
     adapter._runtime=None
     print(json.dumps(dict(sdk='passed',virtual_providers=3,single_shot_transport=True,
         signature_and_usage=True,owner_hooks=True,source_disable_refresh=True,extra_parts_replay=False,
-        native_loops=loops,real_generations=0,platform_messages=0)))
+        native_loops=loops,native_history_untouched=True,real_generations=0,platform_messages=0)))
 
 
 asyncio.run(main())

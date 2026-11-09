@@ -293,11 +293,60 @@ class RoutingTests(unittest.IsolatedAsyncioTestCase):
         router=Router(self.state,self.send)
         await router.generate(messages,None,scope='incremental')
         self.calls.clear()
-        messages.extend([dict(role='assistant',content='本次回应'),dict(role='user',content='新增资料。'*700)])
+        messages.extend([dict(role='assistant',content='本次回应'),dict(role='user',content='新增资料。'*2200)])
         await router.generate(messages,None,scope='incremental')
         summary_call=next(c for c in self.calls if c[3]=='summary')
         self.assertIn('已有摘要',summary_call[1][-1]['content'])
         self.assertLess(estimate(summary_call[1]),20000)
+
+    async def test_working_summary_does_not_roll_on_every_tool_step(self):
+        messages = self.messages('旧问题')
+        for i in range(12):
+            messages.extend([dict(role='assistant', content='旧答复'),
+                             dict(role='user', content='历史内容。' * 650 + str(i))])
+        messages.append(dict(role='user', content='总结这些材料'))
+        router = Router(self.state, self.send)
+        before = fingerprint(messages)
+        await router.generate(messages, None, scope='stable')
+        self.calls.clear()
+        tool_step = [dict(role='assistant', tool_calls=[dict(id='pair', function=dict(name='read'))]),
+                     dict(role='tool', tool_call_id='pair', content='新的必要材料。' * 150)]
+        await router.generate(messages + tool_step, None, scope='stable')
+        self.assertEqual(len(self.calls), 1)
+        self.assertEqual(self.calls[0][1][-2:], tool_step)
+        self.assertEqual(fingerprint(messages), before)
+
+    async def test_summary_policy_invalidates_unsafe_old_cache_without_resetting_usage(self):
+        self.state.save_summary('old', 'old', 1, '不可靠的旧完成状态')
+        self.state.reserve(BY_NAME['gemini-3.5-flash-lite'], 100, 'daily')
+        Router(self.state, self.send)
+        self.assertEqual(self.state.db.execute('SELECT count(*) FROM summaries').fetchone()[0], 0)
+        self.assertEqual(self.state.db.execute('SELECT count(*) FROM attempts').fetchone()[0], 1)
+
+    async def test_legacy_native_error_summary_is_not_sent_as_history(self):
+        messages = [dict(role='user', content='Our previous history conversation summary: 这次必要材料超过可处理范围，请缩小范围后再试。'),
+                    dict(role='assistant', content='Acknowledged the summary of our previous conversation history.'),
+                    dict(role='user', content='继续当前任务')]
+        before = fingerprint(messages)
+        await Router(self.state, self.send).generate(messages, None)
+        sent = self.calls[-1][1]
+        self.assertIn('更早原文尚未恢复', sent[0]['content'])
+        self.assertEqual(sent[-1], messages[-1])
+        self.assertNotIn('Our previous history conversation summary:', json.dumps(sent))
+        self.assertEqual(fingerprint(messages), before)
+
+    async def test_summary_carries_failed_receipts_without_claiming_success(self):
+        messages = []
+        for i in range(12):
+            messages.extend([dict(role='user', content='历史内容。' * 650 + str(i)),
+                dict(role='assistant', tool_calls=[dict(id=str(i), function=dict(name='life_organize'))]),
+                dict(role='tool', tool_call_id=str(i), content='explicit_life_entry_required')])
+        messages.append(dict(role='user', content='当前任务'))
+        await Router(self.state, self.send).generate(messages, None)
+        summary_call = next(c for c in self.calls if c[3] == 'summary')
+        self.assertIn('助手说已完成不等于工具成功', summary_call[1][0]['content'])
+        self.assertIn('工具拒绝证据', self.calls[-1][1][0]['content'])
+        self.assertIn('explicit_life_entry_required', self.calls[-1][1][0]['content'])
 
     async def test_large_history_token_estimation_scales_linearly(self):
         from unittest.mock import patch

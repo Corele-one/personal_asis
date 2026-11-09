@@ -100,9 +100,10 @@ def main(stage):
                 enable=True,model=model,key=[''],max_context_tokens=0,
                 modalities=['text','image','audio','tool_use'])
             if entry['id'] not in ids:cfg['provider'].append(entry)
-        owner_cfg['provider_settings'].update(default_provider_id='asis_router/auto',fallback_chat_models=[],
-            request_max_retries=1,max_context_length=-1,llm_compress_provider_id='asis_router/summary',
-            streaming_response=False)
+        from astrbot_plugin_smart_router.llm_router import NATIVE_CONTEXT_SETTINGS
+        owner_cfg['provider_settings'].update(NATIVE_CONTEXT_SETTINGS,
+            default_provider_id='asis_router/auto',fallback_chat_models=[],
+            request_max_retries=1,streaming_response=False)
         mapping[profile_id]=dict(path=profile_file,name='Personal Asis Smart Router')
         routes[origin]=profile_id
         db.execute('BEGIN IMMEDIATE')
