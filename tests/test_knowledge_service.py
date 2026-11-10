@@ -76,6 +76,9 @@ class KnowledgeServiceTests(unittest.IsolatedAsyncioTestCase):
         page = (await self.call('shared_knowledge', dict(action='list', source='study',
             start='2026-11-10', end='2026-11-10')))['result']
         ref = page['results'][0]
+        self.assertEqual(ref['read_arguments'], dict(action='read', origin=ref['origin'],
+            collection=ref['collection'], record_id=ref['id'], expected_version=ref['version'],
+            expected_hash=ref['content_hash']))
         result = await self.call('shared_knowledge', dict(action='read', origin=ref['origin'],
             collection=ref['collection'], record_id=ref['id'], expected_version=ref['version'],
             expected_hash=ref['content_hash']))
@@ -131,6 +134,22 @@ class KnowledgeServiceTests(unittest.IsolatedAsyncioTestCase):
         async with self.service.lock:
             result = await self.call('shared_knowledge', dict(action='status'))
         self.assertEqual(result['error'], 'knowledge_busy_no_retry')
+
+    async def test_invalid_catalog_arguments_explain_repair_without_source_writes(self):
+        self.put()
+        before = self.store.path.read_bytes()
+        for args, code in [
+            (dict(action='list', source='study', limit=50), 'shared_invalid_query'),
+            (dict(action='list', source='study', collection='notes'), 'knowledge_invalid_request'),
+        ]:
+            result = await self.call('shared_knowledge', args)
+            self.assertEqual(result['error'], code)
+            self.assertIn('hint', result)
+            self.assertNotIn('合成电路', result['hint'])
+        valid = await self.call('shared_knowledge', dict(action='list', source='study', limit=12))
+        self.assertEqual(len(valid['result']['results']), 1)
+        self.assertEqual(before, self.store.path.read_bytes())
+        self.assertEqual(self.calls, [])
 
     async def test_no_paths_shell_sql_or_identity_arguments(self):
         for args in (dict(action='status', path='/etc/passwd'), dict(action='list', user_id='other'),

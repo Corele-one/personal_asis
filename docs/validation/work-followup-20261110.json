@@ -1,0 +1,201 @@
+{
+  "study": {
+    "state": "failed_or_unknown_no_retry",
+    "mode": "study",
+    "error": "generation_unknown_no_retry"
+  },
+  "study-revised": {
+    "state": "completed_needs_review",
+    "mode": "study",
+    "configured_model": "mimo-v2.6-flash",
+    "elapsed_ms": 211347,
+    "generation_steps": 12,
+    "tools": [
+      "tool-ToolSearch",
+      "tool-ToolSearch",
+      "tool-run_script",
+      "tool-run_script",
+      "tool-Bash",
+      "tool-Bash",
+      "tool-Bash",
+      "tool-Bash",
+      "tool-run_script",
+      "tool-run_script",
+      "tool-run_script"
+    ],
+    "terminal_used": true,
+    "complete_read_observed": false,
+    "answer_present": true,
+    "automatic_retry": false,
+    "private_messages_printed": false
+  },
+  "missing": {
+    "state": "completed_needs_review",
+    "mode": "missing",
+    "configured_model": "mimo-v2.6-flash",
+    "elapsed_ms": 89614,
+    "generation_steps": 6,
+    "tools": [
+      "tool-personal-knowledge__shared_knowledge",
+      "tool-personal-knowledge__wucai_read",
+      "tool-personal-knowledge__shared_knowledge",
+      "tool-personal-knowledge__wucai_read",
+      "tool-personal-knowledge__shared_knowledge"
+    ],
+    "terminal_used": false,
+    "complete_read_observed": false,
+    "answer_present": true,
+    "automatic_retry": false,
+    "private_messages_printed": false
+  },
+  "targeted": {
+    "state": "completed_needs_review",
+    "mode": "targeted",
+    "configured_model": "mimo-v2.6-flash",
+    "elapsed_ms": 57687,
+    "generation_steps": 4,
+    "tools": [
+      "tool-personal-knowledge__shared_knowledge",
+      "tool-personal-knowledge__shared_knowledge",
+      "tool-personal-knowledge__shared_knowledge"
+    ],
+    "terminal_used": false,
+    "complete_read_observed": true,
+    "answer_present": true,
+    "automatic_retry": false,
+    "private_messages_printed": false,
+    "review": {
+      "final_chars": 1161,
+      "source_locator_cited": true,
+      "sync_date_mentioned": true,
+      "replica_boundary_mentioned": true,
+      "denies_realtime": true,
+      "denies_learning_inference": true,
+      "discovery_errors": 1
+    }
+  },
+  "resources": {
+    "samples": 117,
+    "span_seconds": 597.48,
+    "health_failures": 0,
+    "health_p95_ms": 62.51,
+    "health_max_ms": 2618.46,
+    "available_min_mib": 214.76,
+    "swap_max_mib": 835.45,
+    "units": {
+      "alma-work": {
+        "final_state": "active",
+        "pid_changed": false,
+        "mem_max_mib": 319.71,
+        "swap_max_mib": 128.0,
+        "oom_kill_delta": 0
+      },
+      "astrbot": {
+        "final_state": "active",
+        "pid_changed": false,
+        "mem_max_mib": 53.12,
+        "swap_max_mib": 543.77,
+        "oom_kill_delta": 0
+      },
+      "personal-asis-dashboard": {
+        "final_state": "active",
+        "pid_changed": false,
+        "mem_max_mib": 7.36,
+        "swap_max_mib": 16.25,
+        "oom_kill_delta": 0
+      },
+      "personal-asis-knowledge": {
+        "final_state": "active",
+        "pid_changed": true,
+        "mem_max_mib": 24.66,
+        "swap_max_mib": 15.46,
+        "oom_kill_delta": 0
+      },
+      "personal-asis-memory": {
+        "final_state": "inactive",
+        "pid_changed": false,
+        "mem_max_mib": 0.0,
+        "swap_max_mib": 0.0,
+        "oom_kill_delta": 0
+      }
+    },
+    "psi_some_avg10_max": 11.97,
+    "psi_full_avg10_max": 11.23
+  },
+  "date": "2026-11-10",
+  "timezone": "Asia/Shanghai",
+  "stage": "W2 followup and Work short observation",
+  "status": "bounded_source_task_passed_broad_task_and_long_residency_not_accepted",
+  "deployment": {
+    "release": "20261110_052018_381435",
+    "archive_sha256": "3b68f96fa8c15b9632e073c5430717a2fd9af6f2148e3229ccb069b86d03e375",
+    "rollback": "/var/backups/personal-asis-knowledge/20261110_052018_381435",
+    "knowledge_only_restarted": true,
+    "chat_work_dashboard_restarted": false,
+    "native_mcp_reconnected": true
+  },
+  "changes": [
+    "Catalog includes ready-to-copy read_arguments bound to version/hash.",
+    "Explicit catalog examples, limit 1..30 and action-specific fields.",
+    "Allowlisted validation errors carry static repair hints, without source or upstream details."
+  ],
+  "regression": {
+    "full": {
+      "run": 898,
+      "passed": 889,
+      "skipped": 9
+    },
+    "knowledge": {
+      "run": 9,
+      "passed": 9
+    },
+    "router": {
+      "run": 37,
+      "passed": 37
+    },
+    "local_before_final_knowledge_change": {
+      "run": 514,
+      "passed": 513,
+      "skipped": 1
+    }
+  },
+  "actual_mcp": {
+    "tools": 2,
+    "complete_study_read": true,
+    "pages": 1,
+    "characters": 2608,
+    "write_actions_denied": true
+  },
+  "freshness": {
+    "replica_received_at": "2026-11-08T12:30:26.503452+00:00",
+    "age_at_check_hours_approx": 41,
+    "refreshed": false,
+    "scope": "Existing approved VPS replica only; no Mac connection or pi_sync.",
+    "chat_work_version_contract": "Both consume the same origin-owned shared replica and version/hash fields; no live cross-end user chat comparison performed."
+  },
+  "limitations": [
+    "Resource observations cover 10 minutes, not normal-day/complex concurrency acceptance.",
+    "Initial study and missing tasks overlapped; not a controlled serial or capacity benchmark.",
+    "Targeted task overlapped only the end of resource window.",
+    "Revised broad task had compacted/incomplete PTC output and used terminal despite requested tool-only path; not accepted.",
+    "Bounded task still had one initial native discovery error before recovery.",
+    "Targeted and broad prompts differ; latency cannot establish before/after speed improvement.",
+    "Real source in sampled first 30 Study parts was one part; multi-page semantics verified synthetically (3 pages), not by this real model task.",
+    "Native generation steps are not exact provider HTTP counts or invoice amounts.",
+    "Final answer structure, source citation and boundary language checked; content usefulness still needs phone user acceptance."
+  ],
+  "untouched": {
+    "mem0": "inactive_disabled",
+    "personal_memory_initialized": false,
+    "journal_writes": 0,
+    "calendar_writes": 0,
+    "feishu_test_messages": 0,
+    "source_accounts_added": 0
+  },
+  "next": [
+    "Natural broad source selection and compacted tool output handling.",
+    "Longer representative Work residency and diagnosis of prior health stall.",
+    "Phone user acceptance including Mac powered off.",
+    "C3 changes against recorded 14-case baseline, then actual SDK/model comparison."
+  ]
+}

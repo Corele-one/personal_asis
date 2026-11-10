@@ -1,0 +1,241 @@
+{
+  "date": "2026-11-10",
+  "stage": "C3 baseline, before changes",
+  "synthetic_transport": true,
+  "real_model_calls": 0,
+  "production_config_changed": false,
+  "source": "src/personal_asis/llm_router.py",
+  "cases": [
+    {
+      "case": "greeting",
+      "expected_task": "simple",
+      "actual_task": "simple",
+      "expected_requested_model": "",
+      "actual_requested_model": "",
+      "task_pass": true,
+      "explicit_pass": true,
+      "simulated_calls": [
+        {
+          "model": "gemma-4-26b-a4b-it",
+          "task": "simple"
+        }
+      ],
+      "policy_elapsed_ms": 2.9
+    },
+    {
+      "case": "short_tool_request",
+      "expected_task": "daily",
+      "actual_task": "daily",
+      "expected_requested_model": "",
+      "actual_requested_model": "",
+      "task_pass": true,
+      "explicit_pass": true,
+      "simulated_calls": [
+        {
+          "model": "gemini-3.5-flash-lite",
+          "task": "daily"
+        }
+      ],
+      "policy_elapsed_ms": 0.468
+    },
+    {
+      "case": "source_lookup",
+      "expected_task": "daily",
+      "actual_task": "daily",
+      "expected_requested_model": "",
+      "actual_requested_model": "",
+      "task_pass": true,
+      "explicit_pass": true,
+      "simulated_calls": [
+        {
+          "model": "gemini-3.5-flash-lite",
+          "task": "daily"
+        }
+      ],
+      "policy_elapsed_ms": 0.425
+    },
+    {
+      "case": "architecture",
+      "expected_task": "daily",
+      "actual_task": "daily",
+      "expected_requested_model": "",
+      "actual_requested_model": "",
+      "task_pass": true,
+      "explicit_pass": true,
+      "simulated_calls": [
+        {
+          "model": "gemini-3.5-flash-lite",
+          "task": "daily"
+        }
+      ],
+      "policy_elapsed_ms": 0.447
+    },
+    {
+      "case": "deep_read",
+      "expected_task": "complex",
+      "actual_task": "complex",
+      "expected_requested_model": "",
+      "actual_requested_model": "",
+      "task_pass": true,
+      "explicit_pass": true,
+      "simulated_calls": [
+        {
+          "model": "gemini-3.8-flash",
+          "task": "complex"
+        }
+      ],
+      "policy_elapsed_ms": 0.41
+    },
+    {
+      "case": "weekly_explicit",
+      "expected_task": "complex",
+      "actual_task": "complex",
+      "expected_requested_model": "",
+      "actual_requested_model": "",
+      "task_pass": true,
+      "explicit_pass": true,
+      "simulated_calls": [
+        {
+          "model": "gemini-3.8-flash",
+          "task": "complex"
+        }
+      ],
+      "policy_elapsed_ms": 0.4
+    },
+    {
+      "case": "weekly_natural",
+      "expected_task": "complex",
+      "actual_task": "daily",
+      "expected_requested_model": "",
+      "actual_requested_model": "",
+      "task_pass": false,
+      "explicit_pass": true,
+      "simulated_calls": [
+        {
+          "model": "gemini-3.5-flash-lite",
+          "task": "daily"
+        }
+      ],
+      "policy_elapsed_ms": 0.444
+    },
+    {
+      "case": "compare_papers",
+      "expected_task": "complex",
+      "actual_task": "daily",
+      "expected_requested_model": "",
+      "actual_requested_model": "",
+      "task_pass": false,
+      "explicit_pass": true,
+      "simulated_calls": [
+        {
+          "model": "gemini-3.5-flash-lite",
+          "task": "daily"
+        }
+      ],
+      "policy_elapsed_ms": 0.396
+    },
+    {
+      "case": "explicit_deepseek",
+      "expected_task": "daily",
+      "actual_task": "daily",
+      "expected_requested_model": "deepseek-v4-flash",
+      "actual_requested_model": "deepseek-v4-flash",
+      "task_pass": true,
+      "explicit_pass": true,
+      "simulated_calls": [
+        {
+          "model": "deepseek-v4-flash",
+          "task": "daily"
+        }
+      ],
+      "policy_elapsed_ms": 0.422
+    },
+    {
+      "case": "explicit_mimo",
+      "expected_task": "daily",
+      "actual_task": "daily",
+      "expected_requested_model": "mimo-v2.6-flash",
+      "actual_requested_model": "mimo-v2.6-flash",
+      "task_pass": true,
+      "explicit_pass": true,
+      "simulated_calls": [
+        {
+          "model": "mimo-v2.6-flash",
+          "task": "daily"
+        }
+      ],
+      "policy_elapsed_ms": 0.383
+    },
+    {
+      "case": "polite_model_switch",
+      "expected_task": "daily",
+      "actual_task": "daily",
+      "expected_requested_model": "mimo-v2.6-flash",
+      "actual_requested_model": "",
+      "task_pass": true,
+      "explicit_pass": false,
+      "simulated_calls": [
+        {
+          "model": "gemini-3.5-flash-lite",
+          "task": "daily"
+        }
+      ],
+      "policy_elapsed_ms": 0.401
+    },
+    {
+      "case": "mention_only",
+      "expected_task": "daily",
+      "actual_task": "daily",
+      "expected_requested_model": "",
+      "actual_requested_model": "",
+      "task_pass": true,
+      "explicit_pass": true,
+      "simulated_calls": [
+        {
+          "model": "gemini-3.5-flash-lite",
+          "task": "daily"
+        }
+      ],
+      "policy_elapsed_ms": 0.399
+    },
+    {
+      "case": "quoted_switch",
+      "expected_task": "simple",
+      "actual_task": "simple",
+      "expected_requested_model": "",
+      "actual_requested_model": "",
+      "task_pass": true,
+      "explicit_pass": true,
+      "simulated_calls": [
+        {
+          "model": "gemma-4-26b-a4b-it",
+          "task": "simple"
+        }
+      ],
+      "policy_elapsed_ms": 0.432
+    },
+    {
+      "case": "time_wrapper",
+      "expected_task": "complex",
+      "actual_task": "complex",
+      "expected_requested_model": "",
+      "actual_requested_model": "",
+      "task_pass": true,
+      "explicit_pass": true,
+      "simulated_calls": [
+        {
+          "model": "gemini-3.8-flash",
+          "task": "complex"
+        }
+      ],
+      "policy_elapsed_ms": 0.406
+    }
+  ],
+  "passed": 11,
+  "total": 14,
+  "limitations": [
+    "Policy timing is not provider latency.",
+    "Fresh local quota state does not represent online balances.",
+    "Expected quality tiers are acceptance targets; do not claim answer quality from tier names."
+  ]
+}

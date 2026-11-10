@@ -34,7 +34,8 @@ def string(description='', **kwargs):
 
 
 SHARED_FIELDS = {
-    'action': string(enum=['status', 'search', 'list', 'coverage', 'read']),
+    'action': string('目录list/search/coverage不要传origin、collection、record_id；这些仅用于read。',
+        enum=['status', 'search', 'list', 'coverage', 'read']),
     'query': string('主题关键词；按日期回顾用list，不用空search。', maxLength=200),
     'source': string(enum=['', 'life', 'study', 'wucai', 'xiaohongshu', 'astrbot', 'annotation']),
     'account': string(maxLength=100), 'start': string('YYYY-MM-DD，含首尾，最多31天'),
@@ -51,6 +52,9 @@ SHARED_FIELDS = {
 }
 TOOLS = [
     dict(name='shared_knowledge', description=(
+        '列Study目录示例：{"action":"list","source":"study","limit":12}，无需日期。'
+        'limit只能1–30，不能50；search必须有query。目录查询不要传origin/collection/record_id。'
+        '首次读取原样复制目录条目的read_arguments；后续原样复制next_arguments，不猜参数或凭证。'
         '只读已有获准共享资料副本：Life/Study笔记、五彩/小红书已采集资料及生活记录。'
         '按主题search，按日期先list/coverage，再逐页read。目录覆盖不等于正文已读；'
         '必须复制next_arguments直到read_complete=true，才可声称读完整来源。'
@@ -113,7 +117,12 @@ class KnowledgeService:
                     counts=store.status()['counts'], memory_connected=False,
                     notice='仅最近同步的获准副本；不连接Mac，不表示平台历史完整或本人已完成。')
             if action in ('search', 'list', 'coverage') and not token:
-                return query.query(action=action, **args)
+                value = query.query(action=action, **args)
+                for item in value['results']:
+                    item['read_arguments'] = dict(action='read', origin=item['origin'],
+                        collection=item['collection'], record_id=item['id'],
+                        expected_version=item['version'], expected_hash=item['content_hash'])
+                return value
             if action != 'read':
                 raise ValueError('knowledge_read_only_action_required')
             if (args.get('origin') not in ('mac', 'vps') or args.get('collection') not in
@@ -206,8 +215,16 @@ class KnowledgeService:
                 return dict(result=value)
             except (ValueError, TypeError, KeyError) as error:
                 code = str(error)
-                return dict(error=code if re.fullmatch(r'(?:knowledge|shared|wucai)_[a-z0-9_]+', code)
-                    else 'knowledge_invalid_request')
+                if not re.fullmatch(r'(?:knowledge|shared|wucai)_[a-z0-9_]+', code):
+                    code = 'knowledge_invalid_request'
+                hints = {
+                    'shared_invalid_query': '目录limit必须为1–30整数，默认12；列Study可用 action=list,source=study,limit=12；无需日期。',
+                    'knowledge_invalid_request': '目录list/search/coverage仅接受query/source/account/start/end/capture_source/cursor/limit；不要传origin、collection或record_id。read按next_arguments继续。',
+                    'knowledge_invalid_source_reference': '首次read必须包含目录条目的origin、collection、record_id；原样复制read_arguments，不用标题或路径作为record_id。后续复制next_arguments。',
+                }
+                if code in hints:
+                    return dict(error=code, hint=hints[code])
+                return dict(error=code)
             except Exception:
                 # Never expose source paths, SQL, CLI output or upstream errors.
                 return dict(error='knowledge_unavailable_no_retry')
