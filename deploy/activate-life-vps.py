@@ -32,6 +32,9 @@ def main(stage):
         isolation_preflight = run('/home/mac/.local/share/uv/tools/astrbot/bin/python',
             str(stage/'validate-chat-isolation-sdk.py'), str(stage))
         print(isolation_preflight.stdout.strip().splitlines()[-1],flush=True)
+        ui_preflight = run('/home/mac/.local/share/uv/tools/astrbot/bin/python',
+            str(stage/'validate-chat-ui-sdk.py'), str(stage))
+        print(ui_preflight.stdout.strip().splitlines()[-1],flush=True)
         if (stage/'validate-router-sdk.py').exists():
             router_preflight=run('/home/mac/.local/share/uv/tools/astrbot/bin/python',
                 str(stage/'validate-router-sdk.py'),str(stage))

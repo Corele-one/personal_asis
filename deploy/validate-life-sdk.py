@@ -16,7 +16,44 @@ tools = ('organize', 'life_context', 'recent', 'workspace_tool', 'track', 'progr
 assert all(callable(getattr(module.LifeAgent, name)) for name in tools)
 
 
+async def verify_chat_platform_readiness():
+    import lark_oapi as lark
+    bridge_module = importlib.import_module('astrbot_plugin_life_agent.chat_interaction')
+    with tempfile.TemporaryDirectory(prefix='asis-c6-ready-') as tmp:
+        handler = lark.EventDispatcherHandler.builder('','').register_p2_im_message_receive_v1(lambda e:None).build()
+        original = dict(handler._processorMap)
+        context = types.SimpleNamespace(conversation_manager=object(),get_platform_inst=lambda _:None)
+        bot = types.SimpleNamespace(home=Path(tmp),context=context,
+            config=dict(owner_id='synthetic-owner',owner_platform='synthetic'),calendar_pending={})
+        bridge = bridge_module.ChatInteraction(bot)
+        try:
+            assert not bridge.install() and bridge.attach_status=='waiting_for_platform'
+            ordinary='chat 和 Work 的职责是什么？'
+            assert not await bridge.command(types.SimpleNamespace(message_str=ordinary,
+                message_obj=types.SimpleNamespace(message_str=ordinary)))
+            context.get_platform_inst=lambda _:types.SimpleNamespace(lark_api=object(),
+                event_handler=handler,client=types.SimpleNamespace(_event_handler=handler))
+            await module.LifeAgent.chat_platform_ready(types.SimpleNamespace(chat_interaction=bridge))
+            assert bridge.installed and bridge.attach_status=='attached'
+            assert bridge.install()
+            assert 'p2.card.action.trigger' in handler._callback_processor_map
+            assert 'p2.application.bot.menu_v6' in handler._processorMap
+            assert all(handler._processorMap[k] is v for k,v in original.items())
+        finally:
+            await bridge.close()
+            assert handler._processorMap==original and not handler._callback_processor_map
+
+
 async def fixture():
+    await verify_chat_platform_readiness()
+    assert list(inspect.signature(module.LifeAgent.chat_platform_ready).parameters) == ['self']
+    installed = []
+    def attach():
+        installed.append(True)
+        return True
+    deferred = types.SimpleNamespace(installed=[], install=attach, attach_status='synthetic')
+    await module.LifeAgent.chat_platform_ready(types.SimpleNamespace(chat_interaction=deferred))
+    assert installed == [True]  # native platform-loaded dispatcher invokes bound handler without arguments
     async def forbidden(*args, **kwargs):
         raise AssertionError('real_transport_forbidden_in_sdk_fixture')
     with tempfile.TemporaryDirectory(prefix='asis-sdk-synthetic-') as tmp:
@@ -329,7 +366,7 @@ async def fixture():
 
 
 asyncio.run(fixture())
-print(json.dumps(dict(actual_sdk_import=True,
+print(json.dumps(dict(actual_sdk_import=True,c6_deferred_platform_sdk=True,
     synthetic_date_enumeration_and_versioned_source_pagination=True, registered_tool_methods=len(tools),
     synthetic_bedtime_retired=True,
     synthetic_owner_tracking=True, synthetic_goal=True, synthetic_prompt=True,

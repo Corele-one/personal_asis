@@ -24,7 +24,7 @@ from .life_intake import entry_content, reminder_request
 from .model_display import display_reply
 
 
-@register('life_agent', 'Personal Asis', '主动记录、习惯学习、共享资料与用户纠正', '2.13.0')
+@register('life_agent', 'Personal Asis', '主动记录、习惯学习、共享资料与用户纠正', '2.14.0')
 class LifeAgent(Star):
     def __init__(self, context: Context, config):
         super().__init__(context)
@@ -48,6 +48,7 @@ class LifeAgent(Star):
         self.calendar_write_scope_available = False
         self.calendar_writes_active = False
         self.calendar_pending = {}
+        self.chat_interaction = None
 
     def owner(self, event):
         return (bool(self.config.get('owner_id')) and event.is_private_chat()
@@ -72,6 +73,16 @@ class LifeAgent(Star):
         return '已记下睡前自述。晚安。' if recorded else '晚安。睡前记录未保存。'
 
     async def initialize(self):
+        from .chat_interaction import ChatInteraction
+        try:
+            self.chat_interaction = ChatInteraction(self)
+            callbacks = self.chat_interaction.install()
+            logger.info('life_agent Chat UI initialized; card callbacks=%s', callbacks)
+        except Exception:
+            if self.chat_interaction:
+                await self.chat_interaction.close()
+            self.chat_interaction = None
+            logger.warning('life_agent Chat UI unavailable; ordinary Chat preserved')
         from .background_isolation import BackgroundIsolation
         self.background_isolation = BackgroundIsolation(self.context, self.config)
         self.background_isolation.install()
@@ -82,6 +93,17 @@ class LifeAgent(Star):
         self.feedback_worker = asyncio.create_task(self.feedback_loop())
         if self.config.get('google_calendar_enabled', False):
             await self.start_calendar_mcp()
+
+    @filter.on_platform_loaded()
+    async def chat_platform_ready(self):
+        ui = getattr(self, 'chat_interaction', None)
+        if ui and not ui.installed:
+            try:
+                attached = ui.install()
+                logger.info('life_agent Chat UI platform ready; callbacks=%s; state=%s',
+                    attached, ui.attach_status)
+            except Exception:
+                logger.warning('life_agent Chat UI deferred attachment unavailable')
 
     async def start_calendar_mcp(self):
         """Connect to the upstream Google Calendar MCP; keep its account tool private."""
@@ -145,6 +167,8 @@ class LifeAgent(Star):
             logger.warning('life_agent Google Calendar MCP unavailable; no account or calendar details logged')
 
     async def terminate(self):
+        if self.chat_interaction:
+            await self.chat_interaction.close()
         if self.attention_worker:
             self.attention_worker.cancel()
             with contextlib.suppress(asyncio.CancelledError):
@@ -233,6 +257,19 @@ class LifeAgent(Star):
         if not self.owner(event):
             return
         text = event.message_str.strip()
+        ui = getattr(self, 'chat_interaction', None)
+        if ui and hasattr(event, 'bot'):
+            try:
+                if await ui.command(event):
+                    return
+                if text and not text.startswith('/') and not re.match(r'^life(?:\s|$)', text):
+                    ui.start(event)
+            except Exception:
+                logger.warning('chat_ui unavailable; no action replay')
+                if text in ('/', '帮助', '/帮助', '/help', '/chat') or text.startswith('/chat '):
+                    event.stop_event()
+                    yield event.plain_result('会话操作结果未知，请用 /chat 核对；不会自动重复执行。')
+                    return
         calendar_command = re.fullmatch(r'/life calendar (confirm|cancel) ([0-9a-f]{16})', text, re.I)
         if calendar_command:
             action, code = calendar_command.group(1).lower(), calendar_command.group(2).lower()
@@ -245,6 +282,8 @@ class LifeAgent(Star):
                     reply = '没有找到这项待确认操作；它可能已过期或已处理。'
             else:
                 reply = await self._confirm_calendar_write(event, code)
+            if ui:
+                await ui.resolve_pending()
             yield event.plain_result(reply)
             event.stop_event()
             return
@@ -284,6 +323,14 @@ class LifeAgent(Star):
     async def instructions(self, event: AstrMessageEvent, req):
         if not self.owner(event):
             return
+        ui = getattr(self, 'chat_interaction', None)
+        if ui and hasattr(event, 'bot') and not (event.get_extra('cron_job') or event.get_extra('background_task_result')):
+            try:
+                ui.start(event)
+                event.set_extra('chat_ui_cid', await ui.ui.current(event.unified_msg_origin))
+            except Exception:
+                logger.warning('chat_ui status unavailable; generation preserved')
+        req.system_prompt += '\n正文需要表情时直接使用Unicode Emoji，不输出[捂脸]等占位符；引用和代码保持原样。'
         self.supply_life_tools(event, req)
         if event.get_extra('cron_job') or event.get_extra('background_task_result'):
             req.system_prompt += '\n本轮是有来源的后台任务通知，不是本人新消息。交付时标注任务来源，只报告真实回执；不写入当前Chat历史，不从通知生成生活自述。'
@@ -633,6 +680,27 @@ class LifeAgent(Star):
             response.completion_text = message
             response.reasoning_content = None
             response.result_chain = MessageChain().message(message)
+
+    @filter.on_llm_response(priority=-105)
+    async def chat_attribution(self, event: AstrMessageEvent, response):
+        ui = getattr(self, 'chat_interaction', None)
+        if ui and self.owner(event) and not (event.get_extra('cron_job') or event.get_extra('background_task_result')):
+            with contextlib.suppress(Exception):
+                await ui.attributed(event, response)
+
+    @filter.on_decorating_result(priority=-900)
+    async def chat_display(self, event: AstrMessageEvent):
+        ui = getattr(self, 'chat_interaction', None)
+        if ui and self.owner(event):
+            with contextlib.suppress(Exception):
+                ui.decorate(event)
+
+    @filter.after_message_sent()
+    async def chat_delivered(self, event: AstrMessageEvent):
+        ui = getattr(self, 'chat_interaction', None)
+        if ui and self.owner(event):
+            with contextlib.suppress(Exception):
+                await ui.finish(event)
 
     @filter.on_decorating_result()
     async def guard_article_delivery(self, event: AstrMessageEvent):

@@ -1,0 +1,169 @@
+{
+  "date": "2026-11-10",
+  "timezone": "Asia/Shanghai",
+  "stage": "Chat C6 first interaction batch",
+  "status": "deployed_console_published_natural_phone_acceptance_pending",
+  "life_version": "2.14.0",
+  "feishu_app_version": "1.0.1",
+  "features": [
+    "Help/session card via /, 帮助, /帮助, /help, /chat",
+    "Native new/switch and non-destructive archive/restore; expected current conversation, owner and TTL bound actions",
+    "Latest actual model receipt; personal shared memory off and old-chat recall participation explicitly unobserved",
+    "Message/phase reaction receipts with no retry of unknown results; display-only known emoji conversion"
+  ],
+  "deployment": {
+    "initial_release": "20261110_135145_019270",
+    "final_release": "20261110_143458_004719",
+    "rollback": "20261110_143458_004719",
+    "final_archive_sha256": "22f477755cdbed0dd14918ac7607366982492aa373d66f216328fb95bb39799b",
+    "cold_platform_ready_hook_registered": true,
+    "actual_final_callback_attach_ready": true,
+    "observed_ready_at": "2026-11-10T14:42:37.031+08:00",
+    "initial_bundle_restarted_chat_and_dashboard": true,
+    "followups_only_restarted_chat": true,
+    "code_and_configuration_checkpoint_prepared_before_maintenance": true,
+    "rollback_restores_code_and_link_not_data": true
+  },
+  "tests": {
+    "full": {
+      "run": 910,
+      "passed": 901,
+      "skipped": 9
+    },
+    "local": {
+      "run": 526,
+      "passed": 525,
+      "skipped": 1
+    },
+    "life": {
+      "run": 154,
+      "passed": 154
+    },
+    "chat_ui": {
+      "run": 12,
+      "passed": 12
+    },
+    "actual_installed_sdk": {
+      "native_temporary_conversations": true,
+      "next_turn_resolves_selected_conversation": true,
+      "old_history_preserved": true,
+      "foreign_owner_denied": true,
+      "duplicate_delivery_claims": true,
+      "unknown_native_commit_not_reissued": true,
+      "reaction_request_builders": true,
+      "unknown_reaction_not_reissued": true,
+      "deferred_platform_none_then_ready": true,
+      "platform_hook_zero_argument_signature": true,
+      "original_message_processor_preserved_and_uninstall_restores_maps": true,
+      "ordinary_chat_work_discussion_does_not_open_panel": true,
+      "synthetic_callback_decoded_by_installed_sdk": true
+    }
+  },
+  "proof_reuse": {
+    "native_conversation_proof_release": "20261110_135145_019270",
+    "conversation_core_sha256": "03ef793cee702dd550400755b0c5c90d50b2a5ca63e95c0b63554c5ec056311c",
+    "reuse_explicitly_selected_and_installer_checks_core_hash": true,
+    "new_deferred_attach_and_ordinary_message_checks_rerun_in_installed_life_sdk": true,
+    "router_and_background_isolation_sources_unchanged": true,
+    "conversation_core_unchanged_across_followups": true
+  },
+  "console": {
+    "existing_chrome_session": true,
+    "console_app_matches_installed_bot": true,
+    "persistent_menus": [
+      "会话",
+      "帮助",
+      "归档"
+    ],
+    "menu_events": [
+      "asis_chat_sessions",
+      "asis_chat_help",
+      "asis_chat_archived"
+    ],
+    "added_subscription": "application.bot.menu_v6",
+    "existing_card_callback": "card.action.trigger",
+    "existing_persistent_callback_transport_retained": true,
+    "version": "1.0.1",
+    "status": "Released",
+    "approval": "Approved",
+    "scope_changes": "None",
+    "availability_unchanged": true,
+    "external_group_and_external_direct_messages_remain_disabled": true,
+    "app_secret_read_or_displayed": false
+  },
+  "preservation": {
+    "release": "20261110_143458_004719",
+    "manifest_files": 81,
+    "live_plugin_files": 30,
+    "all_live_plugin_files_match": true,
+    "old_records": 206,
+    "old_conversations": 9,
+    "old_attempts": 208,
+    "records_preserved": true,
+    "native_history_prefixes_preserved": true,
+    "calls_preserved": true,
+    "original_config_files": 13,
+    "changed_config_files": 1,
+    "native_sdk_files_preserved": true,
+    "target_router_profile_preserved": true,
+    "second_startup_config_diff_paths": [
+      "dashboard/password",
+      "dashboard/pbkdf2_password"
+    ],
+    "work_and_knowledge_pids_preserved": true,
+    "units": {
+      "astrbot": {
+        "MainPID": "791995",
+        "MemoryCurrent": "224550912",
+        "MemorySwapCurrent": "296861696",
+        "ActiveState": "active"
+      },
+      "personal-asis-dashboard": {
+        "MainPID": "789747",
+        "MemoryCurrent": "1564672",
+        "MemorySwapCurrent": "11120640",
+        "ActiveState": "active"
+      },
+      "alma-work": {
+        "MainPID": "776806",
+        "MemoryCurrent": "289546240",
+        "MemorySwapCurrent": "134074368",
+        "ActiveState": "active"
+      },
+      "personal-asis-knowledge": {
+        "MainPID": "786844",
+        "MemoryCurrent": "430080",
+        "MemorySwapCurrent": "18468864",
+        "ActiveState": "active"
+      },
+      "personal-asis-memory": {
+        "MainPID": "0",
+        "MemoryCurrent": "[not set]",
+        "MemorySwapCurrent": "[not set]",
+        "ActiveState": "inactive"
+      }
+    }
+  },
+  "limitations": [
+    "Initial initialize-time callback attachment was false because the platform was not created; final platform-loaded callback attached successfully.",
+    "One expanded SDK probe was stopped during swap-page waiting; another temporary database probe reached its 300-second deadline before changing services.",
+    "A bounded Chat maintenance window was then used; unchanged conversation-core acceptance was reused, and changed readiness code was checked in the existing SDK fixture.",
+    "One non-target native profile hash changed during initial startup. The initial snapshot retained only hashes, so exact first-startup field differences cannot be reconstructed.",
+    "Later full private configuration snapshots show differences only in dashboard/password and dashboard/pbkdf2_password; this profile meets the native startup-password-refresh condition. No old configuration was forced back.",
+    "Real phone card layout, real menu/button clicks and reaction permissions are still user acceptance, not replaced by SDK mocks or console publishing.",
+    "Streaming chunks are not rewritten; a prompt requests direct Unicode output. Complete replies alone use display conversion.",
+    "A cancelled native generation without an after-send event may leave handling state; cancellation behavior still needs real use acceptance.",
+    "C6 serializes its own actions, but native conversation APIs do not supply cross-process compare-and-swap.",
+    "This is not a normal-day resource or latency acceptance."
+  ],
+  "no_actions": {
+    "real_model_requests": 0,
+    "feishu_test_messages_sent": 0,
+    "calendar_writes": 0,
+    "obsidian_writes": 0,
+    "pi_sync": false,
+    "new_source_or_provider": false,
+    "work_or_knowledge_restarted": false,
+    "mem0_enabled": false
+  }
+}

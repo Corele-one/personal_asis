@@ -2,6 +2,8 @@
 
 ## 当前架构（2026-10-20）
 
+- 2026-11-10本人要求将C6提前。Chat增加本人私聊会话／帮助卡、新建／切换／非删除归档、原生SDK有范围的按钮与菜单事件适配、独立reaction收据和保守的展示层Emoji转换。旧会话由AstrBot原生管理，按钮绑定预期当前会话、5分钟有效且执行占位；未知不重放。卡片显示最近实际模型，个人共享记忆仍停用，回查参与未观测。固定菜单已按同一既有机器人发布1.0.1，无新增scope；使用平台就绪Hook挂接，真实按钮／reaction权限及手机UI另验，不发送飞书测试消息，不把本批当作整个C6通过。见[交互说明](docs/chat-interaction.md)。
+
 用户本轮明确调整为 Mac Pi 与 VPS AstrBot 协作，取代此前“仅本机开发、远程冻结”和“VPS 只做中转”的路线。先读本文件、[总规格](SPECIFICATION.md)、[领域词汇](CONTEXT.md)、[当前状态](docs/project-status.md)和任务相关文档。AGENTS.md 只保留读取入口。
 
 - Mac 使用原生 Pi，负责 Obsidian Study／Life、WUCAI、小红书。模型、会话、原生工具和资源发现由 Pi 管理；不强制经过旧 Conversation Core。资料原库保留，不迁移整库。

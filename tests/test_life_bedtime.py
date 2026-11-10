@@ -39,7 +39,7 @@ class PluginTests(unittest.TestCase):
         modules['astrbot.api'].logger = types.SimpleNamespace(warning=lambda *a: None)
         modules['astrbot.api.event'].filter = types.SimpleNamespace(event_message_type=decorator,
             EventMessageType=types.SimpleNamespace(ALL=1), on_llm_request=decorator, on_llm_response=decorator,
-            on_decorating_result=decorator, command=decorator, llm_tool=decorator)
+            on_decorating_result=decorator, after_message_sent=decorator, on_platform_loaded=decorator, command=decorator, llm_tool=decorator)
         modules['astrbot.api.event'].AstrMessageEvent = object
         class Chain:
             def message(self, text): return text

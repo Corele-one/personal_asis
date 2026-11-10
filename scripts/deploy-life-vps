@@ -35,9 +35,9 @@ with tempfile.TemporaryDirectory(prefix='asis-life-release-') as tmp:
     shutil.copyfile(repo/'src/personal_asis/life_bedtime.py',plugin/'life_bedtime.py')
     shutil.copyfile(repo/'src/personal_asis/bootstrap_context.py',plugin/'bootstrap_context.py')
     shutil.copyfile(repo/'src/personal_asis/personal_profile.py',plugin/'personal_profile.py')
-    for name in ('chat_status.py','life_images.py','life_intake.py','life_feedback.py','life_tracking.py','life_attention.py','life_briefing.py','learning_history.py','shared_store.py','shared_query.py','shared_sources.py','shared_cli.py','data_policy.py','wucai_cli.py','wucai_fulltext.py','wucai_chat.py'):
+    for name in ('chat_ui.py','chat_status.py','life_images.py','life_intake.py','life_feedback.py','life_tracking.py','life_attention.py','life_briefing.py','learning_history.py','shared_store.py','shared_query.py','shared_sources.py','shared_cli.py','data_policy.py','wucai_cli.py','wucai_fulltext.py','wucai_chat.py'):
         shutil.copyfile(repo/'src/personal_asis'/name,plugin/name)
-    for name in ('personal-asis-dashboard.service','activate-life-vps.py','rollback-life-vps.py','validate-life-sdk.py','validate-chat-isolation-sdk.py'):
+    for name in ('personal-asis-dashboard.service','activate-life-vps.py','rollback-life-vps.py','validate-life-sdk.py','validate-chat-isolation-sdk.py','validate-chat-ui-sdk.py'):
         shutil.copyfile(repo/'deploy'/name,stage/name)
     manifest={str(f.relative_to(stage)):hashlib.sha256(f.read_bytes()).hexdigest() for f in stage.rglob('*') if f.is_file()}
     (stage/'manifest.json').write_text(json.dumps(manifest))
@@ -50,7 +50,7 @@ with tempfile.TemporaryDirectory(prefix='asis-life-release-') as tmp:
         subprocess.run([*ssh,'tar -xzf - -C /home/mac/personal-asis-v2-incoming'],stdin=payload,check=True)
     remote='/home/mac/personal-asis-v2-incoming/'+stage.name
     if args.check_only:
-        for check in ('validate-life-sdk.py','validate-chat-isolation-sdk.py','validate-router-sdk.py'):
+        for check in ('validate-life-sdk.py','validate-chat-isolation-sdk.py','validate-chat-ui-sdk.py','validate-router-sdk.py'):
             subprocess.run([*ssh, '/home/mac/.local/share/uv/tools/astrbot/bin/python '+remote+'/'+check+' '+remote],check=True)
         print(json.dumps(dict(staged=remote)),flush=True)
     else:

@@ -10,7 +10,7 @@ REMOTE_MODULES = frozenset('personal_asis.' + name for name in (
     'feishu', 'agent_feishu', 'feishu_cards', 'pwa',
 ))
 LOCAL_TESTS = (
-    'test_local_isolation', 'test_memory_authority', 'test_memory_service', 'test_memory_client', 'test_conversation', 'test_conversation_tools', 'test_answer_policy',
+    'test_chat_ui', 'test_local_isolation', 'test_memory_authority', 'test_memory_service', 'test_memory_client', 'test_conversation', 'test_conversation_tools', 'test_answer_policy',
     'test_conversation_terminal', 'test_conversation_web', 'test_pi_terminal', 'test_native_pi', 'test_native_sources',
     'test_bootstrap_context', 'test_personal_profile', 'test_profile_sync', 'test_life', 'test_life_layout', 'test_learning_tracker', 'test_learning_history', 'test_learning_calendar', 'test_life_feedback', 'test_life_bedtime', 'test_life_tracking', 'test_life_dashboard', 'test_overview', 'test_xhs_accounts', 'test_reading_library', 'test_shared_sync', 'test_shared_query', 'test_work', 'test_runtime', 'test_agent', 'test_agent_roles',
     'test_role_context', 'test_work_history', 'test_local_review', 'test_life_briefing', 'test_wucai_cli', 'test_wucai_fulltext', 'test_wucai_chat', 'test_life_review', 'test_life_images', 'test_media_files', 'test_whisper_audio',
