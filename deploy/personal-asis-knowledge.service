@@ -1,0 +1,44 @@
+[Unit]
+Description=Read-only personal knowledge business interface
+After=local-fs.target
+
+[Service]
+Type=simple
+User=mac
+Group=alma-work
+Environment=HOME=/home/mac
+Environment=PYTHONPATH=/opt/personal-asis-knowledge/current/src
+Environment=PYTHONDONTWRITEBYTECODE=1
+EnvironmentFile=/etc/personal-asis-knowledge.conf
+ExecStart=/usr/bin/python3 -m personal_asis.knowledge_service --uid ${WORK_UID}
+RuntimeDirectory=personal-asis-knowledge
+RuntimeDirectoryMode=0750
+UMask=0007
+StandardOutput=null
+StandardError=null
+Restart=no
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/mac/.local/share/personal-asis-life/wucai-fulltext
+InaccessiblePaths=-/home/mac/.ssh -/home/mac/astrbot/data/cmd_config.json -/home/mac/.local/share/personal-asis-life/life.sqlite3
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+MemoryAccounting=yes
+MemoryHigh=64M
+MemoryMax=96M
+MemorySwapMax=32M
+CPUQuota=25%
+TasksMax=16
+LimitNOFILE=256
+LimitCORE=0
+
+[Install]
+WantedBy=multi-user.target

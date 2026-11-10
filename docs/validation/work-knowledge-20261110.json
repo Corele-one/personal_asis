@@ -1,0 +1,139 @@
+{
+  "date": "2026-11-10",
+  "timezone": "Asia/Shanghai",
+  "stage": "Work W2 read-only common business tools",
+  "status": "deployed_engineering_accepted_phone_natural_task_pending",
+  "user_sequence": "W2 first, then comprehensive M1 acceptance",
+  "deployment": {
+    "release": "20261110_025849_734992",
+    "archive_sha256": "c9d00603b3fd51022ba473cf3ad95bd030aa77fc6d010d56767b17a4dcdbab5d",
+    "release_assets_match_workspace": 13,
+    "service": "personal-asis-knowledge.service",
+    "transport": "private Unix socket with Linux SO_PEERCRED, fixed alma-work UID",
+    "tcp_or_public_listener_added": false,
+    "mcp_name": "personal_knowledge",
+    "native_tool_ids": [
+      "personal-knowledge__shared_knowledge",
+      "personal-knowledge__wucai_read"
+    ],
+    "official_mcp_sdk": "1.32.2",
+    "native_mcp_status": "connected",
+    "work_health": "ok",
+    "chat_or_dashboard_restarted": false,
+    "chat_14_config_files_unchanged": true,
+    "chat_dashboard_original_pids_preserved": true,
+    "shared_replica_file_hash_unchanged": true,
+    "first_attempt": "release directory permission prevented loading; corrected to root-owned 0755 before actual acceptance",
+    "activation_gate": "actual Work UID must successfully list both tools before installer accepts release",
+    "rollback": "prepared; restore initial pre-install checkpoint after removing native MCP; full rollback not exercised"
+  },
+  "work_baseline_recovery": {
+    "health_was_timing_out_before_installation": true,
+    "python_child_and_node_observed_in_disk_sleep": true,
+    "root_cause": "unknown",
+    "user_confirmed_no_running_task_to_preserve": true,
+    "work_restarted_once": true,
+    "health_and_encrypted_relay_recovered": true,
+    "database_or_history_restored_from_backup": false,
+    "unknown_task_replayed": false,
+    "long_term_stability_claimed": false
+  },
+  "synthetic": {
+    "new_business_interface_tests": {"run": 8, "passed": 8},
+    "local_agent_suite": {"run": 497, "passed": 496, "skipped": 1},
+    "full_repository": {"run": 880, "passed": 871, "skipped": 9},
+    "coverage": [
+      "client identity and arbitrary paths/SQL/identity arguments rejected",
+      "all shared annotation and platform write operations rejected",
+      "SQLite read-only connection cannot modify or create source replica",
+      "multi-part actual-read receipts, source versions and hashes",
+      "withdrawal and expiration stop further reading",
+      "new/expired read sessions cannot inherit prior read coverage",
+      "WuCai skipping to last page does not claim full read",
+      "busy/failure explicit and not automatically retried"
+    ],
+    "syntax_and_git_diff_check": "passed"
+  },
+  "actual_sdk_and_native_registration": {
+    "official_mcp_client_and_stdio_server": true,
+    "work_uid_listed_two_tools": true,
+    "native_alma_registered_and_discovered_two_tools": true,
+    "write_tool_calls_denied": true,
+    "wrong_unix_peer_uid_denied": true,
+    "work_service_mount_namespace_direct_private_access_denied": {
+      "chat_configuration": true,
+      "shared_database": true,
+      "wucai_credentials": true
+    },
+    "missing_broker_explicit_error_and_zero_discovered_tools": true,
+    "broker_restart_and_recovery_read": true
+  },
+  "real_source_reads": {
+    "study": {"complete": true, "pages": 1, "characters": 2608, "version_hash_bound": true},
+    "wucai": {"metadata": true, "saved_clipping_complete": true, "pages": 1, "characters": 5260},
+    "private_titles_urls_and_body_committed_or_printed": false,
+    "new_source_or_account": false,
+    "source_replica_refreshed_or_modified": false,
+    "mac_connected": false
+  },
+  "real_model": {
+    "configured_and_selected_model": "mimo-v2.6-flash",
+    "tasks": [
+      {"name": "natural native tool discovery and readonly status", "passed": true,
+       "generation_steps": 3, "visible_tools": ["ToolSearch", "run_script"],
+       "mcp_called_via_native_almaTool": true, "terminal_used": false,
+       "original_harness_assertion": "missed native PTC wrapper; verified existing completed run without regenerating"},
+      {"name": "plain answer while actual business service stopped", "passed": true,
+       "generation_steps": 1, "elapsed_ms": 14316, "tools": 0}
+    ],
+    "primary_generation_steps": 4,
+    "native_saved_message_usage": [
+      {"input_tokens": 10153, "output_tokens": 179, "cached_input_tokens": 0},
+      {"input_tokens": 20466, "output_tokens": 103, "cached_input_tokens": 19648}
+    ],
+    "usage_limitations": "Native saved-message usage; exact provider HTTP count, auxiliary tool-selection calls and invoice amount not independently observed.",
+    "private_source_bodies_sent_to_model": false,
+    "automatic_request_retry": false
+  },
+  "isolation": {
+    "actual_business_service_stop_start": true,
+    "chat_and_dashboard_pids_unchanged_during_stop": true,
+    "work_real_model_plain_answer_while_broker_stopped": true,
+    "astrbot_runtime_imported": false,
+    "live_database_copied": false,
+    "credentials_given_to_work_or_new_node": false,
+    "mem0_connected_or_initialized": false,
+    "native_personal_memory_enabled": false,
+    "model_defaults_or_work_resource_limits_changed": false,
+    "journal_calendar_platform_write_tools_added": false,
+    "obsidian_writes": 0,
+    "calendar_writes": 0,
+    "feishu_test_messages": 0,
+    "pi_sync_executed": false
+  },
+  "resources": {
+    "broker_observed_current_bytes_before_offline_test": 26230784,
+    "broker_observed_peak_bytes_before_offline_test": 27774976,
+    "broker_memory_high_mib": 64,
+    "broker_memory_max_mib": 96,
+    "broker_swap_max_mib": 32,
+    "broker_cpu_percent": 25,
+    "work_final_observed_memory_bytes": 333873152,
+    "work_final_observed_swap_bytes": 83283968,
+    "limits_raised": false,
+    "not_a_day_long_or_concurrent_capacity_acceptance": true
+  },
+  "pending": [
+    "iPhone user natural source-based task acceptance",
+    "longer residency and complex/concurrent resource validation",
+    "root cause of pre-existing Work health stall",
+    "M1 comprehensive memory acceptance, service and initialization",
+    "W3 memory client and W5 overview adapter"
+  ],
+  "reproducible_checks": [
+    "tests/test_knowledge_service.py",
+    "deploy/knowledge-mcp/validate.mjs",
+    "deploy/validate-work-knowledge.mjs --verify-existing",
+    "deploy/validate-work-knowledge.mjs --offline"
+  ]
+}

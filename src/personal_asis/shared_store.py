@@ -91,10 +91,21 @@ def validate_change(value, peer):
 
 
 class SharedStore:
-    def __init__(self, path, node):
+    def __init__(self, path, node, *, read_only=False):
         if node not in NODES:
             raise ValueError('shared_invalid_node')
         self.path, self.node = safe_path(path), node
+        if read_only:
+            # Business clients reuse the query rules without creating, migrating,
+            # chmodding or refreshing the source replica.
+            self.db = sqlite3.connect(self.path.as_uri()+'?mode=ro', uri=True, timeout=1)
+            self.db.row_factory = sqlite3.Row
+            self.db.execute('PRAGMA query_only=ON')
+            if (self.db.execute('PRAGMA user_version').fetchone()[0] != 1
+                    or self.get_meta('node') != node):
+                self.close()
+                raise ValueError('shared_readonly_replica_not_ready')
+            return
         self.path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
         fd = os.open(self.path, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
         os.close(fd)
