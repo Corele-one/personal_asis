@@ -1,5 +1,5 @@
 """Bounded real model + native tool loop over synthetic sources, no platform I/O."""
-import asyncio,contextlib,json,logging,os,sys,tempfile,time
+import asyncio,contextlib,json,logging,os,resource,sys,tempfile,time
 from pathlib import Path
 from types import SimpleNamespace as NS
 from unittest.mock import patch
@@ -16,7 +16,8 @@ from astrbot.core.cron.events import CronMessageEvent
 from astrbot.core.platform.message_session import MessageSession
 
 async def main():
- home=Path.home()/'.local/share/personal-asis-memory-pilot';receipt=home/'chat-c2-live-read.json'
+ home=Path.home()/('.local/share/personal-asis-memory-acceptance' if '--m1' in sys.argv else '.local/share/personal-asis-memory-pilot')
+ receipt=home/('chat-coexistence.json' if '--m1' in sys.argv else 'chat-c2-live-read.json')
  if receipt.exists():print(receipt.read_text());return
  cfg=json.loads((Path.home()/'astrbot/data/cmd_config.json').read_text(encoding='utf-8-sig'))
  binding=json.loads((Path.home()/'astrbot/data/config/astrbot_plugin_life_agent_config.json').read_text(encoding='utf-8-sig'))
@@ -77,6 +78,6 @@ async def main():
  except BaseException as error:
   report.update(status='failed_or_unknown',error_type=type(error).__name__)
  finally:
-  await runtime.close();receipt.write_text(json.dumps(report));print(json.dumps(report))
+  await runtime.close();report['peak_rss_mib']=round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/1024,2);receipt.write_text(json.dumps(report));print(json.dumps(report))
 
 asyncio.run(main())

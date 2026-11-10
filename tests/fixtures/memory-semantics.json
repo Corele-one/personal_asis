@@ -1,5 +1,7 @@
 {
-  "status": "acceptance_contract_not_implemented_or_passed",
+  "status": "implemented_see_dated_M1_evidence",
+  "evidence": "docs/validation/mem0-m1-20261110.json",
+  "implementation": ["tests/test_memory_authority.py", "tests/test_memory_service.py", "tests/test_memory_client.py", "deploy/validate-memory-m1.py"],
   "cases": [
     {
       "id": "stable_preference",

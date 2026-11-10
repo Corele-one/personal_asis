@@ -1,0 +1,46 @@
+[Unit]
+Description=Independent Mem0 authority - synthetic M1 acceptance only
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=asis-memory
+Group=asis-memory
+Environment=HOME=/var/lib/personal-asis-memory
+Environment=PYTHONPATH=/opt/personal-asis-memory/current/src
+Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=MEM0_TELEMETRY=false
+Environment=OPENBLAS_NUM_THREADS=1
+Environment=OMP_NUM_THREADS=1
+ExecStart=/opt/personal-asis-memory/venv/bin/python -m personal_asis.memory_service
+WorkingDirectory=/var/lib/personal-asis-memory
+UMask=0077
+StandardOutput=null
+StandardError=journal
+Restart=no
+TimeoutStopSec=100
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/lib/personal-asis-memory
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+MemoryAccounting=yes
+MemoryHigh=160M
+MemoryMax=192M
+MemorySwapMax=128M
+CPUQuota=40%
+TasksMax=32
+LimitNOFILE=512
+LimitCORE=0
+
+[Install]
+WantedBy=multi-user.target
