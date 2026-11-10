@@ -1,0 +1,70 @@
+{
+  "date": "2026-11-10",
+  "timezone": "Asia/Shanghai",
+  "stage": "Work swap headroom",
+  "user_request": "Increase Work headroom while keeping serial ordinary tasks usable",
+  "engineering_choice": {
+    "memory_high_mib": 320,
+    "memory_max_mib": 384,
+    "node_heap_mib": 256,
+    "swap_before_mib": 128,
+    "swap_after_mib": 192,
+    "physical_ram_increased": false
+  },
+  "authorization": "User requested more Work allocation; chosen increase is 64MiB swap buffer.",
+  "before_observation": {
+    "work_memory_current_bytes": 317648896,
+    "work_swap_current_bytes": 134000640,
+    "work_pressure_some_avg10": 0,
+    "work_pressure_full_avg10": 0,
+    "work_memory_max_events": 0,
+    "work_oom_kill_events": 0,
+    "host_available_kib": 215388,
+    "host_swap_free_kib": 412252,
+    "processes": [
+      "Alma supervisor",
+      "Alma Node server",
+      "knowledge MCP Node bridge"
+    ]
+  },
+  "applied": {
+    "pid_before": 776806,
+    "pid_after": 776806,
+    "restarted": false,
+    "persistent_unit_updated": true,
+    "runtime_property_updated": true,
+    "unit_sha256": "39d89c74c8ece48ab1173265fd1c5a783e57a0592f4996305360c9240cdd4579",
+    "backup": "/var/backups/alma-work-resources/20261110_150439"
+  },
+  "validation": {
+    "systemd_unit_verify": true,
+    "deployment_regression_passed": 3,
+    "health_probes": 7,
+    "health_successes": 7,
+    "health_ms": [
+      109.81,
+      2.96,
+      3.14,
+      3.26,
+      3.17,
+      2.9,
+      2.99
+    ]
+  },
+  "limits": [
+    "Quota is a ceiling, not reserved memory or a speed improvement.",
+    "No new real model task or phone workload was generated for this adjustment.",
+    "A single large context, heavy program or parallel subtasks can still exceed practical headroom.",
+    "Serial ordinary tasks are the current recommended use, not a new enforced task restriction."
+  ],
+  "unchanged": {
+    "chat_work_process_restarts": 0,
+    "model_context_and_heap_limits": true,
+    "cpu_limit": true,
+    "work_credentials_and_pairing": true,
+    "mem0_still_disabled": true,
+    "obsidian_writes": 0,
+    "calendar_writes": 0,
+    "feishu_test_messages": 0
+  }
+}
