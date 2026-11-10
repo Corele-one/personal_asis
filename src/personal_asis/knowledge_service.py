@@ -52,6 +52,10 @@ SHARED_FIELDS = {
 }
 TOOLS = [
     dict(name='shared_knowledge', description=(
+        '本人个人资料的来源查询工具。问到“我之前/最近”、本人经历、学习进度、目标计划、'
+        '未完成事项，或需要结合本人背景给建议时，主动查询本工具；不必等本人点名数据库。'
+        '原生记忆和用户档案只是线索，涉及现状、变化或个人建议需核对相关来源。'
+        '普通寒暄、翻译和通用知识问答无须调用。先检索相关材料，按需阅读，不整库加载。'
         '列Study目录示例：{"action":"list","source":"study","limit":12}，无需日期。'
         'limit只能1–30，不能50；search必须有query。目录查询不要传origin/collection/record_id。'
         '首次读取原样复制目录条目的read_arguments；后续原样复制next_arguments，不猜参数或凭证。'

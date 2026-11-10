@@ -24,6 +24,30 @@ async def main():
     from astrbot.core.agent.message import TextPart
     from google.genai import types
 
+    # The native pipeline can retain default-profile fallback settings even
+    # when the owner's persisted profile has an empty list. Exercise that
+    # exact native helper with a nonempty list, not just the JSON setting.
+    from astrbot.core import astr_main_agent
+    from astrbot_plugin_smart_router.native_boundary import NativeBoundary
+    original_fallback = astr_main_agent._get_fallback_chat_providers
+    physical = adapter.SmartProvider(dict(type='asis_smart_router',
+        id='synthetic/physical', model='auto'), {})
+    virtual = adapter.SmartProvider(dict(type='asis_smart_router',
+        id='asis_router/auto', model='auto'), {})
+    fallback_context = NS(get_provider_by_id=lambda _: physical)
+    fallback_settings = dict(fallback_chat_models=['synthetic/physical'])
+    assert original_fallback(virtual, fallback_context, fallback_settings) == [physical]
+    boundary = NativeBoundary()
+    boundary.install()
+    boundary.install()
+    assert astr_main_agent._get_fallback_chat_providers(
+        virtual, fallback_context, fallback_settings) == []
+    unrelated = NS(provider_config={'id': 'synthetic/unrelated'})
+    assert astr_main_agent._get_fallback_chat_providers(
+        unrelated, fallback_context, fallback_settings) == [physical]
+    boundary.close()
+    assert astr_main_agent._get_fallback_chat_providers is original_fallback
+
     registered=importlib.import_module('astrbot.core.provider.register').provider_cls_map
     assert registered['asis_smart_router'].cls_type is adapter.SmartProvider
     for profile in ('auto','complex','summary'):
@@ -237,7 +261,8 @@ async def main():
             state.db.close()
     adapter._runtime=None
     print(json.dumps(dict(sdk='passed',virtual_providers=3,single_shot_transport=True,
-        signature_and_usage=True,owner_hooks=True,source_disable_refresh=True,extra_parts_replay=False,
+        signature_and_usage=True,owner_hooks=True,native_fallback_boundary=True,
+        source_disable_refresh=True,extra_parts_replay=False,
         native_loops=loops,native_history_untouched=True,real_generations=0,platform_messages=0)))
 
 

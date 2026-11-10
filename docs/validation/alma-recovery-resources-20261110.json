@@ -1,0 +1,46 @@
+{
+  "date": "2026-11-10",
+  "incident": {
+    "process_active": true,
+    "health_before": "timeout",
+    "memory_pressure_some_avg10": 97.86,
+    "memory_pressure_full_avg10": 80.63,
+    "cgroup_oom_kill": 0,
+    "diagnostic_on_stop": "v8_heap_exhausted"
+  },
+  "action": {
+    "isolated_restart": true,
+    "replayed_requests": false,
+    "user_authorized_resource_increase": true,
+    "backup": "/var/backups/alma-work/20261110-181910"
+  },
+  "current_limits_mib": {
+    "node_heap": 384,
+    "memory_high": 448,
+    "memory_max": 512,
+    "swap_max": 256
+  },
+  "verification": {
+    "health": "ok",
+    "relay": "connected",
+    "e2e_encryption": true,
+    "astrbot": "active",
+    "dashboard": "active",
+    "memory_bytes_sample": 365887488,
+    "swap_bytes_sample": 0,
+    "deployment_tests_passed": 3,
+    "real_model_calls": 0,
+    "platform_test_messages": 0,
+    "phone_reconnect_verified": false,
+    "long_term_stability_verified": false
+  },
+  "model_tags": {
+    "reported_missing_on_normal_reply": true,
+    "code_present": true,
+    "owner_router_enabled": true,
+    "recent_successful_model_attribution_present": true,
+    "root_cause": "native runner fallback bypassed Router after errors; observed asis_router/auto to google_gemini/gemini-3.6-flash",
+    "fix_deployed": true,
+    "validation": "router-native-boundary-20261110.json"
+  }
+}

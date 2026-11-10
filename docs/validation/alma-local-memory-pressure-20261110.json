@@ -1,0 +1,34 @@
+{
+  "date": "2026-11-10",
+  "observed_at": "2026-11-10T19:06:11+08:00",
+  "service_before": "active_unresponsive",
+  "health": "timeout",
+  "resources": {
+    "ram_bytes": 495431680,
+    "peak_bytes": 507650048,
+    "swap_bytes": 268230656,
+    "pressure_some_avg60": 98.8,
+    "pressure_full_avg60": 98.36,
+    "cgroup_oom_kill": 0
+  },
+  "task_evidence": {
+    "latest_user_turn": "continue",
+    "native_memory_enabled_by_user_task": true,
+    "native_memory_auto_summarize": true,
+    "native_memory_auto_retrieve": true,
+    "embedding_model": "__local__:multilingual-e5-small",
+    "local_model_file_bytes": 470268533,
+    "prior_input_tokens": 157226,
+    "agent_run_records": 0
+  },
+  "assessment": "Local embedding initialization is a stronger resource-pressure lead than the complexity of the latest continue request; exact allocation profile not captured. Prior larger cgroup limits did not resolve host capacity. Long context may add pressure but is not a proven sole cause.",
+  "action": "stopping unresponsive Work; preserve configuration, memory data, conversations and task receipts; await user choice before disabling explicitly enabled native memory",
+  "replayed_requests": false,
+  "stop_result": {
+    "stopped": true,
+    "graceful_stop_timed_out": true,
+    "systemd_sigkill_after_timeout": true,
+    "service_state": "failed_timeout_stopped",
+    "astrbot": "active"
+  }
+}

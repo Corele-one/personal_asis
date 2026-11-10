@@ -5,13 +5,15 @@ from pathlib import Path
 
 from astrbot.api.event import filter, AstrMessageEvent
 from astrbot.api.star import Star, Context, register
+from astrbot.api import logger
 from . import provider
 from .llm_router import fingerprint
 from .model_display import model_emoji, display_reply
 from .conversation_memory import ConversationMemory
+from .native_boundary import NativeBoundary
 
 
-@register('smart_router', 'Personal Asis', '免费额度优先的原生模型路由', '1.1.0')
+@register('smart_router', 'Personal Asis', '免费额度优先的原生模型路由', '1.1.2')
 class SmartRouterPlugin(Star):
     def __init__(self, context: Context):
         super().__init__(context)
@@ -26,6 +28,9 @@ class SmartRouterPlugin(Star):
                 and event.get_sender_id()==self.binding.get('owner_id'))
 
     async def initialize(self):
+        self.native_boundary = NativeBoundary()
+        self.native_boundary.install()
+        logger.info('router native fallback boundary attached')
         provider.runtime()  # one shared state and startup cooldown for all profiles
 
     @filter.on_llm_request(priority=-100)
@@ -131,6 +136,8 @@ class SmartRouterPlugin(Star):
                 provider.runtime().state.invalidate()
 
     async def terminate(self):
+        if getattr(self, 'native_boundary', None):
+            self.native_boundary.close()
         if provider._runtime is not None:
             await provider._runtime.close()
             provider._runtime = None

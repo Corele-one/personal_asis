@@ -1,0 +1,37 @@
+{
+  "date": "2026-11-10",
+  "request": "Add both Google embedding options, then user chose a single suitable model rather than incompatible spaces.",
+  "models_tested": [
+    {
+      "id": "gemini-embedding-001",
+      "dimensions": 3072,
+      "real_synthetic_embed_calls": 1,
+      "passed": true
+    },
+    {
+      "id": "gemini-embedding-2",
+      "dimensions": 3072,
+      "real_synthetic_embed_calls": 1,
+      "passed": true
+    }
+  ],
+  "quota_shown_per_model": {
+    "source": "user_screenshot_not_live_balance",
+    "rpm": 100,
+    "tpm": 30000,
+    "rpd": 1000
+  },
+  "decision": {
+    "selected": "gemini-embedding-001",
+    "sole_enabled_embedding_candidate": true,
+    "reason": "Equal displayed quota; keep the model already validated for actual native memory writes and recall; no claim of globally superior model quality.",
+    "embedding_2_removed_after_user_steering": true,
+    "cross_model_automatic_fallback": false,
+    "existing_index_rebuilt": false,
+    "memory_content_changed": false,
+    "service_restarted": false
+  },
+  "native_backup": "/var/backups/alma-work/embedding-catalog-20261110-200648",
+  "official_migration_reference": "https://ai.google.dev/gemini-api/docs/embeddings#migration",
+  "health": "ok"
+}

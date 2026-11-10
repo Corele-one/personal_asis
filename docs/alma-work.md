@@ -7,6 +7,10 @@
 
 2026-11-10按本人希望增加Work余量的要求，本轮将swap上限从128MiB提高到192MiB；RAM高水位320MiB／硬上限384MiB、Node堆256MiB保持。已修改持久单元并在线应用，不重启Work／Chat，不改变任务、模型、配对或权限。7次健康检查均成功，PID保持，3项部署回归通过；这只是缓冲及配置验收，不是新任务性能或并发容量验收。当前建议一次一个普通任务；“少量”不表示每天限几次，也不新增硬性单任务开关。一个任务若加载大量上下文、运行重程序或分出多个子任务，仍可能吃紧。swap用量高不单独证明泄漏或仍有任务运行，空闲冷页也不会在任务结束后必然立即移回RAM。见[本批核对](validation/alma-work-resources-20261110.json)。
 
+2026-11-10晚间故障：服务进程仍为active，但本地健康接口超时，cgroup内存回收压力some约98%、full约81%，swap达到192MiB；停止时捕获`v8_heap_exhausted`。单独重启后健康接口与加密relay恢复，手机重连另验。本人随后要求增加内存，调整为Node堆384MiB、RAM高水位448MiB／硬上限512MiB、swap上限256MiB；CPU、权限、配对与数据保留，不重放旧任务。此前320／384／192MiB为当时配置快照。这次恢复和扩容不代表长期稳定性或泄漏根因已解决。
+
+2026-11-10 19时后再次失响应：实际任务启用了原生本地向量记忆（本人在Alma中明确要求打开记忆），自动摘要／检索均开启，模型__local__:multilingual-e5-small的ONNX文件约448MiB。此时Work RAM约472MiB、swap256MiB触顶，回收阻塞约99%；此前增配未解决整机容量。先停Work保留数据后，本人要求换成云端embedding、恢复并接续原任务。现已复用同VPS既有Google账号，原生embeddingModel为asis-google-embedding:gemini-embedding-001，记忆／自动摘要／检索保持启用；两次真实向量调用验证合成创建、搜索、删除成功。切换前记忆条目为0，无旧向量迁移；按本人后续要求删除本地ONNX及该模型残余缓存，合计487,352,364字节。原主对话有收据地接续并补做实际资料读取，最终实际保存11条来源整理，修正过时状态；原生索引文件存在于Work HOME的.config/alma中。自动摘要另生成3条来自维护转达的重复派生，已精确锚点备份排除；抽取来源质量仍需持续复核，未声称整库已读或长期稳定性通过，不盲目重放未知写入。当前原生记忆状态与早期关闭配置不同，共享Mem0依旧未启用，详见[故障记录](validation/alma-local-memory-pressure-20261110.json)。
+
 ## 部署与权限
 
 官方固定版 **0.4.530 Linux x64**，SHA256为`05ca4bccddf1c96cd528ae6bd0a20495c73346eeb1b2208646750918069eee49`。已核对官方发布元数据和现有归档；0.4.538的更新内容是herdr终端复制，不作为本批升级前置。[官方发布](https://github.com/yetone/alma-releases/releases/tag/v0.4.530)
@@ -20,11 +24,12 @@
 | 接入 | 仅127.0.0.1:23001；iPhone走官方加密relay；没有nginx公开代理 |
 | 模型 | VPS已有MiMo／DeepSeek账号；可选MiMo 2.6 Flash及DeepSeek V4 Flash，默认MiMo；两者上下文按官方1M设置为1,000,000 token，单次输出4096 |
 | 原生执行能力 | 自动选工具／技能，已启用Agents及按需子任务；工具选择模型复用现有MiMo |
-| 记忆 | 原生自动记忆／自动检索关闭，无embedding服务，无真人历史导入 |
+| 记忆 | 本人选择启用Alma原生自动摘要／检索；Google gemini-embedding-001云端向量，复用VPS既有账号；本地ONNX模型已删除。共享Mem0保持停用 |
+| 向量模型选择 | 本人后续选择仅保留Gemini Embedding 1（gemini-embedding-001）；截图中两款额度相同。Embedding 2实测可用后按本人取舍移除，不自动跨模型回退、不重建现有向量；不是质量优劣全面评测结论 |
 | 后台 | 原生个人代理proactive／自动渠道路由关闭，heartbeat关闭；不保留默认Check in排期 |
 | 执行策略 | 本人选择常规Bash不逐条批准：`ALMA_TOOL_APPROVAL=auto`；UI的autoApprove开关保持false，但headless环境策略优先 |
 | 重试 | `network.retryAttempts=0`；服务退出不自动重启，不自动重放未知任务 |
-| 资源 | Node堆256MiB，cgroup高水位320MiB、最大384MiB、swap最大192MiB，CPU70%，96任务 |
+| 资源 | Node堆384MiB，cgroup高水位448MiB、最大512MiB、swap最大256MiB，CPU70%，96任务 |
 
 2026-11-09上下文修正：初始化器此前将两个模型的`capabilityOverrides.contextWindow`都写成32768；这不是上游模型限制。原生自动压缩阈值80%，使约26K的请求就可能触发压缩，而当前固定提示／工具等开销估计约20K。已通过原生提供商模型API在线修正为1,000,000，保留80%阈值、最近消息策略、输出4096和全部用户设置；无需重启服务。初始化器同样修正，避免后续补配置重新降回32K。模型容量与每轮实际发送量分别看待，配置1M不会自动填满请求；本次不恢复或重新展开既有压缩归档，不重放任何旧任务。
 

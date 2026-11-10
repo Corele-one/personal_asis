@@ -1,0 +1,79 @@
+{
+  "date": "2026-11-10",
+  "model": "gemini-embedding-001",
+  "provider_type": "google",
+  "existing_account_reused_on_same_vps": true,
+  "credentials_returned_to_mac": false,
+  "memory_enabled": true,
+  "auto_summarize": true,
+  "auto_retrieve": true,
+  "memories_before": 0,
+  "private_backup": "/var/backups/alma-work/cloud-memory-20261110-191408",
+  "real_embedding_test": {
+    "calls": 2,
+    "create_search_delete": "passed",
+    "elapsed_seconds": 2.01,
+    "synthetic_memory_removed": true
+  },
+  "local_model": {
+    "deleted_on_user_request": true,
+    "bytes_freed": 470268533,
+    "additional_cache_bytes_freed": 17083831,
+    "total_bytes_freed": 487352364,
+    "entire_selected_model_cache_removed": true
+  },
+  "resume": {
+    "sent_once": true,
+    "same_original_thread": true,
+    "message_id": "f4d6c68b-aaf7-450e-873e-91322035ca4e",
+    "status": "completed_with_source_verification",
+    "unknown_writes_not_replayed": true,
+    "elapsed_seconds": 130.31,
+    "actual_tool_calls": 9,
+    "memories_created": 5,
+    "native_search_tool_completed": true,
+    "index_files": [
+      "~/.config/alma/USER.md",
+      "~/.config/alma/MEMORY.md"
+    ],
+    "source_database_read_receipt_in_first_generation": false,
+    "followup_source_verification_sent_once": true,
+    "source_followup_elapsed_seconds": 198.5,
+    "source_followup_tool_calls": 20,
+    "source_followup_all_tool_results_available": true,
+    "shared_knowledge_called": true,
+    "native_outputs_read_complete_markers": 9,
+    "model_reported_logical_sources_read": 7,
+    "curated_memories": 11,
+    "systemd_description_corrected": true,
+    "old_revision_task_marked_historical": true,
+    "index_files_verified": true
+  },
+  "runtime_sample": {
+    "memory_bytes": 354811904,
+    "swap_bytes": 59105280,
+    "health": "ok"
+  },
+  "shared_mem0": "still_disabled",
+  "runtime_after_first_task": {
+    "memory_bytes": 429301760,
+    "swap_bytes": 59301888,
+    "health": "ok"
+  },
+  "quality_audit": {
+    "auto_summary_generated_maintenance_derived_duplicates": 3,
+    "matched_exact_proxy_message_anchors": true,
+    "privately_backed_up_and_removed": true,
+    "auto_summary_remains_enabled": true,
+    "native_extraction_quality_fully_accepted": false
+  },
+  "final": {
+    "health": "ok",
+    "relay": "connected",
+    "e2e_encrypted": true,
+    "three_services": "active",
+    "selected_local_model_cache_absent": true,
+    "curated_memories": 11,
+    "long_term_stability_verified": false
+  }
+}

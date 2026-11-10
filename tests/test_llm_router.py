@@ -312,6 +312,56 @@ class RoutingTests(unittest.IsolatedAsyncioTestCase):
             await router.generate(self.messages('字'*60000),None)
         self.assertEqual(self.calls,[])
 
+    async def test_oversized_old_turn_does_not_block_new_small_request(self):
+        messages = self.messages('旧任务')
+        for i in range(8):
+            messages.extend([
+                dict(role='assistant', tool_calls=[dict(id=str(i), function=dict(name='read'))]),
+                dict(role='tool', tool_call_id=str(i), content='历史工具结果。' * 450)])
+        messages.extend([dict(role='assistant', content='旧任务答复'),
+                         dict(role='user', content='现在的新问题')])
+        before = fingerprint(messages)
+        tools = NS(empty=lambda: False,
+                   get_func_desc_openai_style=lambda: [{'description': '规则。' * 1800}])
+        await Router(self.state, self.send).generate(messages, tools, scope='large-old-turn')
+        summary = next(c for c in self.calls if c[3] == 'summary')
+        payload = json.loads(summary[1][-1]['content'])
+        self.assertNotEqual(payload[0]['role'], 'tool')
+        paired = {call['id'] for m in payload for call in m.get('tool_calls', [])}
+        self.assertTrue(all(m['tool_call_id'] in paired for m in payload if m['role'] == 'tool'))
+        self.assertLess(estimate(summary[1]), 20000)
+        self.assertIn('更早', self.calls[-1][1][1]['content'])
+        self.assertEqual(self.calls[-1][1][-1], messages[-1])
+        self.assertEqual(fingerprint(messages), before)
+
+    async def test_old_oversized_tool_pair_can_be_omitted_with_explicit_coverage(self):
+        messages = self.messages('旧任务') + [
+            dict(role='assistant', tool_calls=[dict(id='huge', function=dict(name='read'))]),
+            dict(role='tool', tool_call_id='huge', content='旧资料。' * 7000),
+            dict(role='assistant', content='助手曾声称完成，须核对工具证据'),
+            dict(role='user', content='新的普通问题')]
+        await Router(self.state, self.send).generate(messages, None, scope='old-huge-pair')
+        summary = next(c for c in self.calls if c[3] == 'summary')
+        self.assertNotIn('tool_call_id', summary[1][-1]['content'])
+        self.assertIn('更早 3 条未整理', self.calls[-1][1][1]['content'])
+
+    async def test_old_native_content_tool_groups_stay_paired(self):
+        messages = self.messages('旧任务')
+        for i in range(8):
+            messages.extend([
+                dict(role='assistant', content=[dict(type='tool-call', toolCallId=str(i), toolName='read')]),
+                dict(role='tool', content=[dict(type='tool-result', toolCallId=str(i), result='旧工具资料。' * 500)])])
+        messages.append(dict(role='user', content='新问题'))
+        tools = NS(empty=lambda: False,
+                   get_func_desc_openai_style=lambda: [{'description': '规则。' * 1600}])
+        await Router(self.state, self.send).generate(messages, tools, scope='native-old-group')
+        summary = next(c for c in self.calls if c[3] == 'summary')
+        payload = json.loads(summary[1][-1]['content'])
+        calls = {p['toolCallId'] for m in payload if m['role'] == 'assistant'
+                 for p in m['content'] if p.get('type') == 'tool-call'}
+        results = {p['toolCallId'] for m in payload if m['role'] == 'tool' for p in m['content']}
+        self.assertTrue(results <= calls)
+
     async def test_summary_failure_stops_dependent_generation(self):
         async def send(*args):self.calls.append(args);raise Failure('unknown')
         messages=[]

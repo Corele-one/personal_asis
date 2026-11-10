@@ -1,0 +1,59 @@
+{
+  "date": "2026-11-10",
+  "version": "1.1.1",
+  "incident": {
+    "normal_reply_tags_missing": true,
+    "observed_native_fallback_at": "2026-11-10T18:07:04+08:00",
+    "from": "asis_router/auto",
+    "to": "google_gemini/gemini-3.6-flash",
+    "native_429_retries_observed": true,
+    "owner_persisted_fallback_list_empty": true,
+    "default_profile_fallback_list_nonempty": true
+  },
+  "fix": {
+    "virtual_providers_only": true,
+    "native_helper": "_get_fallback_chat_providers",
+    "signature_guard": true,
+    "uninstall_restore": true,
+    "upstream_files_modified": false,
+    "other_providers_keep_native_fallback": true
+  },
+  "tests": {
+    "full_total": 910,
+    "full_passed": 901,
+    "full_skipped": 9,
+    "local_total": 526,
+    "local_passed": 525,
+    "local_skipped": 1,
+    "actual_sdk_nonempty_native_fallback_boundary": "passed",
+    "actual_sdk_physical_provider_passthrough": "passed",
+    "actual_sdk_five_model_markers": "passed",
+    "actual_sdk_native_tool_loops": "passed",
+    "real_model_calls": 0,
+    "platform_test_messages": 0
+  },
+  "deployment": {
+    "first_attempt_readiness_timeout_seconds": 300,
+    "first_attempt_code_rollback": true,
+    "second_attempt": "ready",
+    "temporary_astrbot_memory_low_mib": 256,
+    "astrbot_pid": 803165,
+    "boundary_attached": true,
+    "hashes_match": true,
+    "work_temporarily_stopped_for_startup": true,
+    "cold_start_observed_io_wait_percent": [
+      95,
+      97
+    ],
+    "cold_start_longer_than_15_minutes": true,
+    "backup_taken": true,
+    "temporary_astrbot_memory_low_restored_to_zero": true,
+    "alma_restored": true,
+    "alma_health": "ok",
+    "alma_relay": "connected",
+    "alma_e2e_encrypted": true,
+    "all_three_services": "active",
+    "phone_connected_at_final_check": false
+  },
+  "phone_ui_verified": false
+}

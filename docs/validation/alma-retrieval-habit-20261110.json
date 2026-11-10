@@ -1,0 +1,73 @@
+{
+  "date": "2026-11-10",
+  "intent": "Proactively consult relevant personal sources without a database keyword; avoid unrelated source lookups.",
+  "implementation": {
+    "native_profile": "~/.config/alma/USER.md",
+    "managed_policy_source": "deploy/alma-personal-knowledge-instructions.md",
+    "policy_sha256": "fdaf7ff67b927153765ac9e1215539837b99a22fbf0469637d1509c22ac7548d",
+    "profile_outside_managed_block_preserved": true,
+    "native_workspace_agents_autoload_not_found_in_installed_version": true,
+    "tool_description_purpose_before_parameters": true,
+    "source_permissions_unchanged": true,
+    "native_auto_tools_kept": true,
+    "official_alma_files_modified": false
+  },
+  "deployment": {
+    "profile_backup": "/var/backups/alma-work/retrieval-policy-20261110-193751",
+    "knowledge_release": "/opt/personal-asis-knowledge/releases/20261110_115259_458415",
+    "knowledge_backup": "/var/backups/personal-asis-knowledge/20261110_115259_458415",
+    "source_sha256": "f1cc4e8558d2938630f9e60389ca2c9c6d4b4e0455b547524b4b423f96ffed9a",
+    "actual_work_uid_metadata_probe": true,
+    "native_mcp_reconnected": true,
+    "work_restarted": false,
+    "chat_restarted": false
+  },
+  "checks": {
+    "knowledge_tests_passed": 9,
+    "full_total": 910,
+    "full_passed": 901,
+    "full_skipped": 9,
+    "initial_probe": {
+      "omitted_auto_tool_keys_and_enabled_mcp_ids": true,
+      "not_a_mobile_ui_or_auto_selection_verdict": true,
+      "personal_source_calls": 0,
+      "translation_source_calls": 0
+    },
+    "corrected_native_auto_probe": {
+      "personal_source_calls": 17,
+      "complete_read_markers": 10,
+      "elapsed_seconds": 209.22,
+      "translation_source_calls": 0
+    },
+    "purpose_first_native_auto_probe": {
+      "personal_source_calls": 4,
+      "complete_read_markers": 1,
+      "elapsed_seconds": 121.11,
+      "translation_source_calls": 0,
+      "translation_elapsed_seconds": 5.51,
+      "both_passed": true
+    },
+    "native_probe_turns_total": 6,
+    "provider_request_count_not_equal_to_turn_count": true,
+    "incognito": true,
+    "probe_manual_memory_add_commands": 0,
+    "probe_profile_write_commands": 0,
+    "platform_test_messages": 0
+  },
+  "final": {
+    "health": "ok",
+    "relay": "connected",
+    "encrypted": true,
+    "knowledge_mcp": "connected",
+    "work_chat_knowledge_services": "active",
+    "cloud_embedding_kept": true,
+    "existing_memories_snapshot": 16,
+    "task_state_scope_rule_added_after_behavior_probes": true
+  },
+  "limits": [
+    "Real mobile UI and varied long-term natural use not verified.",
+    "Personal advice probe still took about two minutes.",
+    "Incognito probes measure source-tool use; normal native automatic memory recall remains enabled.",
+    "Reminder/service-state conflation observed; scope clarification added, not independently model-tested."
+  ]
+}

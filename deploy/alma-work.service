@@ -14,7 +14,7 @@ Environment=HOME=/var/lib/alma-work
 Environment=ALMA_DATA_DIR=/var/lib/alma-work/data
 Environment=ALMA_PORT=23001
 Environment=ALMA_TOOL_APPROVAL=auto
-Environment=NODE_OPTIONS=--max-old-space-size=256
+Environment=NODE_OPTIONS=--max-old-space-size=384
 ExecStart=/usr/bin/python3 /opt/alma-work/run-alma-work.py
 StandardOutput=null
 StandardError=journal
@@ -42,9 +42,9 @@ AmbientCapabilities=
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
 InaccessiblePaths=-/run/user -/run/dbus -/run/docker.sock -/run/containerd
 MemoryAccounting=yes
-MemoryHigh=320M
-MemoryMax=384M
-MemorySwapMax=192M
+MemoryHigh=448M
+MemoryMax=512M
+MemorySwapMax=256M
 CPUQuota=70%
 TasksMax=96
 LimitNOFILE=4096

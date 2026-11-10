@@ -1,0 +1,53 @@
+{
+  "date": "2026-11-10",
+  "version": "1.1.2",
+  "incident": {
+    "astrbot_initial_http_timeout": true,
+    "http_recovered_without_restart": true,
+    "later_http_seconds": 0.107542,
+    "feishu_send_http_success_observed": true,
+    "life_record_saved": true,
+    "model_failure": "context_too_large_before_transport",
+    "old_turn_estimated_tokens": 26676,
+    "old_history_total_estimate": 30722
+  },
+  "fix": {
+    "bounded_historical_suffix_at_complete_tool_group_boundary": true,
+    "openai_and_native_content_tool_groups_supported": true,
+    "omitted_history_explicitly_labeled": true,
+    "current_turn_preserved": true,
+    "original_history_unchanged": true,
+    "request_limits_unchanged": true
+  },
+  "verification": {
+    "router_tests": 40,
+    "full_tests": 913,
+    "passed": 904,
+    "skipped": 9,
+    "actual_sdk": "passed",
+    "actual_history_synthetic_transport": "passed",
+    "actual_history_summary_calls_synthetic": 1,
+    "actual_history_outbound_estimate": 2355,
+    "real_model_calls": 0,
+    "platform_test_messages": 0,
+    "failed_user_request_replayed": false
+  },
+  "deployment": {
+    "hot_reload_failed_http_500": true,
+    "native_cancel_scope_error_observed": true,
+    "dashboard_listener_lost_after_reload": true,
+    "fallback_rollback_api_unreachable": true,
+    "tested_code_installed_then_astrbot_restarted": true,
+    "readiness": "passed",
+    "pid": 812649,
+    "native_started_at": "2026-11-10T20:39:21+08:00",
+    "dashboard_http": 200,
+    "version_1_1_2_observed": true,
+    "native_fallback_boundary_attached": true,
+    "astrbot_and_alma_services": "active"
+  },
+  "limitations": [
+    "No real user platform generation acceptance yet.",
+    "Memory swapping caused initial transient delay; this code fix addresses historical compaction, not VPS capacity."
+  ]
+}
